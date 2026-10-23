@@ -20,6 +20,7 @@
   .search input { width: 100%; padding: 8px 14px; border-radius: 20px; border: 1px solid #2c2c38;
     background: #14141b; color: var(--text); font-size: 14px; outline: none; }
   .search input:focus { border-color: #55556a; }
+  header button.p { padding: 7px 14px; font-size: 13px; }
   .status { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; }
   .dot.on { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; } .dot.off { background: #d9534f; }
@@ -80,6 +81,7 @@
 <header>
   <div class="logo">MK2AI</div>
   <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
+  <button class="p" id="imp" title="Load a Tone Studio .tsl file">＋ Import .tsl</button>
   <div class="status"><span class="dot" id="dot"></span><span id="stxt">connecting…</span></div>
 </header>
 <div id="hero"></div>
@@ -194,6 +196,13 @@ document.addEventListener("click", e => {
   if (e.target.id === "modal") $("#modal").classList.remove("open");
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape") $("#modal").classList.remove("open"); });
+$("#imp").addEventListener("click", async () => {
+  const a = api(); if (!a) return;
+  const r = await a.import_tsl();
+  if (r.cancelled) return;
+  if (!r.ok) return toast(r.error, true);
+  SONGS = await a.songs(); q = ""; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library");
+});
 $("#q").addEventListener("input", e => { q = e.target.value.trim(); render(); });
 
 async function init() {

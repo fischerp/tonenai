@@ -13,7 +13,7 @@ python3 -m venv .venv && .venv/bin/pip install mido python-rtmidi
 ```
 ./run.command            # or: .venv/bin/python app/main.py
 ```
-Netflix-style library of your songs: click a song, pick a patch, it is sent to the amp. Search the library; if a
+Netflix-style library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Search the library; if a
 song is not found, **Create with Claude** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
 One-time sign-in for that feature (the app uses the Claude Agent SDK bundled in the venv):
 ```

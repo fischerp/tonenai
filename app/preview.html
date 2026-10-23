@@ -8,6 +8,7 @@ window.pywebview={api:{
   songs: async()=>{const out=[];for(const id of ${JSON.stringify(IDS)}){let s=await (await fetch("../songs/"+id+".json")).json();s=Array.isArray(s)?s:[s];
     const head=(s[0].memo||"").split(":")[0].split(" - ");
     out.push({id,artist:head[0],title:head[1],patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
+  import_tsl: async()=>({ok:false,cancelled:true}),
   reveal: async()=>({ok:true}),
   create_song: async(t)=>{window._j={state:"running",note:"Researching the tone…",t:Date.now()};return{ok:true};},
   job_status: async()=>{const e=Date.now()-window._j.t;if(e>5000)return{state:"done",id:"pearl-jam-animal"};return{state:"running",note:e>2500?"Writing the patch…":"Researching the tone…"};},

@@ -119,6 +119,8 @@ def apply_live(blocks, inp, out):
     time.sleep(0.2)
     for blk in ["PatchName", "Patch_0", "Fx(1)", "Fx(2)", "Delay(1)", "Delay(2)", "Patch_1", "Patch_2", "Eq(2)",
                 "Patch_Mk2V2", "Status"]:
+        if blk not in blocks:
+            continue
         data = blocks[blk]
         for off7, ln in _chunks(blk):
             lin = P.to_linear(off7)
@@ -144,6 +146,19 @@ def snapshot(inp, out, blocks=None):
             buf += got
         res[blk] = buf
     return res
+
+
+# ---------------------------------------------------------------- .tsl import
+
+def from_tsl(path):
+    """Read a Tone Studio .tsl liveset -> (liveset name, [blocks per patch])."""
+    d = json.load(open(path))
+    if d.get("device") != "KATANA MkII":
+        raise ValueError("Not a KATANA MkII liveset (.tsl)")
+    patches = []
+    for p in d["data"][0]:
+        patches.append({k.split("%", 1)[1]: [int(x, 16) for x in v] for k, v in p["paramSet"].items()})
+    return d.get("name", ""), patches
 
 
 # ---------------------------------------------------------------- .tsl export

@@ -41,7 +41,36 @@ class Service:
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
             })
+        for path in sorted(glob.glob(os.path.join(SONGS, "*.tsl"))):
+            sid = os.path.basename(path)[:-4]
+            if os.path.exists(os.path.join(SONGS, sid + ".json")):
+                continue
+            try:
+                name, patches = PT.from_tsl(path)
+            except Exception:
+                continue
+            res.append({"id": sid, "artist": "Imported", "title": name or sid,
+                        "patches": [{"index": i, "name": bytes(b["PatchName"]).decode("ascii", "replace").strip() or f"Patch {i + 1}",
+                                     "amp": "", "note": "From a .tsl file"} for i, b in enumerate(patches)]})
         return res
+
+    def import_tsl(self):
+        """Pick a Tone Studio .tsl with a native dialog and add it to the library."""
+        import shutil, webview
+        picked = webview.windows[0].create_file_dialog(
+            webview.OPEN_DIALOG, file_types=("Tone Studio liveset (*.tsl)",))
+        if not picked:
+            return {"ok": False, "cancelled": True}
+        src = picked[0]
+        try:
+            PT.from_tsl(src)
+        except Exception as e:
+            return {"ok": False, "error": f"Could not read that file: {e}"}
+        sid = re.sub(r"[^a-z0-9]+", "-", os.path.basename(src)[:-4].lower()).strip("-") or "imported"
+        dst = os.path.join(SONGS, sid + ".tsl")
+        if os.path.abspath(src) != os.path.abspath(dst):
+            shutil.copyfile(src, dst)
+        return {"ok": True, "id": sid}
 
     # -------------------------------------------------------------- amp
     def _connect(self):
@@ -73,17 +102,24 @@ class Service:
 
     def play(self, song_id, index):
         path = os.path.join(SONGS, song_id + ".json")
-        specs = json.load(open(path))
-        specs = specs if isinstance(specs, list) else [specs]
-        spec = specs[int(index)]
+        if os.path.exists(path):
+            specs = json.load(open(path))
+            specs = specs if isinstance(specs, list) else [specs]
+            spec = specs[int(index)]
+            blocks = PT.build(spec)
+            label = spec["name"]
+        else:
+            _, patches = PT.from_tsl(os.path.join(SONGS, song_id + ".tsl"))
+            blocks = patches[int(index)]
+            label = bytes(blocks["PatchName"]).decode("ascii", "replace").strip()
         with self._lock:
             try:
                 self._connect()
-                PT.apply_live(PT.build(spec), self._inp, self._out)
+                PT.apply_live(blocks, self._inp, self._out)
             except Exception as e:
                 self._drop()
                 return {"ok": False, "error": str(e)}
-        return {"ok": True, "patch": spec["name"]}
+        return {"ok": True, "patch": label}
 
     # -------------------------------------------------------------- reveal .tsl
     def reveal(self, song_id):
