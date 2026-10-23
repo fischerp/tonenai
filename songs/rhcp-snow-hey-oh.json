@@ -1,0 +1,15 @@
+[
+ {"name":"Snow Riff","memo":"Red Hot Chili Peppers - Snow (Hey Oh): arpeggiated riff. Frusciante-style clean Strat tone, light compression, touch of grit and room.",
+  "amp":{"type":"CLEAN","gain":38,"bass":50,"mid":55,"treble":58,"presence":55,"volume":50},
+  "mod":{"type":"COMP","on":true},
+  "delay":{"type":"ANALOG","on":false,"time":350,"feedback":18,"level":18},
+  "reverb":{"type":"ROOM","on":true,"time":18,"level":15},
+  "noise_suppressor":{"on":true,"threshold":10}},
+ {"name":"Snow Chorus","memo":"Snow (Hey Oh): louder sections / bridge. Crunchier amp with blues-style drive and a bit of delay.",
+  "amp":{"type":"CRUNCH","gain":45,"bass":52,"mid":55,"treble":58,"presence":55,"volume":55},
+  "booster":{"type":"BLUES DRIVE","drive":35,"level":50},
+  "mod":{"type":"COMP","on":true},
+  "delay":{"type":"ANALOG","on":true,"time":380,"feedback":20,"level":18},
+  "reverb":{"type":"ROOM","on":true,"time":18,"level":15},
+  "noise_suppressor":{"on":true,"threshold":12}}
+]

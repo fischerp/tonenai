@@ -1,0 +1,13 @@
+[
+ {"name":"Animal Riff","memo":"Pearl Jam - Animal: driving riff. 90s rock crunch (Les Paul/Tele into cranked Marshall-style amp), mids forward, tight room.",
+  "amp":{"type":"CRUNCH","gain":58,"bass":55,"mid":62,"treble":58,"presence":55,"volume":55},
+  "booster":{"type":"T-SCREAM","drive":28,"level":50},
+  "reverb":{"type":"ROOM","on":true,"time":12,"level":10},
+  "noise_suppressor":{"on":true,"threshold":15}},
+ {"name":"Animal Lead","memo":"Animal: solo/lead sections. Lead amp, more drive, delay for sustain.",
+  "amp":{"type":"LEAD","gain":62,"bass":52,"mid":62,"treble":58,"presence":55,"volume":58},
+  "booster":{"type":"T-SCREAM","drive":32,"level":55},
+  "delay":{"type":"DIGITAL","on":true,"time":340,"feedback":22,"level":22},
+  "reverb":{"type":"PLATE","on":true,"time":18,"level":15},
+  "noise_suppressor":{"on":true,"threshold":18}}
+]

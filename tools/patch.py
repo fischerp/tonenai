@@ -64,7 +64,7 @@ def build(spec):
             v = _opt("mod", fx["type"])
             _set(b, blk, "PRM_FX1_SW", int(fx.get("on", True)))
             _set(b, blk, "PRM_FX1_FXTYPE", v)
-            short = {"CHORUS": "2x2CHORUS", "UNI-V": "UNIV", "AUTO WAH": "AWAH", "T.WAH": "TWAH", "SLOW GEAR": "SLOWGEAR",
+            short = {"COMP": "ADCOMP", "CHORUS": "2x2CHORUS", "UNI-V": "UNIV", "AUTO WAH": "AWAH", "T.WAH": "TWAH", "SLOW GEAR": "SLOWGEAR",
                      "RING MOD": "RINGMOD", "PITCH SHIFTER": "PSHIFT", "HEAVY OCTAVE": "HEAVYOCT"}
             eff = short.get(fx["type"].upper(), fx["type"].upper().replace(" ", ""))
             for pname, pv in fx.get("params", {}).items():

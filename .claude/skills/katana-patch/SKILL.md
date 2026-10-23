@@ -7,7 +7,7 @@ description: Configure the BOSS Katana MkII for a song or band. Use when the use
 
 1. **Research the tone** (guitar, amp, pedals, effects on the recording; ask for the user's guitar/pickups if unknown).
 2. **Backup first**: `.venv/bin/python tools/patch.py backup -o backups/<date>.tsl` (needs the amp on and USB connected).
-3. **Write a spec** `songs/<artist>-<song>.json` (see `songs/example.json`). Keys: `name` (<=16 chars), `memo`,
+3. **Write a spec** `songs/<artist>-<song>.json` (see `songs/gnr-welcome-to-the-jungle.json`). Keys: `name` (<=16 chars), `memo`,
    `amp{type ACOUSTIC|CLEAN|CRUNCH|LEAD|BROWN, gain, bass, mid, treble, presence, volume}`, `booster`, `mod`, `fx`
    (`type` + optional `params`, e.g. `{"RATE":40}` for `PRM_FX1_CHORUS_RATE`), `delay`, `reverb`, `noise_suppressor`,
    and `raw: [[block, "PRM_NAME", value]]` as an escape hatch. Valid type names: `tools/params.py` `TABLES`.

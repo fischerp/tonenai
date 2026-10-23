@@ -1,11 +1,11 @@
 {
- "name": "example",
+ "name": "gnr-welcome-to-the-jungle",
  "formatRev": "0002",
  "device": "KATANA MkII",
  "data": [
   [
    {
-    "memo": "Guns N' Roses - Welcome to the Jungle (rhythm)",
+    "memo": "Guns N' Roses - Welcome to the Jungle: rhythm. Brown amp with a T-Scream style boost, tight and mid-forward.",
     "paramSet": {
      "UserPatch%PatchName": [
       "4A",

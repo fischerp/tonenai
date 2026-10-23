@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mk2ai</title>
+<style>
+  :root {
+    --bg: #0b0b0f; --panel: #16161d; --text: #f4f4f6; --muted: #9a9aa8; --accent: #e50914;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
+  body { overflow-y: auto; overflow-x: hidden; }
+  header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 20px;
+    padding: 14px 4vw; background: linear-gradient(#0b0b0fee, #0b0b0f99 70%, transparent); backdrop-filter: blur(6px); }
+  .logo { font-weight: 800; letter-spacing: .5px; color: var(--accent); font-size: 22px; }
+  .search { flex: 1; max-width: 360px; }
+  .search input { width: 100%; padding: 8px 14px; border-radius: 20px; border: 1px solid #2c2c38;
+    background: #14141b; color: var(--text); font-size: 14px; outline: none; }
+  .search input:focus { border-color: #55556a; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; }
+  .dot.on { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; } .dot.off { background: #d9534f; }
+
+  .hero { position: relative; margin: 0 4vw 24px; border-radius: 14px; padding: 7vh 4vw; min-height: 34vh;
+    display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0b0fcc, transparent 70%), linear-gradient(0deg, #0b0b0f, transparent 50%); }
+  .hero > * { position: relative; z-index: 1; }
+  .hero .eyebrow { color: #ffffffb0; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
+  .hero h1 { margin: 6px 0 4px; font-size: clamp(30px, 5vw, 56px); line-height: 1.05; }
+  .hero .by { color: #ffffffc8; font-size: 18px; margin-bottom: 18px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  button.p { border: 0; border-radius: 6px; padding: 10px 20px; font-size: 15px; font-weight: 600; cursor: pointer;
+    background: #ffffff22; color: var(--text); transition: background .15s, transform .1s; }
+  button.p:hover { background: #ffffff40; } button.p:active { transform: scale(.97); }
+  button.p.main { background: var(--text); color: #000; } button.p.main:hover { background: #fff; }
+  button.p.live { outline: 2px solid var(--accent); }
+
+  section.row { margin: 0 0 26px; }
+  section.row h2 { margin: 0 4vw 10px; font-size: 18px; font-weight: 700; }
+  .track { display: flex; gap: 14px; overflow-x: auto; padding: 8px 4vw 18px; scroll-snap-type: x proximity; }
+  .track::-webkit-scrollbar { height: 0; }
+  .card { flex: 0 0 210px; height: 290px; border-radius: var(--radius); position: relative; cursor: pointer; overflow: hidden;
+    scroll-snap-align: start; transition: transform .2s, box-shadow .2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; }
+  .card:hover { transform: scale(1.06); box-shadow: 0 12px 30px #000a; z-index: 2; }
+  .card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #000d, transparent 65%); }
+  .card > * { position: relative; z-index: 1; }
+  .card .t { font-weight: 800; font-size: 21px; line-height: 1.1; text-shadow: 0 2px 8px #0008; }
+  .card .a { color: #ffffffd0; font-size: 13px; margin-top: 4px; }
+  .card .badge { position: absolute; top: 12px; left: 12px; z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 4px; background: #000a; }
+  .card.live .badge { background: var(--accent); }
+
+  .empty { margin: 8vh 4vw; max-width: 520px; }
+  .empty h2 { margin: 0 0 6px; font-size: 24px; } .empty p { color: var(--muted); margin: 0 0 18px; }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff; border-radius: 50%;
+    animation: sp .8s linear infinite; vertical-align: -2px; margin-right: 8px; } @keyframes sp { to { transform: rotate(360deg); } }
+  .sheet .foot { padding: 0 30px 26px; } .link { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0; text-decoration: underline; }
+  .link:hover { color: var(--text); }
+  .modal { position: fixed; inset: 0; background: #000c; display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal.open { display: flex; }
+  .sheet { width: min(620px, 92vw); max-height: 86vh; overflow: auto; background: var(--panel); border-radius: 14px; }
+  .sheet .top { padding: 34px 30px 20px; position: relative; }
+  .sheet .top::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--panel), transparent 80%); }
+  .sheet .top > * { position: relative; z-index: 1; }
+  .sheet h3 { margin: 0; font-size: 30px; } .sheet .by { color: #ffffffc0; }
+  .plist { padding: 6px 30px 28px; display: grid; gap: 10px; }
+  .pitem { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 8px; background: #1f1f29; cursor: pointer; }
+  .pitem:hover { background: #2a2a37; } .pitem.live { outline: 2px solid var(--accent); }
+  .pitem .n { font-weight: 700; } .pitem .d { color: var(--muted); font-size: 13px; }
+  .pitem .go { margin-left: auto; font-weight: 700; white-space: nowrap; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #222230; padding: 10px 18px;
+    border-radius: 8px; transition: transform .25s; z-index: 99; } .toast.show { transform: translateX(-50%); }
+  .toast.err { background: #5a1f22; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">MK2AI</div>
+  <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
+  <div class="status"><span class="dot" id="dot"></span><span id="stxt">connecting…</span></div>
+</header>
+<div id="hero"></div>
+<main id="rows"></main>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+let SONGS = [], LIVE = null;          // LIVE = {id, index}
+let q = "", JOB = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const api = () => window.pywebview && window.pywebview.api;
+
+function hue(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function grad(s) { const h = hue(s.artist || s.title); return `linear-gradient(155deg, hsl(${h} 65% 38%), hsl(${(h + 50) % 360} 70% 18%))`; }
+function store(get, set) { try { return get ? JSON.parse(localStorage.getItem(get) || "null") : localStorage.setItem(...set); } catch (e) { return null; } }
+function recents() { return store("recent") || []; }
+function pushRecent(id) { const r = [id, ...recents().filter(x => x !== id)].slice(0, 12); store(null, ["recent", JSON.stringify(r)]); }
+
+function toast(msg, err) { const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = "toast", 2600); }
+
+function match(s) { const t = (s.title + " " + s.artist + " " + s.patches.map(p => p.name).join(" ")).toLowerCase(); return t.includes(q.toLowerCase()); }
+
+function card(s) {
+  const live = LIVE && LIVE.id === s.id;
+  return `<div class="card${live ? " live" : ""}" data-id="${esc(s.id)}" style="background:${grad(s)}">
+    <span class="badge">${live ? "PLAYING" : s.patches.length + (s.patches.length > 1 ? " PATCHES" : " PATCH")}</span>
+    <div class="t">${esc(s.title)}</div><div class="a">${esc(s.artist)}</div></div>`;
+}
+function row(title, list) { return list.length ? `<section class="row"><h2>${esc(title)}</h2><div class="track">${list.map(card).join("")}</div></section>` : ""; }
+
+function render() {
+  const list = SONGS.filter(match);
+  const liveSong = LIVE && SONGS.find(s => s.id === LIVE.id);
+  const heroSong = liveSong || SONGS[0];
+  $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${grad(heroSong)}">
+      <div class="eyebrow">${liveSong ? "Now playing on your Katana" : "Pick a song to start"}</div>
+      <h1>${esc(heroSong.title)}</h1><div class="by">${esc(heroSong.artist)}</div>
+      <div class="btns">${heroSong.patches.map(p => `<button class="p ${LIVE && LIVE.id === heroSong.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(heroSong.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}</div></div>` : "";
+  let html = "";
+  if (!q) {
+    const rec = recents().map(id => SONGS.find(s => s.id === id)).filter(Boolean);
+    html += row("Continue playing", rec);
+    html += row("All songs", list);
+    const by = {};
+    list.forEach(s => (by[s.artist || "Other"] = by[s.artist || "Other"] || []).push(s));
+    Object.keys(by).sort().forEach(a => { if (by[a].length > 1) html += row(a, by[a]); });
+  } else html += row(`Results for “${q}”`, list);
+  $("#rows").innerHTML = html || createCta();
+}
+
+function createCta() {
+  if (JOB && JOB.state === "running") return `<div class="empty"><h2>Creating “${esc(JOB.query || q)}”</h2><p><span class="spin"></span>${esc(JOB.note || "Working…")}</p></div>`;
+  const msg = JOB && JOB.state === "error" ? `<p style="color:#ff8a85">${esc(JOB.error)}</p>` : "";
+  return q ? `<div class="empty"><h2>No match for “${esc(q)}”</h2><p>Claude can research the tone and build a patch set for this song. It takes about a minute.</p>${msg}
+    <button class="p main" data-create="1">✦ Create with Claude</button></div>`
+    : `<div class="empty"><h2>No songs yet</h2><p>Search for a song to have Claude create one.</p></div>`;
+}
+
+function openSong(id) {
+  const s = SONGS.find(x => x.id === id); if (!s) return;
+  $("#sheet").innerHTML = `<div class="top" style="background:${grad(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
+    <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
+      <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
+    <div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button></div>`;
+  $("#modal").classList.add("open");
+}
+
+async function play(id, i) {
+  const a = api(); if (!a) return toast("Not running inside the desktop app", true);
+  toast("Sending to amp…");
+  const r = await a.play(id, i);
+  if (r.ok) { LIVE = { id, index: Number(i) }; pushRecent(id); toast("Loaded “" + r.patch + "”"); $("#modal").classList.remove("open"); render(); refreshStatus(); }
+  else { toast("Could not reach the amp: " + r.error, true); refreshStatus(); }
+}
+
+async function startCreate() {
+  const a = api(); if (!a) return;
+  const r = await a.create_song(q);
+  if (!r.ok) return toast(r.error, true);
+  JOB = { state: "running", query: q, note: "Starting Claude…" }; render();
+  const t = setInterval(async () => {
+    JOB = await a.job_status(); JOB.query = JOB.query || q;
+    if (JOB.state === "running") return render();
+    clearInterval(t);
+    if (JOB.state === "done") {
+      SONGS = await a.songs(); q = ""; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library");
+    } else render();
+  }, 1200);
+}
+
+function syncLive(name) {   // match the amp's current patch to a library song
+  for (const s of SONGS) for (const p of s.patches) if (p.name === name) { LIVE = { id: s.id, index: p.index }; return; }
+  LIVE = null;
+}
+
+async function refreshStatus() {
+  const a = api(); if (!a) return;
+  const s = await a.status();
+  if (s.connected) { const before = JSON.stringify(LIVE); syncLive(s.patch); if (before !== JSON.stringify(LIVE)) render(); }
+  $("#dot").className = "dot " + (s.connected ? "on" : "off");
+  $("#stxt").textContent = s.connected ? "Katana · " + s.patch : "Katana not found";
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-create]")) return startCreate();
+  const rv = e.target.closest("[data-reveal]"); if (rv) return api().reveal(rv.dataset.reveal);
+  const pl = e.target.closest("[data-play]"); if (pl) return play(pl.dataset.play, pl.dataset.i);
+  const c = e.target.closest(".card"); if (c) return openSong(c.dataset.id);
+  if (e.target.id === "modal") $("#modal").classList.remove("open");
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("#modal").classList.remove("open"); });
+$("#q").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+
+async function init() {
+  const a = api();
+  SONGS = a ? await a.songs() : [];
+  render(); refreshStatus(); setInterval(refreshStatus, 5000);
+}
+window.addEventListener("pywebviewready", init);
+</script>
+</body>
+</html>

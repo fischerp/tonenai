@@ -1,7 +1,0 @@
-{"name":"Jungle Rhythm","memo":"Guns N' Roses - Welcome to the Jungle (rhythm)",
- "amp":{"type":"BROWN","gain":70,"bass":55,"mid":60,"treble":60,"presence":60,"volume":50},
- "booster":{"type":"T-SCREAM","drive":30,"level":50},
- "mod":{"type":"CHORUS","on":false},
- "delay":{"type":"DIGITAL","on":false,"time":300,"feedback":15,"level":20},
- "reverb":{"type":"ROOM","on":true,"time":20,"level":18},
- "noise_suppressor":{"on":true,"threshold":15}}
