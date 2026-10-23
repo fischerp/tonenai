@@ -1,11 +1,32 @@
 # mk2ai
 
 Tell Claude a song or band; it builds a BOSS Katana MkII patch and applies it to the amp over USB MIDI,
-or exports a `.tsl` liveset for BOSS TONE STUDIO.
+or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a Netflix-style desktop app to pick songs.
+
+> **Unofficial.** This project is not affiliated with, endorsed by or sponsored by BOSS or Roland. "BOSS",
+> "Roland", "KATANA" and "TONE STUDIO" are trademarks of Roland Corporation, used here only to say which
+> hardware and software this works with. Tones are informed approximations of how a song sounds, not copies.
+
+**Status:** tested only on a Katana MkII. Other Katana models may or may not work; see Compatibility.
+
+## What is a `.tsl` file?
+The file format BOSS TONE STUDIO uses to save a set of patches (a "liveset"; the name is inferred from the app,
+BOSS does not spell it out). It is plain JSON: a name, format revision `0002`, the device name and each patch as lists
+of hex bytes. Tone Studio's full backups use `.alb`.
+
+## Compatibility
+- Tested: Katana MkII. Likely: other MkII sizes. Unknown: original Katana (MkI), Gen 3, Air, Go, Artist.
+- macOS only so far (Core MIDI + pywebview). PRs welcome.
+
+## Requirements
+- BOSS TONE STUDIO for KATANA MkII installed (the parameter list is read from the installed app at setup; no
+  BOSS files are shipped in this repo, and `tools/catalog.json` and `songs/covers/` are git-ignored on purpose).
+- The KATANA USB driver, Python 3.12+, and the amp connected over USB.
+- Optional, for "Create with Claude": a Claude sign-in (below) or your own Anthropic API key.
 
 ## Setup
 ```
-python3 -m venv .venv && .venv/bin/pip install mido python-rtmidi
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python tools/extract_catalog.py tools/catalog.json   # needs BOSS TONE STUDIO installed
 ```
 
@@ -38,3 +59,17 @@ UI dev without the amp: `python3 -m http.server 8765` then open `http://localhos
 ## Roadmap
 - Guitar/pickup profile so Claude tunes EQ per guitar; package as a double-click `.app`.
 - Optional: tag songs (played / learning), notes, export selection as one `.tsl` liveset.
+
+## Credits and data sources
+- Album art and song search use Apple's public iTunes Search API; covers are downloaded to a local cache for your own
+  use and are not part of this repo. Artwork belongs to its respective owners.
+- Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.
+- Amp parameter layout was learned from the installed BOSS TONE STUDIO app and from testing on real hardware, for
+  interoperability.
+
+## Safety
+Patches are written to the amp's temporary (live) patch, not to its memory slots, and power-cycling restores
+your stored sounds. Still, back up first (`patch.py backup`) and use at your own risk; see the license.
+
+## License
+PolyForm Noncommercial 1.0.0 (commercial use needs a separate written licence from the author), see [LICENSE](LICENSE).
