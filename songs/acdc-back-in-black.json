@@ -1,0 +1,22 @@
+[
+ {
+  "name": "BackInBlack Rhy",
+  "memo": "AC/DC - Back in Black: rhythm. Plexi-style crunch (Marshall 1959 + SG), amp run fairly clean with natural breakup, presence low, no pedals.",
+  "amp": {"type": "CRUNCH", "gain": 45, "bass": 50, "mid": 55, "treble": 55, "presence": 30, "volume": 50},
+  "booster": {"type": "MID BOOST", "on": false},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 15},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "BackInBlack Lead",
+  "memo": "AC/DC - Back in Black: solo. Same Plexi crunch with a bit more gain and mids for sustain, light delay.",
+  "amp": {"type": "CRUNCH", "gain": 60, "bass": 45, "mid": 62, "treble": 58, "presence": 35, "volume": 58},
+  "booster": {"type": "MID BOOST", "on": false},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 250, "feedback": 15, "level": 18},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ }
+]
