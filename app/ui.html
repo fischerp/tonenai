@@ -208,7 +208,7 @@ $("#q").addEventListener("input", e => { q = e.target.value.trim(); render(); })
 
 async function loadCovers() {   // fetch missing album art one by one, refreshing as each arrives
   const a = api(); if (!a) return;
-  for (const s of SONGS.filter(x => !x.cover)) {
+  for (const s of SONGS.filter(x => !x.cover)) {   // cached ones return instantly; others are downloaded
     const r = await a.cover(s.id);
     if (r.cover) { const t = SONGS.find(x => x.id === s.id); if (t) { t.cover = r.cover; render(); } }
   }

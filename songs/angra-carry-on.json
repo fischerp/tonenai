@@ -1,0 +1,22 @@
+[
+ {
+  "name": "Carry On Rhy",
+  "memo": "Angra - Carry On: rhythm. Tight, scooped-mid high-gain power-metal chug (Ibanez + Marshall/Mesa-style stack, 90s Helloween-school sound), Brown amp with a boost for tightening.",
+  "amp": {"type": "BROWN", "gain": 68, "bass": 50, "mid": 50, "treble": 62, "presence": 58, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 20, "level": 55},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 15},
+  "noise_suppressor": {"on": true, "threshold": 25}
+ },
+ {
+  "name": "Carry On Lead",
+  "memo": "Angra - Carry On: lead. Singing neo-classical lead, more gain and mids for sustain, delay and plate reverb.",
+  "amp": {"type": "LEAD", "gain": 75, "bass": 45, "mid": 65, "treble": 58, "presence": 55, "volume": 58},
+  "booster": {"type": "MID BOOST", "on": true, "drive": 25, "level": 55},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 380, "feedback": 22, "level": 25},
+  "reverb": {"type": "PLATE", "on": true, "time": 30, "level": 25},
+  "noise_suppressor": {"on": true, "threshold": 22}
+ }
+]

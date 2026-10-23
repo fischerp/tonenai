@@ -20,7 +20,12 @@ def _split_title(memo, fallback):
 
 
 def _cover_url(sid):
-    return f"../songs/covers/{sid}.jpg" if os.path.exists(os.path.join(COVERS, sid + ".jpg")) else ""
+    """Cached cover as a data URL (the window's web root can't reach songs/covers)."""
+    path = os.path.join(COVERS, sid + ".jpg")
+    if not os.path.exists(path):
+        return ""
+    import base64
+    return "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode()
 
 
 class Service:
@@ -41,7 +46,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": _cover_url(sid),
+                "id": sid, "artist": artist, "title": title, "cover": "",
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -54,7 +59,7 @@ class Service:
                 name, patches = PT.from_tsl(path)
             except Exception:
                 continue
-            res.append({"id": sid, "artist": "Imported", "title": name or sid, "cover": _cover_url(sid),
+            res.append({"id": sid, "artist": "Imported", "title": name or sid, "cover": "",
                         "patches": [{"index": i, "name": bytes(b["PatchName"]).decode("ascii", "replace").strip() or f"Patch {i + 1}",
                                      "amp": "", "note": "From a .tsl file"} for i, b in enumerate(patches)]})
         return res
