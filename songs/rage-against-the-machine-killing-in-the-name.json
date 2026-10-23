@@ -1,0 +1,23 @@
+[
+ {
+  "name": "KITN Rhythm",
+  "memo": "Rage Against the Machine - Killing in the Name: rhythm. Tom Morello: JCM800 2205 boost channel, tight mid-forward grit, no effects.",
+  "amp": {"type": "BROWN", "gain": 68, "bass": 50, "mid": 70, "treble": 62, "presence": 60, "volume": 50},
+  "booster": {"type": "T-SCREAM", "on": false},
+  "mod": {"type": "PHASER", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 12},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ },
+ {
+  "name": "KITN Wah Solo",
+  "memo": "Killing in the Name: solo. Morello's wah/Whammy-style squeal; wah on the fx slot, boosted lead level, short delay.",
+  "amp": {"type": "BROWN", "gain": 72, "bass": 48, "mid": 70, "treble": 64, "presence": 62, "volume": 58},
+  "booster": {"type": "T-SCREAM", "on": false},
+  "mod": {"type": "PHASER", "on": false},
+  "fx": {"type": "PEDAL WAH", "on": true},
+  "delay": {"type": "DIGITAL", "on": true, "time": 250, "feedback": 20, "level": 25},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 12},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ }
+]

@@ -259,3 +259,23 @@ class Service:
                 if not items:
                     return {"ok": False, "error": f"Search failed (offline?): {e}"}
         return {"ok": True, "items": items}
+
+    # -------------------------------------------------------------- delete (to the macOS Trash, so it is reversible)
+    def delete_song(self, song_id):
+        if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or ""):
+            return {"ok": False, "error": "Invalid song id"}
+        files = [os.path.join(SONGS, song_id + ext) for ext in (".json", ".tsl")] + \
+                [os.path.join(COVERS, song_id + ext) for ext in (".jpg", ".none")]
+        files = [f for f in files if os.path.exists(f)]
+        if not files:
+            return {"ok": False, "error": "Song not found"}
+        items = ", ".join(f'POSIX file "{f}"' for f in files)
+        r = subprocess.run(["osascript", "-e", f'tell application "Finder" to delete {{{items}}}'],
+                           capture_output=True, text=True)
+        if r.returncode != 0:                      # Finder not allowed: keep a recoverable copy instead
+            import shutil
+            keep = os.path.join(ROOT, ".trash")
+            os.makedirs(keep, exist_ok=True)
+            for f in files:
+                shutil.move(f, os.path.join(keep, os.path.basename(f)))
+        return {"ok": True}

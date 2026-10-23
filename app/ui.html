@@ -67,7 +67,9 @@
   .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff; border-radius: 50%;
     animation: sp .8s linear infinite; vertical-align: -2px; margin-right: 8px; } @keyframes sp { to { transform: rotate(360deg); } }
   .sheet .foot { padding: 0 30px 26px; } .link { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0; text-decoration: underline; }
-  .link:hover { color: var(--text); }
+  .link:hover { color: var(--text); } .sheet .foot { display: flex; align-items: center; gap: 12px; } .foot .sp { flex: 1; }
+  .link.danger { color: #ff8a85; } .confirm { color: var(--muted); font-size: 13px; } .confirm button { margin-left: 8px; padding: 5px 12px; font-size: 13px; }
+  button.p.red { background: #c62828; color: #fff; } button.p.red:hover { background: #e53935; }
   .modal { position: fixed; inset: 0; background: #000c; display: none; align-items: center; justify-content: center; z-index: 50; }
   .modal.open { display: flex; }
   .sheet { width: min(620px, 92vw); max-height: 86vh; overflow: auto; background: var(--panel); border-radius: 14px; }
@@ -99,7 +101,7 @@
 
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
-let q = "", JOB = null, RES = null;   // RES = search results view (set when the user presses Enter)
+let q = "", JOB = null, RES = null, SHEET = null;   // RES = search results view (set when the user presses Enter)
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const api = () => window.pywebview && window.pywebview.api;
@@ -166,10 +168,12 @@ function createCta() {
 
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
+  SHEET = id;
   $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
     <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
-    <div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button></div>`;
+    <div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
+      <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
   $("#modal").classList.add("open");
 }
 
@@ -210,10 +214,19 @@ async function refreshStatus() {
   $("#stxt").textContent = s.connected ? "Katana · " + s.patch : "Katana not found";
 }
 
-document.addEventListener("click", e => {
+document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
+  const dl = e.target.closest("[data-del]");
+  if (dl) { const sn = SONGS.find(x => x.id === dl.dataset.del);
+    $("#del").innerHTML = `<span class="confirm">Delete “${esc(sn ? sn.title : "song")}”? It goes to the Trash.<button class="p red" data-delyes="${esc(dl.dataset.del)}">Delete</button><button class="p" data-delno="1">Cancel</button></span>`; return; }
+  if (e.target.closest("[data-delno]")) return openSong(SHEET);
+  const dy = e.target.closest("[data-delyes]");
+  if (dy) { const r = await api().delete_song(dy.dataset.delyes);
+    if (!r.ok) return toast(r.error, true);
+    SONGS = await api().songs(); if (LIVE && LIVE.id === dy.dataset.delyes) LIVE = null;
+    $("#modal").classList.remove("open"); render(); return toast("Moved to the Trash"); }
   const rv = e.target.closest("[data-reveal]"); if (rv) return api().reveal(rv.dataset.reveal);
   const pl = e.target.closest("[data-play]"); if (pl) return play(pl.dataset.play, pl.dataset.i);
   const c = e.target.closest(".card"); if (c) return openSong(c.dataset.id);
