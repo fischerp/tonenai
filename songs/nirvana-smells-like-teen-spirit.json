@@ -1,0 +1,13 @@
+[
+ {"name":"SLTS Verse","memo":"Nirvana - Smells Like Teen Spirit: intro/verse. Clean amp + Small Clone-style chorus (Cobain used a Small Clone on the clean parts).",
+  "amp":{"type":"CLEAN","gain":32,"bass":55,"mid":50,"treble":55,"presence":50,"volume":50},
+  "mod":{"type":"CHORUS","on":true,"params":{"LOW_RATE":25,"LOW_DEPTH":70,"HIGH_RATE":25,"HIGH_DEPTH":70,"DIRECT_LEVEL":100}},
+  "reverb":{"type":"ROOM","on":true,"time":15,"level":15},
+  "noise_suppressor":{"on":true,"threshold":12}},
+ {"name":"SLTS Chorus","memo":"Nirvana - Smells Like Teen Spirit: chorus/riff. Crunch amp + DS-1-style distortion, scooped mids (Mesa/Marshall + Boss DS-1).",
+  "amp":{"type":"CRUNCH","gain":60,"bass":62,"mid":40,"treble":62,"presence":55,"volume":55},
+  "booster":{"type":"DISTORTION","drive":60,"level":50,"tone":10},
+  "mod":{"type":"CHORUS","on":false},
+  "reverb":{"type":"ROOM","on":true,"time":15,"level":12},
+  "noise_suppressor":{"on":true,"threshold":18}}
+]

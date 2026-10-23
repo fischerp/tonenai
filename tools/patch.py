@@ -64,7 +64,7 @@ def build(spec):
             v = _opt("mod", fx["type"])
             _set(b, blk, "PRM_FX1_SW", int(fx.get("on", True)))
             _set(b, blk, "PRM_FX1_FXTYPE", v)
-            short = {"UNI-V": "UNIV", "AUTO WAH": "AWAH", "T.WAH": "TWAH", "SLOW GEAR": "SLOWGEAR",
+            short = {"CHORUS": "2x2CHORUS", "UNI-V": "UNIV", "AUTO WAH": "AWAH", "T.WAH": "TWAH", "SLOW GEAR": "SLOWGEAR",
                      "RING MOD": "RINGMOD", "PITCH SHIFTER": "PSHIFT", "HEAVY OCTAVE": "HEAVYOCT"}
             eff = short.get(fx["type"].upper(), fx["type"].upper().replace(" ", ""))
             for pname, pv in fx.get("params", {}).items():
@@ -163,10 +163,11 @@ def main():
     ap.add_argument("cmd", choices=["apply", "export", "backup", "show"])
     ap.add_argument("spec", nargs="?")
     ap.add_argument("-o", "--out")
+    ap.add_argument("-n", "--index", type=int, default=0, help="which patch of a list to apply")
     a = ap.parse_args()
     if a.cmd == "apply":
         specs = json.load(open(a.spec))
-        spec = specs[0] if isinstance(specs, list) else specs
+        spec = specs[a.index] if isinstance(specs, list) else specs
         i, o = k.open_ports()
         apply_live(build(spec), i, o)
         print("applied:", spec["name"])
