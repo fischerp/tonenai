@@ -107,7 +107,7 @@ def build(spec):
 
 # ---------------------------------------------------------------- live MIDI
 
-def _chunks(block, step=48):
+def _chunks(block, step=32):
     n = P.block_len(block)
     for off in range(0, n, step):
         yield P.to_7bit(off), min(step, n - off)
@@ -132,11 +132,15 @@ def snapshot(inp, out, blocks=None):
     time.sleep(0.2)
     res = {}
     for blk in blocks or P.TSL_BLOCKS:
-        buf = []
+        buf, dflt = [], P.default_block(blk)
         for off7, ln in _chunks(blk):
-            got = k.rq1(inp, out, P.abs_addr(blk, off7), ln)
-            if len(got) != ln:
-                raise IOError(f"short read {blk}@{off7:#x}: {len(got)}/{ln}")
+            got = k.rq1(inp, out, P.abs_addr(blk, off7), ln, tries=2)
+            if len(got) != ln:  # amp skips unmapped gaps: retry in 8-byte pieces, default the holes
+                lin, got = P.to_linear(off7), []
+                for sub in range(0, ln, 8):
+                    n = min(8, ln - sub)
+                    r = k.rq1(inp, out, P.abs_addr(blk, P.to_7bit(lin + sub)), n, tries=1)
+                    got += r if len(r) == n else dflt[lin + sub:lin + sub + n]
             buf += got
         res[blk] = buf
     return res

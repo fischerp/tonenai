@@ -15,7 +15,15 @@ def nib(a):  # app addresses are 7-bit-per-byte: 0x60000010 -> bytes 60 00 00 10
 def open_ports():
     return mido.open_input("KATANA"), mido.open_output("KATANA")
 
-def rq1(inp, out, addr, size, timeout=2):
+def rq1(inp, out, addr, size, timeout=1.0, tries=4):
+    for _ in range(tries):
+        r = _rq1(inp, out, addr, size, timeout)
+        if r:
+            return r
+    return []
+
+
+def _rq1(inp, out, addr, size, timeout):
     for _ in inp.iter_pending():
         pass
     body = nib(addr) + nib(size)
@@ -24,7 +32,7 @@ def rq1(inp, out, addr, size, timeout=2):
     while time.time() - t < timeout:
         m = inp.poll()
         if m and m.type == "sysex" and m.data[6] == 0x12 and list(m.data[7:11]) == want:
-            return list(m.data[11:-1])
+            return list(m.data[11:-1])[:size]
         if not m:
             time.sleep(0.005)
     return []
