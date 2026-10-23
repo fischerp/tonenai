@@ -1,0 +1,4 @@
+#!/bin/bash
+# Launcher: resolves the project folder from the app's own location.
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$ROOT" && exec .venv/bin/python app/main.py
