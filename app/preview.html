@@ -10,6 +10,12 @@ window.pywebview={api:{
     out.push({id,artist:head[0],title:head[1],cover:"../songs/covers/"+id+".jpg",patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
   import_tsl: async()=>({ok:false,cancelled:true}),
   cover: async(id)=>({cover:"../songs/covers/"+id+".jpg"}),
+  search_songs: async(t)=>({ok:true,items:[
+    {inLibrary:true,id:"acdc-back-in-black",artist:"AC/DC",title:"Back in Black",album:"",art:"",patches:2},
+    {inLibrary:false,artist:"AC/DC",title:"Highway to Hell",album:"Highway to Hell",art:"../songs/covers/acdc-back-in-black.jpg"},
+    {inLibrary:false,artist:"AC/DC",title:"Thunderstruck",album:"The Razors Edge",art:""},
+    {inLibrary:false,artist:"AC/DC",title:"You Shook Me All Night Long",album:"Back in Black",art:""},
+    {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
   reveal: async()=>({ok:true}),
   create_song: async(t)=>{window._j={state:"running",note:"Researching the tone…",t:Date.now()};return{ok:true};},
   job_status: async()=>{const e=Date.now()-window._j.t;if(e>5000)return{state:"done",id:"pearl-jam-animal"};return{state:"running",note:e>2500?"Writing the patch…":"Researching the tone…"};},

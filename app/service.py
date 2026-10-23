@@ -228,3 +228,34 @@ class Service:
         except Exception:
             pass  # offline etc.: try again next launch
         return {"cover": ""}
+
+    # -------------------------------------------------------------- song search (library + iTunes catalog)
+    def search_songs(self, text, limit=5):
+        """Top matches: songs already in the library first, then catalog hits (iTunes). Max `limit` items."""
+        norm = lambda t: re.sub(r"[^a-z0-9 ]", "", re.sub(r"\s*[\(\[].*?[\)\]]|\s+-\s+.*$", "", t.lower())).strip()
+        words = [w for w in re.findall(r"[a-z0-9]+", text.lower())]
+        lib = []
+        for song in self.songs():
+            hay = (song["artist"] + " " + song["title"]).lower()
+            if words and all(w in hay for w in words):
+                lib.append({"inLibrary": True, "id": song["id"], "artist": song["artist"], "title": song["title"],
+                            "album": "", "art": "", "patches": len(song["patches"])})
+        items, seen = lib[:limit], {(norm(x["artist"]), norm(x["title"])) for x in lib}
+        if len(items) < limit:
+            try:
+                url = "https://itunes.apple.com/search?" + urllib.parse.urlencode(
+                    {"term": text, "entity": "song", "limit": 25})
+                for r in json.load(urllib.request.urlopen(url, timeout=8))["results"]:
+                    key = (norm(r["artistName"]), norm(r["trackName"]))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    items.append({"inLibrary": False, "artist": r["artistName"], "title": r["trackName"],
+                                  "album": r.get("collectionName", ""),
+                                  "art": r["artworkUrl100"].replace("100x100bb", "300x300bb")})
+                    if len(items) >= limit:
+                        break
+            except Exception as e:
+                if not items:
+                    return {"ok": False, "error": f"Search failed (offline?): {e}"}
+        return {"ok": True, "items": items}

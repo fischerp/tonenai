@@ -1,0 +1,29 @@
+[
+ {
+  "name": "Wasting Love Cln",
+  "memo": "Iron Maiden - Wasting Love: clean arpeggio intro/verses. Strat-style sparkle, chorus and a touch of delay, lots of reverb. Informed approximation.",
+  "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 50, "treble": 60, "presence": 55, "volume": 45},
+  "mod": {"type": "CHORUS", "on": true},
+  "delay": {"type": "DIGITAL", "on": true, "time": 420, "feedback": 20, "level": 22},
+  "reverb": {"type": "HALL", "on": true, "time": 40, "level": 30},
+  "noise_suppressor": {"on": true, "threshold": 10}
+ },
+ {
+  "name": "Wasting Love Crn",
+  "memo": "Iron Maiden - Wasting Love: crunchy power-chord rhythm for the heavier choruses. Marshall-style crunch, moderate gain.",
+  "amp": {"type": "CRUNCH", "gain": 50, "bass": 50, "mid": 60, "treble": 60, "presence": 60, "volume": 50},
+  "booster": {"type": "T-SCREAM", "on": false, "drive": 25, "level": 50},
+  "delay": {"type": "DIGITAL", "on": false, "time": 350, "feedback": 15, "level": 18},
+  "reverb": {"type": "ROOM", "on": true, "time": 25, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Wasting Love Ld",
+  "memo": "Iron Maiden - Wasting Love: Gers lead solos. Singing Marshall lead with boost, delay and reverb.",
+  "amp": {"type": "LEAD", "gain": 65, "bass": 45, "mid": 65, "treble": 60, "presence": 60, "volume": 55},
+  "booster": {"type": "T-SCREAM", "on": true, "drive": 30, "level": 55},
+  "delay": {"type": "DIGITAL", "on": true, "time": 450, "feedback": 25, "level": 28},
+  "reverb": {"type": "HALL", "on": true, "time": 35, "level": 25},
+  "noise_suppressor": {"on": true, "threshold": 18}
+ }
+]

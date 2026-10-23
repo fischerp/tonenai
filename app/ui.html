@@ -54,6 +54,14 @@
     padding: 3px 8px; border-radius: 4px; background: #000a; }
   .card.live .badge { background: var(--accent); }
 
+  .results { margin: 4px 4vw 40px; max-width: 760px; }
+  .results h2 { font-size: 18px; margin: 4px 0 12px; } .results .hint { color: var(--muted); font-size: 13px; margin-left: 8px; font-weight: 400; }
+  .res { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 10px; background: #14141b; margin-bottom: 8px; }
+  .res:hover { background: #1c1c26; }
+  .res .art { width: 56px; height: 56px; border-radius: 6px; background: #2a2a37 center/cover; flex: none; }
+  .res .m { min-width: 0; flex: 1; } .res .n { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .d { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: #3ddc84; margin-right: 6px; }
   .empty { margin: 8vh 4vw; max-width: 520px; }
   .empty h2 { margin: 0 0 6px; font-size: 24px; } .empty p { color: var(--muted); margin: 0 0 18px; }
   .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff; border-radius: 50%;
@@ -91,7 +99,7 @@
 
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
-let q = "", JOB = null;
+let q = "", JOB = null, RES = null;   // RES = search results view (set when the user presses Enter)
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const api = () => window.pywebview && window.pywebview.api;
@@ -116,8 +124,19 @@ function card(s) {
 }
 function row(title, list) { return list.length ? `<section class="row"><h2>${esc(title)}</h2><div class="track">${list.map(card).join("")}</div></section>` : ""; }
 
+function resultsView() {
+  if (RES.loading) return `<div class="results"><h2><span class="spin"></span>Searching “${esc(RES.q)}”…</h2></div>`;
+  if (RES.error) return `<div class="empty"><h2>Search failed</h2><p>${esc(RES.error)}</p></div>`;
+  if (!RES.items.length) return createCta();
+  return `<div class="results"><h2>Top ${RES.items.length} for “${esc(RES.q)}”<span class="hint">Esc to go back</span></h2>${RES.items.map((r, i) => `
+    <div class="res"><div class="art" style="background-image:url('${esc(r.art || (SONGS.find(s => s.id === r.id) || {}).cover || "")}')"></div>
+      <div class="m"><div class="n">${esc(r.title)}</div><div class="d">${r.inLibrary ? '<span class="tag">IN YOUR LIBRARY</span>' : ""}${esc(r.artist)}${r.album ? " · " + esc(r.album) : ""}</div></div>
+      ${r.inLibrary ? `<button class="p main" data-open="${esc(r.id)}">Open</button>` : `<button class="p main" data-make="${i}">✦ Create</button>`}</div>`).join("")}</div>`;
+}
+
 function render() {
   const list = SONGS.filter(match);
+  if (RES) { $("#hero").innerHTML = ""; $("#rows").innerHTML = JOB && JOB.state === "running" ? createCta() : resultsView(); return; }
   const liveSong = LIVE && SONGS.find(s => s.id === LIVE.id);
   const heroSong = liveSong || SONGS[0];
   $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${bg(heroSong)}">
@@ -137,9 +156,10 @@ function render() {
 }
 
 function createCta() {
-  if (JOB && JOB.state === "running") return `<div class="empty"><h2>Creating “${esc(JOB.query || q)}”</h2><p><span class="spin"></span>${esc(JOB.note || "Working…")}</p></div>`;
+  const term = RES ? RES.q : q;
+  if (JOB && JOB.state === "running") return `<div class="empty"><h2>Creating “${esc(JOB.query || term)}”</h2><p><span class="spin"></span>${esc(JOB.note || "Working…")}</p></div>`;
   const msg = JOB && JOB.state === "error" ? `<p style="color:#ff8a85">${esc(JOB.error)}</p>` : "";
-  return q ? `<div class="empty"><h2>No match for “${esc(q)}”</h2><p>Claude can research the tone and build a patch set for this song. It takes about a minute.</p>${msg}
+  return term ? `<div class="empty"><h2>No match for “${esc(term)}”</h2><p>Claude can research the tone and build a patch set for this song. It takes about a minute.</p>${msg}
     <button class="p main" data-create="1">✦ Create with Claude</button></div>`
     : `<div class="empty"><h2>No songs yet</h2><p>Search for a song to have Claude create one.</p></div>`;
 }
@@ -161,17 +181,18 @@ async function play(id, i) {
   else { toast("Could not reach the amp: " + r.error, true); refreshStatus(); }
 }
 
-async function startCreate() {
+async function startCreate(text) {
   const a = api(); if (!a) return;
-  const r = await a.create_song(q);
+  text = text || (RES ? RES.q : q);
+  const r = await a.create_song(text);
   if (!r.ok) return toast(r.error, true);
-  JOB = { state: "running", query: q, note: "Starting Claude…" }; render();
+  JOB = { state: "running", query: text, note: "Starting Claude…" }; render();
   const t = setInterval(async () => {
-    JOB = await a.job_status(); JOB.query = JOB.query || q;
+    JOB = await a.job_status(); JOB.query = JOB.query || text;
     if (JOB.state === "running") return render();
     clearInterval(t);
     if (JOB.state === "done") {
-      SONGS = await a.songs(); q = ""; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library"); loadCovers();
+      SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library"); loadCovers();
     } else render();
   }, 1200);
 }
@@ -191,20 +212,34 @@ async function refreshStatus() {
 
 document.addEventListener("click", e => {
   if (e.target.closest("[data-create]")) return startCreate();
+  const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
+  const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
   const rv = e.target.closest("[data-reveal]"); if (rv) return api().reveal(rv.dataset.reveal);
   const pl = e.target.closest("[data-play]"); if (pl) return play(pl.dataset.play, pl.dataset.i);
   const c = e.target.closest(".card"); if (c) return openSong(c.dataset.id);
   if (e.target.id === "modal") $("#modal").classList.remove("open");
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") $("#modal").classList.remove("open"); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if ($("#modal").classList.contains("open")) $("#modal").classList.remove("open");
+  else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
+});
 $("#imp").addEventListener("click", async () => {
   const a = api(); if (!a) return;
   const r = await a.import_tsl();
   if (r.cancelled) return;
   if (!r.ok) return toast(r.error, true);
-  SONGS = await a.songs(); q = ""; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library"); loadCovers();
+  SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library"); loadCovers();
 });
-$("#q").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+$("#q").addEventListener("input", e => { q = e.target.value.trim(); RES = null; render(); });
+$("#q").addEventListener("keydown", async e => {
+  if (e.key !== "Enter" || !q) return;
+  const a = api(); if (!a) return;
+  const term = q; RES = { q: term, loading: true }; render();
+  const r = await a.search_songs(term);
+  if (!RES || RES.q !== term) return;           // user typed something else meanwhile
+  RES = r.ok ? { q: term, items: r.items } : { q: term, error: r.error }; render();
+});
 
 async function loadCovers() {   // fetch missing album art one by one, refreshing as each arrives
   const a = api(); if (!a) return;

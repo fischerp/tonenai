@@ -1,0 +1,31 @@
+[
+ {
+  "name": "Unforgiven Clean",
+  "memo": "Metallica - The Unforgiven: clean chorused arpeggio intro/verse, JC-style clean with chorus and a touch of delay.",
+  "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 45, "treble": 60, "presence": 50, "volume": 40},
+  "mod": {"type": "CHORUS", "on": true},
+  "delay": {"type": "DIGITAL", "on": true, "time": 380, "feedback": 20, "level": 22},
+  "reverb": {"type": "PLATE", "on": true, "time": 25, "level": 25},
+  "noise_suppressor": {"on": true, "threshold": 10}
+ },
+ {
+  "name": "Unforgiven Crunch",
+  "memo": "Metallica - The Unforgiven: heavy chorus rhythm, tight Mesa-style crunch, mids slightly scooped.",
+  "amp": {"type": "CRUNCH", "gain": 75, "bass": 60, "mid": 45, "treble": 60, "presence": 60, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 20, "level": 50},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 15},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ },
+ {
+  "name": "Unforgiven Lead",
+  "memo": "Metallica - The Unforgiven: Hammett-style lead solo, boosted lead channel with delay.",
+  "amp": {"type": "LEAD", "gain": 70, "bass": 50, "mid": 65, "treble": 60, "presence": 60, "volume": 55},
+  "booster": {"type": "T-SCREAM", "drive": 30, "level": 60},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 420, "feedback": 25, "level": 28},
+  "reverb": {"type": "PLATE", "on": true, "time": 25, "level": 22},
+  "noise_suppressor": {"on": true, "threshold": 18}
+ }
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "AintTalkin Rhythm",
+  "memo": "Van Halen - Ain't Talkin' 'bout Love: rhythm. Brown sound (Marshall Super Lead on a Variac), dotted-eighth tape echo on the staccato chords, flanger for the riff ends.",
+  "amp": {"type": "BROWN", "gain": 60, "bass": 50, "mid": 60, "treble": 65, "presence": 60, "volume": 50},
+  "mod": {"type": "FLANGER", "on": false},
+  "delay": {"type": "ANALOG", "on": true, "time": 320, "feedback": 20, "level": 25},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 12},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "AintTalkin Lead",
+  "memo": "Van Halen - Ain't Talkin' 'bout Love: lead. Brown sound with a slow Phase 90 style swirl and a little more gain for the solo.",
+  "amp": {"type": "BROWN", "gain": 70, "bass": 50, "mid": 60, "treble": 65, "presence": 60, "volume": 55},
+  "mod": {"type": "PHASER", "on": true, "params": {}},
+  "delay": {"type": "ANALOG", "on": true, "time": 320, "feedback": 20, "level": 22},
+  "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 12},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ }
+]
