@@ -27,7 +27,7 @@
 
   .hero { position: relative; margin: 0 4vw 24px; border-radius: 14px; padding: 7vh 4vw; min-height: 34vh;
     display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
-  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0b0fcc, transparent 70%), linear-gradient(0deg, #0b0b0f, transparent 50%); }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0b0fee 15%, #0b0b0f66 60%, transparent), linear-gradient(0deg, #0b0b0f, transparent 55%); }
   .hero > * { position: relative; z-index: 1; }
   .hero .eyebrow { color: #ffffffb0; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
   .hero h1 { margin: 6px 0 4px; font-size: clamp(30px, 5vw, 56px); line-height: 1.05; }
@@ -46,7 +46,7 @@
   .card { flex: 0 0 210px; height: 290px; border-radius: var(--radius); position: relative; cursor: pointer; overflow: hidden;
     scroll-snap-align: start; transition: transform .2s, box-shadow .2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; }
   .card:hover { transform: scale(1.06); box-shadow: 0 12px 30px #000a; z-index: 2; }
-  .card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #000d, transparent 65%); }
+  .card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #000e, #0004 45%, transparent 70%); }
   .card > * { position: relative; z-index: 1; }
   .card .t { font-weight: 800; font-size: 21px; line-height: 1.1; text-shadow: 0 2px 8px #0008; }
   .card .a { color: #ffffffd0; font-size: 13px; margin-top: 4px; }
@@ -97,6 +97,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const api = () => window.pywebview && window.pywebview.api;
 
 function hue(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function bg(s) { return s.cover ? `linear-gradient(0deg, #0006, #0002), url('${s.cover}') center/cover` : grad(s); }
 function grad(s) { const h = hue(s.artist || s.title); return `linear-gradient(155deg, hsl(${h} 65% 38%), hsl(${(h + 50) % 360} 70% 18%))`; }
 function store(get, set) { try { return get ? JSON.parse(localStorage.getItem(get) || "null") : localStorage.setItem(...set); } catch (e) { return null; } }
 function recents() { return store("recent") || []; }
@@ -109,7 +110,7 @@ function match(s) { const t = (s.title + " " + s.artist + " " + s.patches.map(p 
 
 function card(s) {
   const live = LIVE && LIVE.id === s.id;
-  return `<div class="card${live ? " live" : ""}" data-id="${esc(s.id)}" style="background:${grad(s)}">
+  return `<div class="card${live ? " live" : ""}" data-id="${esc(s.id)}" style="background:${bg(s)}">
     <span class="badge">${live ? "PLAYING" : s.patches.length + (s.patches.length > 1 ? " PATCHES" : " PATCH")}</span>
     <div class="t">${esc(s.title)}</div><div class="a">${esc(s.artist)}</div></div>`;
 }
@@ -119,7 +120,7 @@ function render() {
   const list = SONGS.filter(match);
   const liveSong = LIVE && SONGS.find(s => s.id === LIVE.id);
   const heroSong = liveSong || SONGS[0];
-  $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${grad(heroSong)}">
+  $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${bg(heroSong)}">
       <div class="eyebrow">${liveSong ? "Now playing on your Katana" : "Pick a song to start"}</div>
       <h1>${esc(heroSong.title)}</h1><div class="by">${esc(heroSong.artist)}</div>
       <div class="btns">${heroSong.patches.map(p => `<button class="p ${LIVE && LIVE.id === heroSong.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(heroSong.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}</div></div>` : "";
@@ -145,7 +146,7 @@ function createCta() {
 
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
-  $("#sheet").innerHTML = `<div class="top" style="background:${grad(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
+  $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
     <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
     <div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button></div>`;
@@ -170,7 +171,7 @@ async function startCreate() {
     if (JOB.state === "running") return render();
     clearInterval(t);
     if (JOB.state === "done") {
-      SONGS = await a.songs(); q = ""; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library");
+      SONGS = await a.songs(); q = ""; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library"); loadCovers();
     } else render();
   }, 1200);
 }
@@ -201,14 +202,23 @@ $("#imp").addEventListener("click", async () => {
   const r = await a.import_tsl();
   if (r.cancelled) return;
   if (!r.ok) return toast(r.error, true);
-  SONGS = await a.songs(); q = ""; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library");
+  SONGS = await a.songs(); q = ""; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library"); loadCovers();
 });
 $("#q").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+
+async function loadCovers() {   // fetch missing album art one by one, refreshing as each arrives
+  const a = api(); if (!a) return;
+  for (const s of SONGS.filter(x => !x.cover)) {
+    const r = await a.cover(s.id);
+    if (r.cover) { const t = SONGS.find(x => x.id === s.id); if (t) { t.cover = r.cover; render(); } }
+  }
+}
 
 async function init() {
   const a = api();
   SONGS = a ? await a.songs() : [];
   render(); refreshStatus(); setInterval(refreshStatus, 5000);
+  loadCovers();
 }
 window.addEventListener("pywebviewready", init);
 </script>

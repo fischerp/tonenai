@@ -1,5 +1,5 @@
 """Backend for the mk2ai desktop app: song library + amp control (exposed to the UI via pywebview)."""
-import asyncio, glob, json, os, re, subprocess, sys, threading, time
+import asyncio, urllib.parse, urllib.request, glob, json, os, re, subprocess, sys, threading, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -8,6 +8,7 @@ import params as P      # noqa: E402
 import patch as PT      # noqa: E402
 
 SONGS = os.path.join(ROOT, "songs")
+COVERS = os.path.join(SONGS, "covers")
 
 
 def _split_title(memo, fallback):
@@ -16,6 +17,10 @@ def _split_title(memo, fallback):
         artist, title = head.split(" - ", 1)
         return artist.strip(), title.strip()
     return "", fallback
+
+
+def _cover_url(sid):
+    return f"../songs/covers/{sid}.jpg" if os.path.exists(os.path.join(COVERS, sid + ".jpg")) else ""
 
 
 class Service:
@@ -36,7 +41,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title,
+                "id": sid, "artist": artist, "title": title, "cover": _cover_url(sid),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -49,7 +54,7 @@ class Service:
                 name, patches = PT.from_tsl(path)
             except Exception:
                 continue
-            res.append({"id": sid, "artist": "Imported", "title": name or sid,
+            res.append({"id": sid, "artist": "Imported", "title": name or sid, "cover": _cover_url(sid),
                         "patches": [{"index": i, "name": bytes(b["PatchName"]).decode("ascii", "replace").strip() or f"Patch {i + 1}",
                                      "amp": "", "note": "From a .tsl file"} for i, b in enumerate(patches)]})
         return res
@@ -188,3 +193,33 @@ class Service:
                 for b in msg.content:
                     if isinstance(b, ToolUseBlock):
                         self._job = {**self._job, "note": labels.get(b.name, "Working…")}
+
+    # -------------------------------------------------------------- cover art (iTunes Search API, cached)
+    def cover(self, song_id):
+        """Find and cache album art for a song. Returns {"cover": relative url or ""}."""
+        dst, miss = os.path.join(COVERS, song_id + ".jpg"), os.path.join(COVERS, song_id + ".none")
+        if os.path.exists(dst):
+            return {"cover": _cover_url(song_id)}
+        if os.path.exists(miss):
+            return {"cover": ""}
+        song = next((x for x in self.songs() if x["id"] == song_id), None)
+        if not song or not song["artist"]:
+            return {"cover": ""}
+        title = re.sub(r"\s*\(.*?\)", "", song["title"]).strip()
+        try:
+            os.makedirs(COVERS, exist_ok=True)
+            url = "https://itunes.apple.com/search?" + urllib.parse.urlencode(
+                {"term": f"{song['artist']} {title}", "entity": "song", "limit": 8})
+            res = json.load(urllib.request.urlopen(url, timeout=8))["results"]
+            hit = next((r for r in res if r["artistName"].lower().startswith(song["artist"].lower()[:6])), None)
+            if not hit:
+                raise LookupError("no match")
+            art = hit["artworkUrl100"].replace("100x100bb", "600x600bb")
+            data = urllib.request.urlopen(art, timeout=10).read()
+            open(dst, "wb").write(data)
+            return {"cover": _cover_url(song_id)}
+        except LookupError:
+            open(miss, "w").close()
+        except Exception:
+            pass  # offline etc.: try again next launch
+        return {"cover": ""}

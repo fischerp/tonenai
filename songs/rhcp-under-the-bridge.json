@@ -1,0 +1,15 @@
+[
+ {"name":"Bridge Intro","memo":"Red Hot Chili Peppers - Under the Bridge: intro/verse. Frusciante clean Jaguar-style tone, light compression, bright and sparkly with some chorus and room.",
+  "amp":{"type":"CLEAN","gain":30,"bass":48,"mid":50,"treble":62,"presence":62,"volume":50},
+  "mod":{"type":"COMP","on":true},
+  "delay":{"type":"ANALOG","on":false,"time":350,"feedback":18,"level":15},
+  "reverb":{"type":"ROOM","on":true,"time":22,"level":20},
+  "noise_suppressor":{"on":true,"threshold":10}},
+ {"name":"Bridge Outro","memo":"Under the Bridge: loud outro riff. Marshall-style crunch with mild boost, mid-forward.",
+  "amp":{"type":"CRUNCH","gain":50,"bass":50,"mid":58,"treble":60,"presence":58,"volume":55},
+  "booster":{"type":"BLUES DRIVE","drive":35,"level":50},
+  "mod":{"type":"COMP","on":false},
+  "delay":{"type":"ANALOG","on":false,"time":350,"feedback":18,"level":15},
+  "reverb":{"type":"ROOM","on":true,"time":22,"level":18},
+  "noise_suppressor":{"on":true,"threshold":12}}
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "Whiskey Rhythm",
+  "memo": "Thin Lizzy - Whiskey in the Jar: rhythm. Eric Bell style, edge-of-breakup crunch with a light boost, slapback echo.",
+  "amp": {"type": "CRUNCH", "gain": 45, "bass": 50, "mid": 60, "treble": 60, "presence": 55, "volume": 45},
+  "booster": {"type": "T-SCREAM", "drive": 20, "level": 50},
+  "delay": {"type": "ANALOG", "on": true, "time": 120, "feedback": 15, "level": 25},
+  "reverb": {"type": "SPRING", "on": true, "time": 20, "level": 15},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Whiskey Lead",
+  "memo": "Thin Lizzy - Whiskey in the Jar: lead. Tone Bender-ish sustain with tape-style echo for the twin-guitar riff.",
+  "amp": {"type": "LEAD", "gain": 55, "bass": 50, "mid": 65, "treble": 60, "presence": 55, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 35, "level": 60},
+  "delay": {"type": "ANALOG", "on": true, "time": 280, "feedback": 25, "level": 30},
+  "reverb": {"type": "SPRING", "on": true, "time": 25, "level": 18},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ }
+]
