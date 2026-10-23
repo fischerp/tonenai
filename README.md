@@ -1,4 +1,4 @@
-# mk2ai
+# Tonai
 
 Tell Claude a song or band; it builds a BOSS Katana MkII patch and applies it to the amp over USB MIDI,
 or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a Netflix-style desktop app to pick songs.
@@ -32,7 +32,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ## Desktop app
 ```
-Double-click mk2ai.app (keep it inside the project folder; drag it to the Dock if you like)
+Double-click Tonai.app (keep it inside the project folder; drag it to the Dock if you like)
 ./run.command            # or from a terminal: .venv/bin/python app/main.py
 ```
 Netflix-style library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Search the library; if a

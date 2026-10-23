@@ -1,4 +1,4 @@
-"""Backend for the mk2ai desktop app: song library + amp control (exposed to the UI via pywebview)."""
+"""Backend for the Tonai desktop app: song library + amp control (exposed to the UI via pywebview)."""
 import asyncio, urllib.parse, urllib.request, glob, json, os, re, subprocess, sys, threading, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

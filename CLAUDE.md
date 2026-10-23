@@ -1,4 +1,4 @@
-# mk2ai
+# Tonai
 
 Katana MkII tone tooling. Use the `katana-patch` skill (`.claude/skills/katana-patch/SKILL.md`) when the user names a song.
 
