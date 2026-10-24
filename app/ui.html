@@ -103,6 +103,29 @@
   .pill { display: block; padding: 3px 10px; margin-bottom: 3px; border-radius: 12px; background: #2a2a37; color: #9a9aa8; font-size: 12px; font-weight: 700; }
   .pill.on { background: #c62828; color: #fff; box-shadow: 0 0 10px #c6282888; }
   .nums { display: flex; gap: 3px; margin-bottom: 8px; flex-wrap: wrap; max-width: 250px; } .nums .pill { display: inline-block; margin: 0; padding: 4px 8px; min-width: 26px; text-align: center; }
+  /* song window: facts first, details on demand */
+  .sheet.wide { width: min(780px, 94vw); }
+  .sg-top { position: relative; padding: 26px 30px 16px; } .sg-top::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--panel) 4%, #16161d88 55%, #16161d22); }
+  .sg-top > * { position: relative; z-index: 1; } .sg-top h3 { font-size: 32px; line-height: 1.05; margin: 0; } .sg-top .by { font-size: 16px; margin-top: 2px; }
+  .sg-x { position: absolute; top: 14px; right: 16px; z-index: 2; display: flex; gap: 8px; }
+  .sg-x button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #000a; color: #fff; font-size: 17px; cursor: pointer; line-height: 1; } .sg-x button:hover { background: #000d; }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: baseline; margin-top: 16px; }
+  .fact .v { font-size: 26px; font-weight: 800; line-height: 1; } .fact .v small { font-size: 12px; color: var(--muted); font-weight: 700; margin-left: 4px; } .fact .l { font-size: 11px; letter-spacing: 1px; color: #ffffffa8; font-weight: 700; margin-top: 3px; }
+  .sg-h { margin: 6px 30px 10px; font-size: 12px; letter-spacing: 1.2px; color: var(--muted); font-weight: 800; text-transform: uppercase; }
+  .patches { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; padding: 0 30px 18px; }
+  .patch { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #22222f; cursor: pointer; border: 1.5px solid transparent; transition: background .12s, transform .1s; }
+  .patch:hover { background: #2c2c3d; } .patch:active { transform: scale(.985); } .patch.live { border-color: var(--accent); background: #2a1c22; }
+  .patch .pi { width: 38px; height: 38px; border-radius: 50%; background: #e50914; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+  .patch.live .pi { background: #3ddc84; color: #04120a; } .patch .n { font-weight: 800; font-size: 15px; } .patch .d { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .patch .tag { margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #3ddc84; white-space: nowrap; }
+  .tiles3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 30px 14px; } @media (max-width: 640px) { .tiles3 { grid-template-columns: 1fr; } }
+  .stile { text-align: left; border: 1.5px solid #2a2a3a; background: #1b1b25; border-radius: 12px; padding: 12px 14px; cursor: pointer; color: var(--text); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .stile:hover { border-color: #4a4a62; } .stile[aria-expanded="true"] { border-color: #7a7af0; background: #1d1d34; }
+  .stile .l { font-size: 11px; letter-spacing: 1.1px; color: var(--muted); font-weight: 800; display: flex; justify-content: space-between; } .stile .l i { font-style: normal; opacity: .7; }
+  .stile .v { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; } .stile .sub { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .stile .star { color: #ffd75e; letter-spacing: 1px; } .stile .ok { color: #7dffb0; } .stile .warn { color: #ffd75e; }
+  .stile .mini { margin-top: 6px; align-self: flex-start; font-size: 12.5px; padding: 4px 10px; }
+  .panel { margin: 0 30px 16px; } .panel .band { margin: 0; }
   .band { margin: 0 30px 18px; padding: 16px 18px; border-radius: 10px; background: #1b1b25; }
   .band h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -224,7 +247,7 @@ function toggleClick(bpm) {
     g.gain.setValueAtTime(.4, c.currentTime); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + .06); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + .07); };
   beep(); CLICK = { c, t: setInterval(beep, 60000 / bpm) }; refreshClickBtn();
 }
-function refreshClickBtn() { const b = document.querySelector("[data-click]"); if (b) b.textContent = CLICK ? "■ Stop click" : "▶ Click track"; }
+function refreshClickBtn() { document.querySelectorAll("[data-click]").forEach(b => { b.textContent = CLICK ? "■ Stop" : (b.classList.contains("mini") ? "▶ Click " + b.dataset.click : "▶ Click track"); }); }
 
 function bandCard(s) {
   const b = s.band;
@@ -311,22 +334,65 @@ function whammyCard(s) {
     ${w.tips ? `<div class="tip">${esc(w.tips)}</div>` : ""}</div>`;
 }
 
+let TAB = null;      // which detail panel is open in the song window: "guitar" | "trio" | "whammy" | null
+const keyShort = k => (k || "").replace(/\s*\(.*?\)/g, "").replace(/[,;].*$/, "").trim();
+const tuningShort = t => (t || "").replace(/\s*\(.*?\)/g, "").replace(/,.*$/, "").trim();
+function whammyLabel(w) {
+  if (!w) return null;
+  const st = w.settings || {};
+  const act = st.transpose_down != null ? `Transpose ↓${st.transpose_down}` : st.transpose_up != null ? `Transpose ↑${st.transpose_up}` : st.effect ? st.effect.replace(/\b\w/g, c => c) : st.harmony ? "Harmony" : st.detune ? "Detune " + st.detune.toLowerCase() : "";
+  if (w.use === "yes") return { v: act || "Use it", cls: "ok", sub: "Use it · " + (w.when || "") };
+  if (w.use === "optional") return { v: "Optional", cls: "warn", sub: act ? "Try: " + act : tuningShort(w.tuning) || "Not verified" };
+  return { v: "Not needed", cls: "", sub: tuningShort(w.tuning) };
+}
+function bestGuitar(s) {
+  const gi = s.guitar; if (!gi || !GUITARS.length) return null;
+  const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
+  return list[0].stars > 0 ? list[0] : null;
+}
+function summaryTiles(s) {
+  const b = s.band, gi = s.guitar, w = whammyLabel(s.whammy), best = bestGuitar(s);
+  const open = t => TAB === t ? "true" : "false";
+  const tile = (key, label, val, sub, extra = "") => `<div class="stile" role="button" tabindex="0" data-tab="${key}" aria-expanded="${open(key)}"><div class="l">${label}<i>${TAB === key ? "▴" : "▾"}</i></div>${val}<div class="sub">${sub}</div>${extra}</div>`;
+  const guitar = best
+    ? tile("guitar", "🎸 PLAY THIS", `<div class="v">${esc(best.g.name)}</div>`, `<span class="star">${"★".repeat(best.stars)}</span> ${esc(gi.position || best.why)}`)
+    : gi ? tile("guitar", "🎸 GUITAR", `<div class="v">${esc(((gi.originals || [])[0] || {}).guitar || "Unknown")}</div>`, GUITARS.length ? esc(gi.position || "") : "Add your guitars to get a pick")
+         : tile("guitar", "🎸 GUITAR", '<div class="v">Not set up</div>', "Tap to find the originals");
+  const trio = b ? tile("trio", "🥁 TRIO+", `<div class="v">${esc(b.genre || "—")}</div>`, `${esc(b.time_signature || "4/4")} · style ${(b.time_signature || "").startsWith("3") ? "10–12" : "1–9"}`,
+        b.bpm ? `<button type="button" class="p mini" data-click="${b.bpm}">▶ Click ${b.bpm}</button>` : "")
+    : tile("trio", "🥁 TRIO+", '<div class="v">Not set up</div>', "Tap to generate");
+  const wh = w ? tile("whammy", "〰 WHAMMY DT", `<div class="v ${w.cls}">${esc(w.v)}</div>`, esc(w.sub)) : tile("whammy", "〰 WHAMMY DT", '<div class="v">Not set up</div>', "Tap to generate");
+  return guitar + trio + wh;
+}
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
+  if (id !== SHEET) TAB = null;
   SHEET = id;
-  $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
-    <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
-      <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
-    ${guitarCard(s)}${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
-      <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
-  $("#modal").classList.add("open"); 
+  const b = s.band || {}, tun = tuningShort((s.whammy || {}).tuning);
+  const fact = (v, small, l) => v ? `<div class="fact"><div class="v">${esc(v)}${small ? `<small>${esc(small)}</small>` : ""}</div><div class="l">${l}</div></div>` : "";
+  const detail = TAB === "guitar" ? guitarCard(s) : TAB === "trio" ? bandCard(s) : TAB === "whammy" ? whammyCard(s) : "";
+  $("#sheet").classList.add("wide");
+  $("#sheet").innerHTML = `<div class="sg-top" style="background:${bg(s)}">
+      <div class="sg-x"><button data-reveal="${esc(s.id)}" title="Show the .tsl file (for BOSS Tone Studio)" aria-label="Show .tsl file">⤓</button><button data-gm-close-song="1" aria-label="Close">×</button></div>
+      <h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div>
+      <div class="facts">${fact(b.bpm, "BPM", "TEMPO")}${fact(keyShort(b.key), "", "KEY")}${fact(tun || null, "", "TUNING")}${fact(b.time_signature, "", "TIME")}</div></div>
+    <div class="sg-h">Amp patches</div>
+    <div class="patches">${s.patches.map(p => { const live = LIVE && LIVE.id === s.id && LIVE.index === p.index;
+      return `<div class="patch${live ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}"><div class="pi">${live ? "✓" : "▶"}</div>
+        <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp${p.note ? " · " + esc(p.note.split(/[.;]/)[0].slice(0, 56)) : ""}</div></div>${live ? '<div class="tag">ON AMP</div>' : ""}</div>`; }).join("")}</div>
+    <div class="sg-h">Before you play</div>
+    <div class="tiles3">${summaryTiles(s)}</div>
+    ${detail ? `<div class="panel" id="panel">${detail}</div>` : ""}
+    <div class="foot"><span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
+  $("#modal").classList.add("open");
 }
 
 async function play(id, i) {
   const a = api(); if (!a) return toast("Not running inside the desktop app", true);
   toast("Sending to amp…");
   const r = await a.play(id, i);
-  if (r.ok) { LIVE = { id, index: Number(i) }; pushRecent(id); toast("Loaded “" + r.patch + "”"); $("#modal").classList.remove("open"); render(); refreshStatus(); }
+  if (r.ok) { LIVE = { id, index: Number(i) }; pushRecent(id); toast("Loaded “" + r.patch + "”"); render(); refreshStatus();
+    if ($("#modal").classList.contains("open") && SHEET) { const st = $("#sheet").scrollTop; openSong(SHEET); $("#sheet").scrollTop = st; } }   // keep the setup info on screen while you play
   else { toast("Could not reach the amp: " + r.error, true); refreshStatus(); }
 }
 
@@ -377,6 +443,10 @@ async function refreshStatus() {
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
   const ck = e.target.closest("[data-click]"); if (ck) return toggleClick(Number(ck.dataset.click));
+  if (e.target.closest("[data-gm-close-song]")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); return; }
+  const tb = e.target.closest("[data-tab]");
+  if (tb) { TAB = TAB === tb.dataset.tab ? null : tb.dataset.tab; const st = $("#sheet").scrollTop; openSong(SHEET); $("#sheet").scrollTop = st;
+    if (TAB) setTimeout(() => { const el = document.getElementById("panel"); if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30); return; }
   const bd = e.target.closest("[data-band]"); if (bd) return startExtra(bd.dataset.band, "band");
   const gg = e.target.closest("[data-genguitar]"); if (gg) return startExtra(gg.dataset.genguitar, "guitar");
   if (e.target.closest("[data-guitars]")) return openGuitars();
@@ -399,6 +469,7 @@ document.addEventListener("click", async e => {
   if (e.target.id === "modal") { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
 });
 document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
   if (e.key !== "Escape") return;
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
   else if ($("#gmodal").classList.contains("open")) gmClose();
