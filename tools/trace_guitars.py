@@ -6,7 +6,7 @@ are original vector paths (app/guitar-shapes.js) with real proportions. See READ
 import cv2, numpy as np, os, sys, json
 
 REF = "/tmp/mkprev/ref"
-SIMPLE = {"sg": "white", "flyingv": "black", "strat": "whitefill", "explorer": "whitefill"}   # plain backgrounds
+SIMPLE = {"sg": "white", "flyingv": "black", "strat": "whitefill", "explorer": "whitefill", "classical": "whitefill", "dread": "grass", "folk": "warm"}   # plain backgrounds
 FLOOD = {"lp": 3, "es335": 3}
 CLOSE_BODY = {}
 GROW = {"es335": 2}                     # dark rims that blend into a dark backdrop: grow the mask a few pixels
@@ -61,6 +61,12 @@ def segment(path, name):
             border = set(lab_[0, :]) | set(lab_[-1, :]) | set(lab_[:, 0]) | set(lab_[:, -1])
             bgm_ = np.isin(lab_, [l for l in border if l != 0])
             m = (~bgm_).astype(np.uint8)
+        elif SIMPLE[name] in ("grass", "warm"):
+            hsv_ = cv2.cvtColor(cv2.GaussianBlur(bgr, (0, 0), 1.5), cv2.COLOR_BGR2HSV); H_, S_, V_ = cv2.split(hsv_)
+            if SIMPLE[name] == "grass": m = (~((H_ >= 30) & (H_ <= 90) & (S_ > 55))).astype(np.uint8)                       # not green
+            else: m = (((H_ <= 24) | (H_ >= 172)) & (S_ > 95) & (V_ > 45)).astype(np.uint8)                                  # warm wood tones
+            m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21)))
+            if SIMPLE[name] == "grass": m = cv2.morphologyEx(m, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (31, 31)))   # blades of grass hugging the edge
         elif SIMPLE[name] == "notred":
             b_, g_, r_ = [c.astype(np.int32) for c in cv2.split(cv2.GaussianBlur(bgr, (0, 0), 2))]
             m = (~((r_ > 1.7 * g_ + 6) & (r_ > 28))).astype(np.uint8)
@@ -111,9 +117,17 @@ if __name__ == "__main__":
 
 
 # ----------------------------------------------------------------------------- outline extraction
-BODY_ONLY_MM = {"es335": 406}   # real body width (mm) when the neck can't be segmented
+BODY_ONLY_MM = {"es335": 406, "folk": 381, "dread": 396}
+BODY_JOIN_FRAC = {"folk": 0.0, "dread": 0.0}
+HULL_TOP = {"folk": 0.30, "dread": 0.30}
+STUB_CUT = {"dread": 0.10}              # leftover neck stub at the top of the upper bout: cut it, then the hull restores the arc   # real body width (mm) when the neck can't be segmented
+NECK_MM = {"classical": 62, "dread": 54, "folk": 54}     # real neck width (mm) where it meets the body, if not the usual 56
 OUR_NECK_JOIN_W = 25.2        # canvas units: neck width where it enters the body (see app/guitars.js)
 NECK_END = 196                # canvas y of the neck/body join
+
+def scale_of(d):
+    """canvas units per photo pixel: 0.45 units per mm of the real instrument (25.2 units = 56 mm at the neck join)."""
+    return 0.45 * NECK_MM.get(d["name"], 56) / d["neckW"]
 
 def runs(row):
     d = np.diff(np.concatenate([[0], row, [0]]))
@@ -154,10 +168,16 @@ def analyse(name):
         widths = np.array([mask[y].sum() for y in range(h)])
         last = max(y for y in range(top, bot) if widths[y] > 0.30 * widths.max())
         body = mask.copy(); body[last + 1:] = 0
+        if name in STUB_CUT:
+            cxs = float(np.mean(np.where(body[top + (last - top) // 3])[0])); hw = int(0.085 * widths.max())
+            body[:int(top + STUB_CUT[name] * (last - top)), int(cxs - hw):int(cxs + hw)] = 0
+        if name in HULL_TOP:                                     # the dark neck is missing: fill the notch it leaves in the upper bout with the convex hull
+            rows_ = int(top + HULL_TOP[name] * (last - top)); ptsh = np.argwhere(body[:rows_])
+            hull = cv2.convexHull(ptsh[:, ::-1].astype(np.int32)); filled = np.zeros_like(body); cv2.fillConvexPoly(filled, hull, 1); body[:rows_] = np.maximum(body[:rows_], filled[:rows_])
         BODY_W_MM, NECK_MM = BODY_ONLY_MM.get(name, 406), 56.0
         nW = widths.max() * NECK_MM / BODY_W_MM           # neck width implied by real proportions
         cx = float(np.mean(np.where(body[top + (last - top) // 3])[0]))
-        return dict(name=name, mask=mask, body=body, rgb=rgb, r0=top, join=int(top + .10 * (last - top)), last=last, neckW=nW, neckMid=nW, cx=cx, ang=ang)
+        return dict(name=name, mask=mask, body=body, rgb=rgb, r0=top, join=int(top + BODY_JOIN_FRAC.get(name, .10) * (last - top)), last=last, neckW=nW, neckMid=nW, cx=cx, ang=ang)
     # 2) neck width and the join row
     a0, a1 = int(top + .16 * (bot - top)), int(top + .30 * (bot - top))
     widths = np.array([mask[y].sum() for y in range(h)])
@@ -191,7 +211,7 @@ NECK_COLS = {"explorer": (83, 119)}
 NECK_CUT = {"explorer": 205, "lp": 221, "es335": 229}
 SMOOTH_FROM = {"explorer": 300, "strat": 244, "tele": 240, "lp": 248, "es335": 262, "sg": 262, "jazz": 252, "prs": 252}
 STRONG_SIGMA = 4.6
-SYMMETRIC = {"sg", "prs", "es335"}
+SYMMETRIC = {"sg", "prs", "es335", "dread", "folk", "classical"}
 LOWER_SYM = {"strat": (246, "max"), "tele": (250, "max"), "lp": (246, "mean")}   # lower bouts are symmetric: union/mean with the mirror image from this canvas y down      # models that are symmetrical about the neck axis in real life
 
 def clean_outline(d, s, sigma_units=2.0, ppu=6):
@@ -278,7 +298,7 @@ def fit_cubic(pts, t1, t2, err):
     return fit_cubic(pts[:sp + 1], t1, ct, err) + fit_cubic(pts[sp:], -ct, t2, err)
 
 def to_path(body, d, nsamp=None):
-    s = OUR_NECK_JOIN_W / d["neckW"]
+    s = scale_of(d)
     c = clean_outline(d, s)
     P = resample_closed(c, 1.0)
     # start the path at the neck-notch corner (top-most point of the body next to the neck) so the seam sits on a real corner
@@ -305,9 +325,10 @@ def calib_image(d, s, path):
 
 if __name__ == "__main__" and os.environ.get("TRACE"):
     res = {}
-    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer"]:
+    names = os.environ["TRACE"].split(",") if os.environ["TRACE"] != "1" else ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer"]
+    for n in names:                      # TRACE=1 for the standard set, or TRACE=name1,name2 for specific guitars
         d = analyse(n); path, s = to_path(d["body"], d)
-        h = d["last"]; bottom = NECK_END + (d["last"] - d["join"]) * s
+        bottom = NECK_END + (d["last"] - d["join"]) * s
         res[n] = {"path": path, "bottom": round(bottom, 1), "scale": round(s, 4), "neckW": round(d["neckW"], 1)}
         calib_image(d, s, f"/tmp/mkprev/cal_{n}.png")
         print(n, "ang", round(d["ang"], 2), "r0", d["r0"], "join", d["join"], "last", d["last"], "neckW", round(d["neckW"], 1), "-> bottom", res[n]["bottom"], "len", len(path))
@@ -365,7 +386,7 @@ def smooth_path(c, nsamp):
 
 def export(out_js="app/guitar-shapes.js"):
     shapes = {}
-    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer"]:
+    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer", "dread", "folk", "classical"]:
         d = analyse(n); path, s = to_path(d["body"], d)
         cc = clean_outline(d, s)
         shapes[n] = {"body": path, "bottom": round(float(cc[:, 1].max()), 1), "pg": pickguard_path(n, d, s)}

@@ -13,15 +13,18 @@ const GTYPES = [
   { k: "Explorer", short: "Explorer", w: "Explorer", pk: "humbucker", fin: "cherry", brands: ["Gibson", "Epiphone"] },
   { k: "Flying V", short: "Flying V", w: "Flying V", pk: "humbucker", fin: "honey", brands: ["Gibson", "Epiphone"] },
   { k: "PRS / Superstrat", short: "PRS", w: "Custom 24", pk: "hsh", fin: "cherryburst", brands: ["PRS", "Ibanez"] },
-  { k: "Acoustic", short: "Acoustic", w: "Acoustic", pk: "acoustic", fin: "natural", brands: ["Martin", "Taylor", "Yamaha"] },
+  { k: "Dreadnought", short: "Dreadnought", w: "Dreadnought", pk: "acoustic", fin: "natural", brands: ["Martin", "Taylor", "Yamaha"] },
+  { k: "Concert / OM", short: "Concert/OM", w: "OM", pk: "acoustic", fin: "natural", brands: ["Martin", "Taylor", "Yamaha"] },
+  { k: "Classical", short: "Classical", w: "Classical", pk: "acoustic", fin: "natural", brands: ["Yamaha", "Cordoba", "Alhambra"] },
   { k: "Other", short: "Other", w: "", pk: "humbucker", fin: "grey", brands: [] },
 ];
 const ALL_BRANDS = ["Fender", "Gibson", "Epiphone", "PRS", "Ibanez", "ESP", "LTD", "Jackson", "Charvel", "Squier", "Gretsch", "Schecter", "Yamaha", "Rickenbacker",
-  "Music Man", "G&L", "Danelectro", "Hagstrom", "Reverend", "Godin", "Sterling", "Cort", "Martin", "Taylor", "Takamine"];
+  "Music Man", "G&L", "Danelectro", "Hagstrom", "Reverend", "Godin", "Sterling", "Cort", "Martin", "Taylor", "Takamine", "Cordoba", "Alhambra", "Guild", "Seagull", "Ovation"];
 const LEGACY_P90 = "P-90 guitar (Junior, Special…)";
 const normKind = (k, name) => k === "Explorer / Flying V" ? (/flying|\bv\b/i.test(name || "") ? "Flying V" : "Explorer")   // old combined type
-  : k === LEGACY_P90 ? "Les Paul" : k;                                                                                       // P-90 is a pickup, not a body shape
+  : k === LEGACY_P90 ? "Les Paul" : k === "Acoustic" ? "Dreadnought" : k;                                                                                       // P-90 is a pickup, not a body shape
 const defFinish = g => g.finish || (g.kind === LEGACY_P90 ? "tv" : gtype(normKind(g.kind, g.name)).fin);
+const isAcoustic = k => ["Dreadnought", "Concert / OM", "Classical", "Acoustic"].includes(k);
 const gtype = k => GTYPES.find(t => t.k === k) || GTYPES[GTYPES.length - 1];
 let GM = null;   // { view: "list" | "form", f: form state }
 
@@ -71,7 +74,7 @@ function gmRender() {
         <input class="in" id="g-name" placeholder="e.g. Gibson Les Paul" maxlength="60" value="${esc(f.name)}" aria-describedby="name-hint name-err">
         <div class="err" id="name-err" role="alert">Give your guitar a name (at least 2 characters).</div><div class="hint" id="name-hint"></div></div>
       <div class="fld"><div class="lbl"><span id="l-pk">4 · Pickups</span><span class="opt" id="pk-note"></span></div>
-        <div class="seg" role="radiogroup" aria-labelledby="l-pk">${Object.keys(PK).filter(k => k !== "acoustic" || f.kind === "Acoustic").map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="false" title="${esc(PK_LONG[k])}">${esc(PK[k])}</button>`).join("")}</div>
+        <div class="seg" role="radiogroup" aria-labelledby="l-pk">${Object.keys(PK).filter(k => k !== "acoustic" || isAcoustic(f.kind)).map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="false" title="${esc(PK_LONG[k])}">${esc(PK[k])}</button>`).join("")}</div>
         <div class="hint" id="pk-hint"></div></div>
       <div class="fld"><div class="lbl"><span id="l-fin">5 · Finish</span><span class="opt" id="fin-name"></span></div>
         <div class="swatches" role="radiogroup" aria-labelledby="l-fin">${GUITAR_FINISHES.map(x => `<button type="button" class="sw" role="radio" data-fin="${x.key}" aria-checked="false" aria-label="${esc(x.label)}" title="${esc(x.label)}" style="background:${x.css}"></button>`).join("")}</div></div>
@@ -102,7 +105,7 @@ function gmSync(initial) {   // push state f into the DOM (idempotent; never tou
   $("#prev-meta").textContent = [f.brand.trim(), PK[f.pickups], fin(f.finish).label].filter(Boolean).join(" · ");
   // acoustic pickup option only for acoustics
   const seg = document.querySelector("#gsheet .seg"); const hasAc = !!seg.querySelector('[data-pk="acoustic"]');
-  if ((f.kind === "Acoustic") !== hasAc) { seg.innerHTML = Object.keys(PK).filter(k => k !== "acoustic" || f.kind === "Acoustic").map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="${k === f.pickups}" title="${esc(PK_LONG[k])}">${esc(PK[k])}</button>`).join(""); }
+  if (isAcoustic(f.kind) !== hasAc) { seg.innerHTML = Object.keys(PK).filter(k => k !== "acoustic" || isAcoustic(f.kind)).map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="${k === f.pickups}" title="${esc(PK_LONG[k])}">${esc(PK[k])}</button>`).join(""); }
 }
 
 function gmSetKind(k) {

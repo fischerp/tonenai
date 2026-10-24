@@ -30,7 +30,6 @@
   }
   // Hand-drawn outlines for the models without a usable reference photo.
   const LES_PAUL = "M87.0,197.0C86.1,197.1 78.3,197.0 74.0,198.0C69.6,199.0 64.9,200.9 61.0,203.0C57.3,205.0 53.6,207.3 51.0,210.0C48.7,212.4 47.2,215.1 46.0,218.0C44.8,221.0 44.3,224.8 44.0,228.0C43.7,230.8 43.7,233.4 44.0,236.0C44.3,238.7 45.2,241.4 46.0,244.0C46.8,246.7 47.9,249.4 49.0,252.0C50.2,254.7 52.0,257.3 53.0,260.0C54.0,262.6 55.0,265.3 55.0,268.0C55.0,270.9 54.3,274.2 53.0,277.0C51.7,279.9 49.2,282.5 47.0,285.0C44.8,287.5 42.3,289.5 40.0,292.0C37.6,294.5 35.2,297.2 33.0,300.0C30.8,302.8 28.7,305.9 27.0,309.0C25.4,311.9 24.0,314.9 23.0,318.0C22.0,321.2 21.5,324.5 21.0,328.0C20.5,331.8 20.2,336.0 20.0,340.0C19.8,344.0 19.8,348.2 20.0,352.0C20.2,355.5 20.2,358.7 21.0,362.0C21.8,365.4 23.3,368.8 25.0,372.0C26.7,375.2 28.7,378.2 31.0,381.0C33.4,383.9 36.0,386.6 39.0,389.0C42.3,391.6 46.0,394.2 50.0,396.0C54.3,397.9 59.0,398.9 64.0,400.0C69.6,401.2 76.0,402.0 82.0,402.5C88.0,403.0 94.0,403.0 100.0,403.0C106.0,403.0 112.0,403.0 118.0,402.5C124.0,402.0 130.4,401.2 136.0,400.0C141.0,398.9 145.7,397.9 150.0,396.0C154.0,394.2 157.7,391.6 161.0,389.0C164.0,386.6 166.6,383.9 169.0,381.0C171.3,378.2 173.3,375.2 175.0,372.0C176.7,368.8 178.2,365.4 179.0,362.0C179.8,358.7 179.8,355.5 180.0,352.0C180.2,348.2 180.2,344.0 180.0,340.0C179.8,336.0 179.5,331.8 179.0,328.0C178.5,324.5 178.0,321.2 177.0,318.0C176.0,314.9 174.6,311.9 173.0,309.0C171.3,305.9 169.2,302.8 167.0,300.0C164.8,297.2 162.4,294.5 160.0,292.0C157.7,289.5 155.2,287.5 153.0,285.0C150.8,282.5 148.3,279.9 147.0,277.0C145.7,274.2 145.0,270.9 145.0,268.0C145.0,265.3 146.0,262.6 147.0,260.0C148.0,257.3 149.8,254.7 151.0,252.0C152.1,249.4 153.2,246.7 154.0,244.0C154.8,241.4 155.5,238.7 156.0,236.0C156.5,233.3 157.2,230.5 157.0,228.0C156.8,225.8 156.3,223.5 155.0,222.0C153.7,220.5 151.0,219.0 149.0,219.0C147.0,219.0 144.7,220.6 143.0,222.0C141.4,223.3 140.6,225.5 139.0,227.0C137.3,228.6 135.1,230.4 133.0,231.0C131.1,231.6 128.8,231.6 127.0,231.0C125.1,230.3 123.5,228.6 122.0,227.0C120.4,225.3 119.2,223.3 118.0,221.0C116.5,218.4 114.8,215.3 114.0,212.0C113.1,208.4 113.1,202.7 113.0,200.0C112.9,198.7 113.0,197.4 113.0,197.0Z";
-  const ACOUSTIC = "M100,196 C140,196 163.5,210 163.5,244 C163.5,272 157,282 157,298 C157,316 189,330 189,372 C189,408 150,425 100,425 C50,425 11,408 11,372 C11,330 43,316 43,298 C43,282 36.5,272 36.5,244 C36.5,210 60,196 100,196 Z";
 
   // Pickup spec: [type, cx, cy, cover]  ·  bridge: [type, cy, tail cy]  ·  knob: [x, y, colour]
   const S = {
@@ -53,7 +52,9 @@
       pups: [["hum", 100, 215, "cream"], ["hum", 100, 254, "cream"]], bridge: ["hardtail", 279], knobs: [[126, 309, "gold"]], sw: [127, 336] },
     "P-90 guitar (Junior, Special…)": { path: LES_PAUL, bottom: 403, fin: "tv", hs: "gibson", fb: "rosewood", bind: "#f8f2d8", inlay: "dots",
       pups: [["p90", 100, 246], ["p90", 100, 295]], bridge: ["wrap", 316], knobs: [[150, 340, "black"], [132, 356, "black"]], sw: null },
-    Acoustic: { path: ACOUSTIC, bottom: 425, acoustic: true, fin: "natural", hs: "gibson", fb: "rosewood", bind: "#2a1b10", inlay: "dots" },
+    Dreadnought: { shape: "dread", acoustic: true, ac: { f: 0.31, r: 22, br: 0.62, pg: true, bridge: "pin" }, fin: "natural", hs: "martin", fb: "rosewood", inlay: "dots", bind: "#efe4c8" },
+    "Concert / OM": { shape: "folk", acoustic: true, ac: { f: 0.33, r: 21, br: 0.62, pg: true, bridge: "pin" }, fin: "natural", hs: "martin", fb: "rosewood", inlay: "dots", bind: "#efe4c8" },
+    Classical: { shape: "classical", acoustic: true, ac: { f: 0.30, r: 19, br: 0.70, pg: false, bridge: "tie", rose: "ornate" }, fin: "natural", hs: "classic", fb: "rosewood", inlay: "none", bind: "#6b4a2a", neckW: [11.6, 14.2], nylon: true },
     Other: { shape: "prs", fin: "grey", hs: "fender", fb: "rosewood", inlay: "dots",
       pups: [["hum", 100, 215, "chrome"], ["hum", 100, 254, "chrome"]], bridge: ["hardtail", 279], knobs: [[126, 309, "black"]], sw: null },
   };
@@ -61,13 +62,13 @@
   const FLYING_V = { path: FLYING_V_PATH, bottom: 452, fin: "honey", hs: "gibson", fb: "rosewood", inlay: "dots",
     pups: [["hum", 100, 218, "chrome"], ["hum", 100, 278, "chrome"]], bridge: ["tom", 298, 306], knobs: [[124, 317, "black"], [137, 346, "black"], [151, 376, "black"]], sw: null };
 
-  S["Flying V"] = FLYING_V;
+  S["Flying V"] = FLYING_V; S.Acoustic = S.Dreadnought;      // old saved guitars used the single "Acoustic" type
   const LEGACY_EXPLORER = "Explorer / Flying V";   // old saved guitars used one combined type
 
   // Real proportions: [scale length, nut -> body-join distance, headstock length] in canvas units (1 unit = 2.2 mm).
   const LAY = { Stratocaster: [291.6, 185, 80], Telecaster: [291.6, 185, 80], "Les Paul": [283, 172, 76], SG: [283, 188, 76], "ES-335 / semi-hollow": [283, 190, 76],
     "Jazzmaster / Jaguar": [291.6, 185, 80], Explorer: [283, 172, 76], "Flying V": [283, 172, 76], "PRS / Superstrat": [286, 175, 76],
-    "P-90 guitar (Junior, Special…)": [283, 172, 76], Acoustic: [290, 161, 76], Other: [286, 175, 76] };
+    "P-90 guitar (Junior, Special…)": [283, 172, 76], Dreadnought: [290, 161, 76], "Concert / OM": [286, 161, 76], Classical: [292.5, 146, 80], Acoustic: [290, 161, 76], Other: [286, 175, 76] };
   Object.keys(S).forEach(k => { S[k].lay = LAY[k] || LAY.Other; }); FLYING_V.lay = LAY["Flying V"];
 
   let uid = 0;
@@ -126,6 +127,17 @@
       return `<defs><clipPath id="${hid}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="${wood}" stroke="${edge}" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
         ${ys.map(y => tuner(90.6, y, -1, "#e0cd85", "#7a6620") + tuner(109.4, y, 1, "#e0cd85", "#7a6620")).join("")}<path d="M96,22 q4,-6 8,0 q-4,2 -4,6 q0,-4 -4,-6 Z" fill="#efe6c8" opacity=".9"/>`;
     }
+    if (kind === "martin") {
+      const d = "M89,70 L89,60 L83,52 L83,17 Q83,8 92,8 L108,8 Q117,8 117,17 L117,52 L111,60 L111,70 Z", ys = [16, 29, 42];
+      return `<defs><clipPath id="${hid}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="#17110c" stroke="#000" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
+        ${ys.map(y => tuner(83.4, y, -1, "#d9dce2", "#6c6f78") + tuner(116.6, y, 1, "#d9dce2", "#6c6f78")).join("")}<path d="M100,20 l4,6 l-4,6 l-4,-6 Z" fill="#efe6c8" opacity=".9"/>`;
+    }
+    if (kind === "classic") {
+      const d = "M88,70 L88,57 C85,53 83,48 83,40 L83,15 Q83,8 89,8 L111,8 Q117,8 117,15 L117,40 C117,48 115,53 112,57 L112,70 Z", ys = [15, 28, 41];
+      return `<defs><clipPath id="${hid}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="#7a4a24" stroke="#2a170a" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
+        <rect x="90.5" y="14" width="4" height="36" rx="2" fill="#241208"/><rect x="105.5" y="14" width="4" height="36" rx="2" fill="#241208"/>
+        ${ys.map(y => `<rect x="77" y="${y - 2.4}" width="7" height="4.8" rx="2.2" fill="#eee7d4" stroke="#8a7a5a" stroke-width=".4"/><rect x="116" y="${y - 2.4}" width="7" height="4.8" rx="2.2" fill="#eee7d4" stroke="#8a7a5a" stroke-width=".4"/>`).join("")}`;
+    }
     const d = "M88,70 L88.4,58 C85.5,52 80,48 78,38 C76,27 79,16 88,9.5 C94,5.5 106,5.5 112,9.5 C121,16 124,27 122,38 C120,48 114.5,52 111.6,58 L112,70 Z";   // gibson "open book"
     const ys = [15, 28, 41];
     return `<defs><clipPath id="${hid}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="#15100c" stroke="#000" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
@@ -134,6 +146,7 @@
   }
 
   function inlays(style, fb, L) {
+    if (style === "none") return "";
     const c = fb === "maple" ? "#2a2018" : "#efe6c8", out = [];
     const one = (y, dx) => style === "blocks" ? `<rect x="${96.5 + dx}" y="${f(y - 3)}" width="7" height="6" rx="1" fill="${c}"/>`
       : style === "trapezoid" ? `<path d="M${96.5} ${f(y - 3)} L103.5 ${f(y - 3)} L102.6 ${f(y + 3)} L97.4 ${f(y + 3)} Z" fill="${c}"/>`
@@ -153,21 +166,25 @@
     const lay = g.lay || LAY.Other, hsLen = lay[2];
     const L = { sl: lay[0], nut: 6 + hsLen }; L.join = L.nut + lay[1]; const dy = L.join - NECK_END;     // body artwork is drawn with its join at y=196
     const H = Math.ceil(bottom + dy + 12);
+    const acTop = 196, acLen = bottom - acTop, acR = g.ac ? g.ac.r : 0;
+    const acSoundY = g.ac ? acTop + g.ac.f * acLen : 0, acBridgeY = g.ac ? acTop + g.ac.br * acLen : 0;
     const id = "g" + (++uid), m = id + "m", fin = FIN[finish] || FIN[g.fin];
     const bodyFill = fin.burst
       ? `<radialGradient id="${id}b" cx=".5" cy=".6" r=".65"><stop offset="0" stop-color="${fin.burst[0]}"/><stop offset=".5" stop-color="${fin.burst[1]}"/><stop offset="1" stop-color="${fin.burst[2]}"/></radialGradient>`
       : `<linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${fin.solid[0]}"/><stop offset="1" stop-color="${fin.solid[1]}"/></linearGradient>`;
     const sheen = `<linearGradient id="${id}s" x1=".1" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset=".3" stop-color="#fff" stop-opacity=".06"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></linearGradient>`;
     const strings = Array.from({ length: 6 }, (_, i) => {
-      const by = g.bridge ? g.bridge[1] + (g.bridge[0] === "strat" ? 2 : g.bridge[0] === "tele" ? 6 : g.bridge[0] === "hardtail" ? 4 : 0) : (g.acoustic ? 361 : bottom - 80);
-      return `<line x1="${f(100 + (i - 2.5) * 3.1)}" y1="${f(L.nut + 1 - dy)}" x2="${f(100 + (i - 2.5) * (g.acoustic ? 5.2 : 5.4))}" y2="${by}" stroke="#e7e8ec" stroke-width="${f(.55 + (5 - i) * .08)}" stroke-opacity=".8"/>`;
+      const by = g.bridge ? g.bridge[1] + (g.bridge[0] === "strat" ? 2 : g.bridge[0] === "tele" ? 6 : g.bridge[0] === "hardtail" ? 4 : 0) : (g.acoustic ? acBridgeY : bottom - 80);
+      return `<line x1="${f(100 + (i - 2.5) * 3.1)}" y1="${f(L.nut + 1 - dy)}" x2="${f(100 + (i - 2.5) * (g.acoustic ? 5.2 : 5.4))}" y2="${by}" stroke="${g.nylon ? (i < 3 ? "#f1efe6" : "#d9b86a") : "#e7e8ec"}" stroke-width="${f(.55 + (5 - i) * .08)}" stroke-opacity=".85"/>`;
     }).join("");
-    const halfAt = y => 9 + (y - L.nut) / (L.join - L.nut) * 3.6;
+    const halfAt = y => (g.neckW ? g.neckW[0] : 9) + ((g.neckW ? g.neckW[1] : 12.6) - (g.neckW ? g.neckW[0] : 9)) * (y - L.nut) / (L.join - L.nut);
     const frets = Array.from({ length: 22 }, (_, i) => i + 1).filter(n => fretAt(L, n) < L.join - 2).map(n => { const y = fretAt(L, n), h = halfAt(y) - 1.4; return `<line x1="${f(100 - h)}" x2="${f(100 + h)}" y1="${f(y)}" y2="${f(y)}" stroke="#d9dbe0" stroke-width=".9"/>`; }).join("");
     const fbCol = g.fb === "maple" ? "#e9c98b" : "#3a2013";
-    const nEnd = L.join + 8 + (g.neckExtra || 0), nh = 9 + (nEnd - L.nut) / (L.join - L.nut) * 3.6, fh2 = 7.6 + (nEnd - L.nut) / (L.join - L.nut) * 3.4;
-    const neckPoly = `M91,${L.nut} L109,${L.nut} L${f(100 + nh)},${nEnd} L${f(100 - nh)},${nEnd} Z`;
-    const fbPoly = `M${100 - 7.6},${L.nut + 2} L${100 + 7.6},${L.nut + 2} L${f(100 + fh2)},${nEnd} L${f(100 - fh2)},${nEnd} Z`;
+    const [nutH, joinH] = g.neckW || [9, 12.6], span = (nEndOf() - L.nut) / (L.join - L.nut);
+    function nEndOf() { return L.join + 8 + (g.neckExtra || 0); }
+    const nEnd = nEndOf(), nh = nutH + (joinH - nutH) * span, fh2 = (nutH - 1.4) + ((joinH - 1.6) - (nutH - 1.4)) * span;
+    const neckPoly = `M${100 - nutH},${L.nut} L${100 + nutH},${L.nut} L${f(100 + nh)},${nEnd} L${f(100 - nh)},${nEnd} Z`;
+    const fbPoly = `M${100 - (nutH - 1.4)},${L.nut + 2} L${100 + (nutH - 1.4)},${L.nut + 2} L${f(100 + fh2)},${nEnd} L${f(100 - fh2)},${nEnd} Z`;
     const pgPath = g.pgc && shp && shp.pg ? `<g clip-path="url(#${id}c)"><path d="${shp.pg}" fill="${g.pgc}"/><path d="${shp.pg}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><path d="${shp.pg}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.6" transform="translate(-.5,-.5)" clip-path="url(#${id}c)"/></g>` : "";
     const plate = g.plate ? (g.ctrl
       ? (([x, y, w, h]) => `<g transform="rotate(-9 ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2.6}" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5"/>
@@ -175,9 +192,13 @@
           <circle cx="${x + w / 2}" cy="${y + h - 7.5}" r="3.6" fill="#5a5d66"/><circle cx="${x + w / 2}" cy="${y + h - 7.5}" r="1.6" fill="#c9ccd4"/></g>`)(g.plate)
       : `<rect x="${g.plate[0]}" y="${g.plate[1]}" width="${g.plate[2]}" height="${g.plate[3]}" rx="3" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5" opacity=".95"/>`) : "";
     const fh = (g.fholes || []).map(([x1, y1, x2, y2]) => `<path d="M${x1},${y1} q${(x2 - x1) / 2 + (x2 > x1 ? -3 : 3)},${(y2 - y1) / 2} ${x2 - x1},${y2 - y1}" fill="none" stroke="#0a0a0a" stroke-width="3.4" stroke-linecap="round"/>`).join("");
-    const ac = g.acoustic ? `<circle cx="100" cy="250" r="23" fill="#2a1b10"/><circle cx="100" cy="250" r="20" fill="#050403"/><circle cx="100" cy="250" r="25.5" fill="none" stroke="#e8dcc0" stroke-width="1.2" opacity=".7"/>
-        <path d="M116,262 C146,262 150,300 130,314 C112,326 98,300 104,282 C108,272 110,264 116,262 Z" fill="#2a1b10" opacity=".55"/>
-        <rect x="76" y="355" width="48" height="12" rx="3.6" fill="#3a2414"/><rect x="82" y="358" width="36" height="3" rx="1.5" fill="#e8dcc0"/>${[0, 1, 2, 3, 4, 5].map(i => `<circle cx="${84 + i * 6.4}" cy="363.5" r="1.3" fill="#e8dcc0"/>`).join("")}` : "";
+    const tear = (cx, cy, r) => `M${f(cx + r * .55)},${f(cy - r * .35)} C${f(cx + r * 1.7)},${f(cy - r * .55)} ${f(cx + r * 2.5)},${f(cy + r * .5)} ${f(cx + r * 2.35)},${f(cy + r * 1.9)} C${f(cx + r * 2.2)},${f(cy + r * 3.1)} ${f(cx + r * .9)},${f(cy + r * 3.3)} ${f(cx + r * .8)},${f(cy + r * 2.2)} C${f(cx + r * .72)},${f(cy + r * 1.3)} ${f(cx + r * .3)},${f(cy + r * .7)} ${f(cx + r * .55)},${f(cy - r * .35)} Z`;
+    const ac = g.acoustic ? `${g.ac.pg ? `<path d="${tear(100, acSoundY, acR * 0.88)}" fill="#3a1a12"/><path d="${tear(100, acSoundY, acR * 0.88)}" fill="none" stroke="#8a4a2e" stroke-opacity=".7" stroke-width=".8"/>` : ""}
+        <circle cx="100" cy="${f(acSoundY)}" r="${acR + 2.6}" fill="#efe4c8"/><circle cx="100" cy="${f(acSoundY)}" r="${acR + 1.4}" fill="#1a110a"/>${g.ac.rose === "ornate" ? `<circle cx="100" cy="${f(acSoundY)}" r="${acR + 6.5}" fill="none" stroke="#6b4a2a" stroke-width="4.2"/><circle cx="100" cy="${f(acSoundY)}" r="${acR + 6.5}" fill="none" stroke="#efe4c8" stroke-width="2.4" stroke-dasharray="2.2 2.2"/>` : `<circle cx="100" cy="${f(acSoundY)}" r="${acR + 4.2}" fill="none" stroke="#2a1b10" stroke-width="1.1"/>`}
+        <circle cx="100" cy="${f(acSoundY)}" r="${acR}" fill="#040302"/><circle cx="100" cy="${f(acSoundY)}" r="${acR}" fill="none" stroke="#000" stroke-width="1"/>
+        ${g.ac.bridge === "tie"
+        ? `<rect x="62" y="${f(acBridgeY - 6)}" width="76" height="14" rx="5" fill="#3a2414"/><rect x="66" y="${f(acBridgeY - 3)}" width="68" height="3" rx="1.5" fill="#efe4c8"/>${[0, 1, 2, 3, 4, 5].map(i => `<ellipse cx="${72 + i * 11.2}" cy="${f(acBridgeY + 4)}" rx="3.2" ry="1.6" fill="#241608"/>`).join("")}`
+        : `<path d="M54,${f(acBridgeY - 7)} Q100,${f(acBridgeY - 12)} 146,${f(acBridgeY - 7)} Q151,${f(acBridgeY - 1)} 146,${f(acBridgeY + 6)} Q100,${f(acBridgeY + 9)} 54,${f(acBridgeY + 6)} Q49,${f(acBridgeY - 1)} 54,${f(acBridgeY - 7)} Z" fill="#2b1810"/><rect x="62" y="${f(acBridgeY - 1.5)}" width="76" height="3" rx="1.5" fill="#efe4c8"/>${[0, 1, 2, 3, 4, 5].map(i => `<circle cx="${f(100 + (i - 2.5) * 7.6)}" cy="${f(acBridgeY - 5)}" r="1.5" fill="#efe4c8"/>`).join("")}`}` : "";
     const sw = g.sw ? `<g><rect x="${g.sw[0] - 6}" y="${g.sw[1] - 2}" width="12" height="4" rx="2" fill="#c9ccd4" stroke="#6c6f78" stroke-width=".4"/><rect x="${g.sw[0] - 1.5}" y="${g.sw[1] - 3.5}" width="3.4" height="7" rx="1.4" fill="#f2f2f4"/></g>` : "";
     const bind = g.bind ? `<path d="${body}" fill="none" stroke="${g.bind}" stroke-width="2.6" stroke-linejoin="round"/>` : "";
     return `<svg viewBox="0 0 200 ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
