@@ -51,3 +51,17 @@ OCT, or OCT DRY. Footswitches: WHAMMY (on/off, heel-toe rocker sweeps the effect
   string lowered) from standard; say so if the song is in Drop D and suggest retuning the 6th string instead.
 - `use`: "yes" if the song needs it (tuning change, or a signature whammy/octave part), "optional" for a nice-to-have,
   "no" if not needed (still fill `tuning`).
+
+## Guitar setup (original guitars + which of the user's to play)
+Add a `"guitar"` object to the FIRST patch of every song file: the guitar(s) actually used on the recording, researched with a web
+search (never invent; say `"confidence": "unknown"` if you cannot confirm).
+```json
+"guitar": {"originals": [{"guitar": "Gibson Les Paul Standard", "player": "Slash", "pickups": "humbucker"}],
+           "pickups_needed": "humbucker", "position": "bridge pickup, tone knob around 8",
+           "tone_notes": "Thick, mid-focused humbucker tone; a single-coil guitar will sound thinner - add gain and roll back treble.",
+           "confidence": "confirmed"}
+```
+- `pickups` and `pickups_needed` use only: `humbucker`, `single-coil`, `p90`, `any` (a pickup type that matters little).
+- `originals`: 1-3 entries; each has `guitar` (model), optional `player`, and `pickups`.
+- `position`: which pickup(s) and any knob settings to use for this song.
+- `confidence`: `confirmed` (several sources), `likely` (one source) or `unknown`.

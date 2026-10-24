@@ -28,6 +28,10 @@ def _cover_url(sid):
     return "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode()
 
 
+DATA = os.path.join(ROOT, "data")
+GUITARS = os.path.join(DATA, "guitars.json")
+
+
 class Service:
     def __init__(self):
         self._lock = threading.Lock()
@@ -47,7 +51,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"), "whammy": specs[0].get("whammy"),
+                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -201,7 +205,7 @@ class Service:
             "rhythm vs lead parts) with a web search. Then create ONE new file songs/<artist>-<title>.json "
             "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
             "The first patch memo must start with 'Artist - Title: ' . Also add a \"band\" object and a \"whammy\" object "
-            "to the FIRST patch (see 'Band setup' and 'Whammy DT setup' in the instructions). Validate and export by running "
+            "and a \"guitar\" object to the FIRST patch (see 'Band setup', 'Whammy DT setup' and 'Guitar setup' in the instructions). Validate and export by running "
             "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
             "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done.")
 
@@ -219,6 +223,17 @@ class Service:
             "effect is used. Edit only that file, "
             f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot verify the tuning, say so in tips and set use to optional. Reply with one short line when done.")
+
+    def _guitar_prompt(self, sid):
+        return (
+            f"Add (or replace) the \"guitar\" object on the FIRST patch of songs/{sid}.json, following 'Guitar setup' in the "
+            "instructions. Use a web search to find which guitar(s) and pickups were really used on the recording and which "
+            "pickup position sounds right. Edit only that file, "
+            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            "If you cannot confirm the guitar, set confidence to unknown. Reply with one short line when done.")
+
+    def generate_guitar(self, song_id):
+        return self._generate(song_id, "guitar")
 
     def generate_whammy(self, song_id):
         return self._generate(song_id, "whammy")
@@ -239,7 +254,7 @@ class Service:
     def _run_band(self, sid, kind="band"):
         try:
             for attempt in range(2):          # the agent occasionally finishes without saving; try once more
-                asyncio.run(self._agent(self._band_prompt(sid) if kind == "band" else self._whammy_prompt(sid)))
+                asyncio.run(self._agent({"band": self._band_prompt, "whammy": self._whammy_prompt, "guitar": self._guitar_prompt}[kind](sid)))
                 self._validate(sid)
                 specs = json.load(open(os.path.join(SONGS, sid + ".json")))
                 specs = specs if isinstance(specs, list) else [specs]
@@ -334,3 +349,33 @@ class Service:
             for f in files:
                 shutil.move(f, os.path.join(keep, os.path.basename(f)))
         return {"ok": True}
+
+    # -------------------------------------------------------------- my guitars (local, per user)
+    def guitars(self):
+        try:
+            return json.load(open(GUITARS))
+        except (OSError, ValueError):
+            return []
+
+    def save_guitar(self, guitar):
+        """Add or update a guitar: {id?, name, kind, pickups, notes}."""
+        name = (guitar.get("name") or "").strip()
+        if not name:
+            return {"ok": False, "error": "Give the guitar a name"}
+        pickups = guitar.get("pickups", "humbucker")
+        if pickups not in ("humbucker", "single-coil", "p90", "hss", "hsh", "acoustic"):
+            return {"ok": False, "error": "Unknown pickup type"}
+        items = self.guitars()
+        gid = guitar.get("id") or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "guitar"
+        entry = {"id": gid, "name": name[:60], "kind": (guitar.get("kind") or "")[:40], "pickups": pickups,
+                 "notes": (guitar.get("notes") or "")[:200]}
+        items = [g for g in items if g["id"] != gid] + [entry]
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(items, open(GUITARS, "w"), indent=1)
+        return {"ok": True, "guitars": items}
+
+    def delete_guitar(self, gid):
+        items = [g for g in self.guitars() if g["id"] != gid]
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(items, open(GUITARS, "w"), indent=1)
+        return {"ok": True, "guitars": items}

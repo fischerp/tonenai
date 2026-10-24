@@ -41,6 +41,12 @@ One-time sign-in for that feature (the app uses the Claude Agent SDK bundled in 
 ```
 .venv/lib/python3.14/site-packages/claude_agent_sdk/_bundled/claude /login
 ```
+**My guitars:** register the guitars you own (stored locally in `data/`, not in git). Each song lists the original
+guitars and pickups used on the record (researched by Claude, with a confidence level) and ranks your guitars for it,
+with the pickup position to use.
+
+**Also per song:** Trio+ band setup (genre, BPM, click track, steps) and Whammy DT setup (tuning, when to use it).
+
 UI dev without the amp: `python3 -m http.server 8765` then open `http://localhost:8765/app/preview.html` (mock amp).
 
 ## CLI

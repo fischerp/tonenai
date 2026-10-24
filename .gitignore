@@ -3,3 +3,4 @@ __pycache__/
 tools/catalog.json
 backups/
 songs/covers/
+data/

@@ -1,6 +1,11 @@
 [
  {
   "name": "Carry On Rhy",
+  "guitar": {"originals": [{"guitar": "Unconfirmed (Kiko Loureiro is associated with Ibanez superstrats; model on the 1993 recording not found)", "player": "Kiko Loureiro", "pickups": "humbucker"},
+                           {"guitar": "Unconfirmed", "player": "Rafael Bittencourt", "pickups": "humbucker"}],
+             "pickups_needed": "humbucker", "position": "bridge pickup for rhythm, tone knob around 8-10; neck pickup with tone rolled slightly back for the lead",
+             "tone_notes": "Could not confirm the guitars from sources; the pickup type is an assumption from the high-gain power-metal sound. A single-coil guitar will sound thinner: add a little gain and roll back treble.",
+             "confidence": "unknown"},
   "band": {"genre": "Metal", "style_feel": "fast driving double-time metal, straight eighths, snare on 2 and 4 (or half-time feel at 80)", "bpm": 160, "time_signature": "4/4",
            "key": "C# minor", "parts": ["Part A: intro riff - two-guitar riff, drums tight", "Part B: verse - sparser, minor progression", "Part C: pre-chorus - building", "Part D: chorus - full band, open and big", "Part E: solo - same drive as the verse"],
            "tips": "Tempo and key are Spotify-derived estimates (songbpm.com) and the song is recorded half a step down, so check against the record. Play the intro riff cleanly for 2 bars before the Trio+ starts learning; keep palm-muted 8ths steady."},

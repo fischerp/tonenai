@@ -90,6 +90,13 @@
   .stylerow { display: flex; gap: 4px; margin-top: 6px; } .sty { width: 26px; height: 26px; border-radius: 6px; background: #2a2a37; color: #9a9aa8; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   .sty.ok { background: #1f4d36; color: #7dffb0; } .sty.three { border: 1px dashed #6d6d80; }
   .steps { margin: 10px 0 8px; padding-left: 20px; } .steps li { margin: 6px 0; } .steps b { color: #fff; }
+  .gtr { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px; background: #14141b; margin-bottom: 6px; }
+  .gtr.best { outline: 2px solid #3ddc84; } .gtr .m { flex: 1; min-width: 0; } .gtr .n { font-weight: 700; } .gtr .d { color: var(--muted); font-size: 13px; }
+  .stars { color: #ffd75e; letter-spacing: 2px; white-space: nowrap; } .stars i { color: #444455; font-style: normal; }
+  .best-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #0b0b0f; background: #3ddc84; padding: 2px 7px; border-radius: 4px; margin-left: 8px; }
+  .gform { display: grid; gap: 10px; padding: 0 30px 26px; } .gform label { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .5px; }
+  .gform input, .gform select { width: 100%; margin-top: 4px; padding: 9px 12px; border-radius: 8px; border: 1px solid #2c2c38; background: #14141b; color: var(--text); font-size: 14px; }
+  .glist { padding: 6px 30px 14px; } .gempty { color: var(--muted); padding: 6px 0 12px; } .xbtn { background: none; border: 0; color: #ff8a85; cursor: pointer; font-size: 13px; }
   .badge2 { font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 3px 9px; border-radius: 5px; margin-left: 8px; vertical-align: 1px; }
   .badge2.yes { background: #1f4d36; color: #7dffb0; } .badge2.optional { background: #5a4a1a; color: #ffd75e; } .badge2.no { background: #2a2a37; color: #9a9aa8; }
   .wh { display: flex; gap: 22px; flex-wrap: wrap; margin: 6px 0 12px; } .wh .col { min-width: 120px; }
@@ -112,17 +119,19 @@
 <header>
   <div class="logo">TONAI</div>
   <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
+  <button class="p" id="gbtn" title="Register the guitars you own">🎸 My guitars</button>
   <button class="p" id="imp" title="Load a Tone Studio .tsl file">＋ Import .tsl</button>
   <div class="status"><span class="dot" id="dot"></span><span id="stxt">connecting…</span></div>
 </header>
 <div id="hero"></div>
 <main id="rows"></main>
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="modal" id="gmodal"><div class="sheet" id="gsheet"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
-let q = "", JOB = null, RES = null, SHEET = null;   // RES = search results view (set when the user presses Enter)
+let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [];   // RES = search results view (set when the user presses Enter)
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const api = () => window.pywebview && window.pywebview.api;
@@ -241,6 +250,61 @@ function bandCard(s) {
     ${b.tips ? `<div class="tip">${esc(b.tips)}</div>` : ""}</div>`;
 }
 
+const KINDS = [["Stratocaster", "single-coil"], ["Telecaster", "single-coil"], ["Les Paul", "humbucker"], ["SG", "humbucker"], ["ES-335 / semi-hollow", "humbucker"],
+  ["Jazzmaster / Jaguar", "single-coil"], ["Explorer / Flying V", "humbucker"], ["PRS / Superstrat", "hsh"], ["P-90 guitar (Junior, Special…)", "p90"], ["Acoustic", "acoustic"], ["Other", "humbucker"]];
+const PK = { "single-coil": "Single-coil", humbucker: "Humbucker", p90: "P-90", hss: "HSS (humbucker + 2 single-coils)", hsh: "HSH (2 humbuckers + single)", acoustic: "Acoustic" };
+const MODELS = ["les paul", "stratocaster", "strat", "telecaster", "tele", "sg", "es-335", "335", "explorer", "flying v", "jazzmaster", "jaguar", "prs", "firebird", "rd", "v"];
+
+function modelMatch(g, originals) {
+  const mine = (g.kind + " " + g.name).toLowerCase();
+  return (originals || []).some(o => { const t = (o.guitar || "").toLowerCase();
+    return MODELS.some(m => (m.length > 3 ? mine.includes(m) && t.includes(m) : new RegExp("\\b" + m + "\\b").test(mine) && new RegExp("\\b" + m + "\\b").test(t))); });
+}
+function rate(g, gi) {   // -> {stars 0-3, why}
+  const need = gi.pickups_needed || "any", pk = g.pickups;
+  if (pk === "acoustic") return { stars: 0, why: "Acoustic: it won't suit this electric patch." };
+  if (modelMatch(g, gi.originals)) return { stars: 3, why: "Same kind of guitar as the record." };
+  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, why: "Pickup type isn't critical for this song." };
+  if (pk === need) return { stars: 3, why: `${PK[pk]} pickups, like the original.` };
+  if (pk === "hss" || pk === "hsh") return { stars: 3, why: need === "humbucker" ? "Use a humbucker position (bridge)." : "Use the single-coil positions (middle/neck)." };
+  if (pk === "p90" || need === "p90") return { stars: 2, why: "P-90s sit between single-coil and humbucker; a close match." };
+  return need === "humbucker"
+    ? { stars: 1, why: "Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble." }
+    : { stars: 1, why: "Hotter and thicker than the record: use the neck pickup, roll volume to ~7, split the coils if you can." };
+}
+function guitarCard(s) {
+  const gi = s.guitar;
+  if (!gi) return `<div class="band"><h4>Guitar</h4><p class="tip" style="margin:0 0 10px">No guitar info yet. Claude can find which guitars were used on the recording.</p>
+    <button class="p" data-genguitar="${esc(s.id)}">✦ Find the original guitars</button></div>`;
+  const chips = (gi.originals || []).map(o => `<span class="chip"><b>${esc(o.player || "Played on")}</b>${esc(o.guitar)}</span>`).join("");
+  let rec;
+  if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">Add the guitars you own and I'll tell you which one to play.</p><button class="p" data-guitars="1">🎸 Add my guitars</button>`;
+  else {
+    const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
+    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
+      <div class="d">${esc(r.why)}</div></div><div class="stars">${"★".repeat(r.stars)}<i>${"★".repeat(3 - r.stars)}</i></div></div>`).join("");
+  }
+  return `<div class="band"><h4>Guitar${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(gi.confidence.toUpperCase())}</span>` : ""}</h4>
+    <div class="chips">${chips}${gi.pickups_needed && gi.pickups_needed !== "any" ? `<span class="chip"><b>Pickups</b>${esc(gi.pickups_needed)}</span>` : ""}</div>
+    ${gi.position ? `<p style="margin:0 0 10px">Set up: <b>${esc(gi.position)}</b></p>` : ""}${rec}
+    ${gi.tone_notes ? `<div class="tip" style="margin-top:8px">${esc(gi.tone_notes)}</div>` : ""}</div>`;
+}
+
+function openGuitars() {
+  const rows = GUITARS.map(g => `<div class="gtr"><div class="m"><div class="n">${esc(g.name)}</div><div class="d">${esc(g.kind)} · ${esc(PK[g.pickups] || g.pickups)}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
+    <button class="xbtn" data-gdel="${esc(g.id)}">Remove</button></div>`).join("");
+  $("#gsheet").innerHTML = `<div class="top" style="background:linear-gradient(155deg,#6b2f1d,#1a0f0b)"><h3>My guitars</h3><div class="by">Tonai recommends the best one for each song</div></div>
+    <div class="glist">${rows || '<div class="gempty">No guitars yet. Add the ones you have available.</div>'}</div>
+    <div class="gform"><label>NAME<input id="g-name" placeholder="e.g. Gibson Les Paul Standard"></label>
+      <label>TYPE<select id="g-kind">${KINDS.map(k => `<option>${esc(k[0])}</option>`).join("")}</select></label>
+      <label>PICKUPS<select id="g-pk">${Object.keys(PK).map(k => `<option value="${k}">${esc(PK[k])}</option>`).join("")}</select></label>
+      <label>NOTES (optional)<input id="g-notes" placeholder="e.g. 57 Classic pickups, coil split on tone knob"></label>
+      <button class="p main" id="g-save">Add guitar</button></div>`;
+  $("#g-kind").addEventListener("change", e => { const k = KINDS.find(x => x[0] === e.target.value); if (k) $("#g-pk").value = k[1]; });
+  $("#g-pk").value = KINDS[0][1];
+  $("#gmodal").classList.add("open");
+}
+
 const WH_EFFECTS = ["2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN", "5TH DOWN", "OCT DOWN", "2 OCT DOWN", "DIVE BOMB"];
 function whammyCard(s) {
   const w = s.whammy;
@@ -268,7 +332,7 @@ function openSong(id) {
   $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
     <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
-    ${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
+    ${guitarCard(s)}${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
       <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
   $("#modal").classList.add("open");
 }
@@ -329,6 +393,12 @@ document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
   const ck = e.target.closest("[data-click]"); if (ck) return toggleClick(Number(ck.dataset.click));
   const bd = e.target.closest("[data-band]"); if (bd) return startExtra(bd.dataset.band, "band");
+  const gg = e.target.closest("[data-genguitar]"); if (gg) return startExtra(gg.dataset.genguitar, "guitar");
+  if (e.target.closest("[data-guitars]")) return openGuitars();
+  const gd = e.target.closest("[data-gdel]"); if (gd) { const r = await api().delete_guitar(gd.dataset.gdel); GUITARS = r.guitars; openGuitars(); return; }
+  if (e.target.id === "g-save") { const r = await api().save_guitar({ name: $("#g-name").value, kind: $("#g-kind").value, pickups: $("#g-pk").value, notes: $("#g-notes").value });
+    if (!r.ok) return toast(r.error, true); GUITARS = r.guitars; openGuitars(); toast("Guitar added"); if (SHEET && $("#modal").classList.contains("open")) openSong(SHEET); return; }
+  if (e.target.id === "gmodal") { $("#gmodal").classList.remove("open"); if (SHEET && $("#modal").classList.contains("open")) openSong(SHEET); return; }
   const wh = e.target.closest("[data-whammy]"); if (wh) return startExtra(wh.dataset.whammy, "whammy");
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
@@ -349,8 +419,10 @@ document.addEventListener("click", async e => {
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
+  else if ($("#gmodal").classList.contains("open")) $("#gmodal").classList.remove("open");
   else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
 });
+$("#gbtn").addEventListener("click", openGuitars);
 $("#imp").addEventListener("click", async () => {
   const a = api(); if (!a) return;
   const r = await a.import_tsl();
@@ -379,6 +451,7 @@ async function loadCovers() {   // fetch missing album art one by one, refreshin
 async function init() {
   const a = api();
   SONGS = a ? await a.songs() : [];
+  GUITARS = a ? await a.guitars() : [];
   render(); refreshStatus(); setInterval(refreshStatus, 5000);
   loadCovers();
 }

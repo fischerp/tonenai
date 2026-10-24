@@ -7,7 +7,7 @@ let cur="Jungle Rhythm";
 window.pywebview={api:{
   songs: async()=>{const out=[];for(const id of ${JSON.stringify(IDS)}){let s=await (await fetch("../songs/"+id+".json",{cache:"no-store"})).json();s=Array.isArray(s)?s:[s];
     const head=(s[0].memo||"").split(":")[0].split(" - ");
-    out.push({id,artist:head[0],title:head[1],band:s[0].band||null,whammy:s[0].whammy||null,cover:"../songs/covers/"+id+".jpg",patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
+    out.push({id,artist:head[0],title:head[1],band:s[0].band||null,whammy:s[0].whammy||null,guitar:s[0].guitar||null,cover:"../songs/covers/"+id+".jpg",patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
   import_tsl: async()=>({ok:false,cancelled:true}),
   cover: async(id)=>({cover:"../songs/covers/"+id+".jpg"}),
   search_songs: async(t)=>({ok:true,items:[
@@ -17,7 +17,10 @@ window.pywebview={api:{
     {inLibrary:false,artist:"AC/DC",title:"You Shook Me All Night Long",album:"Back in Black",art:""},
     {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
   delete_song: async()=>({ok:true}),
-  generate_band: async()=>({ok:true}),
+  generate_band: async()=>({ok:true}), generate_guitar: async()=>({ok:true}),
+  guitars: async()=>JSON.parse(localStorage.getItem("g")||"[]"),
+  save_guitar: async(g)=>{const l=JSON.parse(localStorage.getItem("g")||"[]");g.id=g.name.toLowerCase().replace(/[^a-z0-9]+/g,"-");l.push(g);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},
+  delete_guitar: async(id)=>{const l=JSON.parse(localStorage.getItem("g")||"[]").filter(x=>x.id!==id);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},
   generate_whammy: async()=>({ok:true}),
   reveal: async()=>({ok:true}),
   create_song: async(t)=>{window._j={state:"running",note:"Researching the tone…",t:Date.now()};return{ok:true};},

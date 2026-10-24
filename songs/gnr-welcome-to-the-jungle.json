@@ -29,6 +29,16 @@
    ],
    "tips": "Play the riffs as in standard tuning; the pedal sounds them a half step lower, matching the recording. No whammy, octave or harmony effect is documented on the recording, so none is set; the intro delay was studio reverb/delay. Alternatively just retune the guitar to Eb and leave the pedal off."
   },
+  "guitar": {
+   "originals": [
+    {"guitar": "Les Paul copy by Kris Derrig (Slash's Appetite-era recording guitar)", "player": "Slash", "pickups": "humbucker"},
+    {"guitar": "Gibson ES-175D (Appetite sessions)", "player": "Izzy Stradlin", "pickups": "humbucker"}
+   ],
+   "pickups_needed": "humbucker",
+   "position": "bridge pickup, volume full, tone knob around 8",
+   "tone_notes": "Thick, mid-focused humbucker tone (Slash's Alnico II style pickups). A single-coil guitar will sound thinner: add a little gain and roll back treble.",
+   "confidence": "likely"
+  },
   "amp": {
    "type": "BROWN",
    "gain": 70,
