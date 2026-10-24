@@ -62,12 +62,21 @@ UI dev without the amp: `python3 -m http.server 8765` then open `http://localhos
 - Temp patch lives at `60 00 00 00`; panel amp type N (Acoustic..Brown = 0..4) sets preamp type 28+N.
 - Parameter layout and option names are read from the installed Tone Studio bundle (`tools/params.py`).
 
+## Developer: regenerating the guitar outlines
+`tools/trace_guitars.py` re-creates `app/guitar-shapes.js` from reference photos (download them into `/tmp/mkprev/ref/` first;
+file names are listed in the credits above). Needs `pip install opencv-python-headless numpy`, then `EXPORT=1 python tools/trace_guitars.py`.
+
 ## Roadmap
 - Guitar/pickup profile so Claude tunes EQ per guitar; package as a double-click `.app`.
 - Optional: tag songs (played / learning), notes, export selection as one `.tsl` liveset.
 
 ## Credits and data sources
-- Guitar pictures in My guitars are original vector illustrations drawn for Tonai (no photos, nothing downloaded).
+- Guitar pictures in My guitars are original vector illustrations drawn for Tonai. The **body outlines** of seven models
+  (and a few pickguard shapes) were traced from silhouettes of photographs on Wikimedia Commons with `tools/trace_guitars.py`
+  (needs OpenCV; only vector paths in `app/guitar-shapes.js` ship, no photo pixels): Fender Stratocaster 004-2 (public domain),
+  Fender Telecaster American Vintage 1952 (CC BY-SA 3.0), Full front R9 Les Paul (CC BY-SA 4.0), Iommi SG (CC BY-SA 2.0),
+  1960 Gibson ES-335TD (CC BY-SA 4.0), Fender Jaguar 3 tone burst (CC BY-SA 4.0), PRS Custom (1988) Santana (CC BY-SA 4.0).
+  The Explorer, Flying V and acoustic outlines are hand-drawn. Credit and share-alike apply to `app/guitar-shapes.js`.
 - Album art and song search use Apple's public iTunes Search API; covers are downloaded to a local cache for your own
   use and are not part of this repo. Artwork belongs to its respective owners.
 - Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.
