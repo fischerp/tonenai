@@ -19,7 +19,7 @@ window.pywebview={api:{
   delete_song: async()=>({ok:true}),
   generate_band: async()=>({ok:true}), generate_guitar: async()=>({ok:true}),
   guitars: async()=>JSON.parse(localStorage.getItem("g")||"[]"),
-  save_guitar: async(g)=>{const l=JSON.parse(localStorage.getItem("g")||"[]");g.id=g.name.toLowerCase().replace(/[^a-z0-9]+/g,"-");l.push(g);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},
+  save_guitar: async(g)=>{const l=JSON.parse(localStorage.getItem("g")||"[]");g.id=g.id||g.name.toLowerCase().replace(/[^a-z0-9]+/g,"-");const i=l.findIndex(x=>x.id===g.id);if(i>=0)l[i]=g;else l.push(g);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},
   delete_guitar: async(id)=>{const l=JSON.parse(localStorage.getItem("g")||"[]").filter(x=>x.id!==id);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},
   generate_whammy: async()=>({ok:true}),
   reveal: async()=>({ok:true}),

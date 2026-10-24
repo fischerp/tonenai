@@ -367,7 +367,8 @@ class Service:
             return {"ok": False, "error": "Unknown pickup type"}
         items = self.guitars()
         gid = guitar.get("id") or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "guitar"
-        entry = {"id": gid, "name": name[:60], "kind": (guitar.get("kind") or "")[:40], "pickups": pickups,
+        entry = {"id": gid, "name": name[:60], "brand": (guitar.get("brand") or "").strip()[:40],
+                 "kind": (guitar.get("kind") or "")[:40], "pickups": pickups,
                  "notes": (guitar.get("notes") or "")[:200]}
         items = [g for g in items if g["id"] != gid] + [entry]
         os.makedirs(DATA, exist_ok=True)
