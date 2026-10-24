@@ -42,7 +42,7 @@
       pups: [["hum", 100, 246, "cream"], ["hum", 100, 295, "cream"]], bridge: ["tom", 314, 334], knobs: [[155, 326, "gold"], [133, 339, "gold"], [154, 354, "gold"], [133, 368, "gold"]], sw: [64, 226] },
     SG: { shape: "sg", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots",
       pups: [["hum", 100, 213, "chrome"], ["hum", 100, 249, "chrome"]], bridge: ["tom", 264, 281], knobs: [[56, 286, "black"], [52, 302, "black"], [70, 310, "black"], [86, 314, "black"]], sw: [62, 222] },
-    "ES-335 / semi-hollow": { shape: "es335", fin: "cherryburst", hs: "gibson", fb: "rosewood", bind: "#f3e8c4", inlay: "blocks",
+    "ES-335 / semi-hollow": { shape: "es335", neckTo: 246, fin: "cherryburst", hs: "gibson", fb: "rosewood", bind: "#f3e8c4", inlay: "blocks",
       pups: [["hum", 100, 254, "chrome"], ["hum", 100, 302, "chrome"]], bridge: ["tom", 324, 342], knobs: [[160, 366, "gold"], [136, 380, "gold"], [166, 394, "gold"], [142, 404, "gold"]], sw: [128, 349],
       fholes: [[41, 300, 33, 340], [159, 300, 167, 340]] },
     "Jazzmaster / Jaguar": { shape: "jazz", fin: "sunburst", hs: "fender", fb: "rosewood", inlay: "dots",
@@ -154,8 +154,9 @@
     }).join("");
     const frets = Array.from({ length: 12 }, (_, i) => { const y = fretY(i + 1), h = half(y) - 1.4; return `<line x1="${f(100 - h)}" x2="${f(100 + h)}" y1="${f(y)}" y2="${f(y)}" stroke="#d9dbe0" stroke-width=".9"/>`; }).join("");
     const fbCol = g.fb === "maple" ? "#e9c98b" : "#3a2013";
-    const neckPoly = `M91,${NECK_TOP} L109,${NECK_TOP} L${100 + 12.6},${NECK_END + 8} L${100 - 12.6},${NECK_END + 8} Z`;
-    const fbPoly = `M${100 - 7.6},${NECK_TOP + 2} L${100 + 7.6},${NECK_TOP + 2} L${100 + 11},${NECK_END + 8} L${100 - 11},${NECK_END + 8} Z`;
+    const nEnd = g.neckTo || NECK_END + 8, nh = 9 + (nEnd - NECK_TOP) * 0.0286, fh2 = 7.6 + (nEnd - NECK_TOP - 2) * 0.0266;   // the neck continues under the body to the pocket
+    const neckPoly = `M91,${NECK_TOP} L109,${NECK_TOP} L${f(100 + nh)},${nEnd} L${f(100 - nh)},${nEnd} Z`;
+    const fbPoly = `M${100 - 7.6},${NECK_TOP + 2} L${100 + 7.6},${NECK_TOP + 2} L${f(100 + fh2)},${nEnd} L${f(100 - fh2)},${nEnd} Z`;
     const pgPath = g.pgc && shp && shp.pg ? `<g clip-path="url(#${id}c)"><path d="${shp.pg}" fill="${g.pgc}"/><path d="${shp.pg}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><path d="${shp.pg}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.6" transform="translate(-.5,-.5)" clip-path="url(#${id}c)"/></g>` : "";
     const plate = g.plate ? (g.ctrl
       ? (([x, y, w, h]) => `<g transform="rotate(-9 ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2.6}" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5"/>
