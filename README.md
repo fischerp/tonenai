@@ -67,9 +67,7 @@ UI dev without the amp: `python3 -m http.server 8765` then open `http://localhos
 - Optional: tag songs (played / learning), notes, export selection as one `.tsl` liveset.
 
 ## Credits and data sources
-- Guitar photos in My guitars come from Wikimedia Commons (CC BY-SA 2.0/3.0/4.0 or public domain; one per guitar type).
-  They are downloaded on first use into `data/guitars/` (git-ignored) with a `credits.json` linking each file's author page.
-  If you redistribute a build that bundles them, keep the attribution and share-alike terms.
+- Guitar pictures in My guitars are original vector illustrations drawn for Tonai (no photos, nothing downloaded).
 - Album art and song search use Apple's public iTunes Search API; covers are downloaded to a local cache for your own
   use and are not part of this repo. Artwork belongs to its respective owners.
 - Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.

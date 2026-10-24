@@ -1,0 +1,50 @@
+/* My guitars: list + add/edit form. Uses the app's design tokens (--panel, --muted, --accent, ...). */
+.gpic { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #e6e6ee, #cfcfda); border-radius: 10px; overflow: hidden; }
+.gpic svg { height: 100%; width: auto; padding: 4px; display: block; }
+.gthumb { flex: none; width: 40px; display: flex; justify-content: center; } .gthumb .gpic { height: 62px; width: 40px; }
+
+.gm { display: flex; flex-direction: column; max-height: 88vh; }
+.gm-head { position: relative; padding: 26px 30px 18px; background: linear-gradient(155deg, #5a2a1b, #1a0f0b 70%); }
+.gm-head h3 { margin: 0; font-size: 26px; } .gm-head .sub { color: #ffffffb8; margin-top: 2px; font-size: 14px; }
+.gm-x { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #ffffff1f; color: #fff; font-size: 18px; cursor: pointer; line-height: 1; }
+.gm-x:hover { background: #ffffff38; }
+.gm-body { overflow: auto; padding: 20px 30px 8px; flex: 1; }
+.gm-foot { display: flex; gap: 10px; justify-content: flex-end; align-items: center; padding: 14px 30px 20px; border-top: 1px solid #ffffff12; background: var(--panel); }
+.gm-foot .grow { flex: 1; color: var(--muted); font-size: 13px; }
+
+/* list */
+.gm-list { display: grid; gap: 8px; }
+.gm-row { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 10px; background: #1b1b25; }
+.gm-row:hover { background: #222230; } .gm-row .m { flex: 1; min-width: 0; } .gm-row .n { font-weight: 700; } .gm-row .d { color: var(--muted); font-size: 13px; }
+.gm-row .act { display: flex; gap: 4px; } .gm-link { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.gm-link:hover { background: #ffffff14; color: var(--text); } .gm-link.danger:hover { color: #ff8a85; }
+.gm-empty { text-align: center; padding: 14px 0 6px; color: var(--muted); }
+
+/* form */
+.gm-form { display: grid; grid-template-columns: 1fr 210px; gap: 8px 28px; align-items: start; }
+@media (max-width: 640px) { .gm-form { grid-template-columns: 1fr; } .gm-prev { display: none; } }
+.fld { margin-bottom: 18px; } .fld > .lbl { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
+.fld > .lbl .opt { color: var(--muted); font-weight: 500; font-size: 12px; }
+.hint { color: var(--muted); font-size: 12.5px; margin-top: 6px; } .hint b { color: #cfcfda; font-weight: 600; }
+.err { color: #ff8a85; font-size: 12.5px; margin-top: 6px; display: none; } .fld.bad .err { display: block; } .fld.bad input { border-color: #e5534b; }
+.in { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #34344a; background: #12121a; color: var(--text); font-size: 14.5px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.in:focus { border-color: #7a7af0; box-shadow: 0 0 0 3px #7a7af033; } textarea.in { resize: vertical; min-height: 58px; font-family: inherit; }
+.chips2 { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; } .chips2 .tl { color: var(--muted); font-size: 12px; margin-right: 2px; }
+.pillbtn { border: 1px solid #34344a; background: #1b1b25; color: var(--text); border-radius: 16px; padding: 4px 11px; font-size: 12.5px; cursor: pointer; }
+.pillbtn:hover { border-color: #5a5a7a; } .pillbtn.on { border-color: #7a7af0; background: #26264a; }
+.linkbtn { background: none; border: 0; color: #9d9dff; font-size: 12.5px; cursor: pointer; padding: 0; text-decoration: underline; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } @media (max-width: 520px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+.tile { border: 1.5px solid #2a2a3a; background: #14141c; border-radius: 10px; padding: 6px 4px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 11.5px; font-weight: 600; transition: border-color .12s, transform .12s; }
+.tile .gpic { height: 74px; width: 46px; background: transparent; } .tile:hover { border-color: #55556f; transform: translateY(-1px); }
+.tile[aria-checked="true"] { border-color: #7a7af0; background: #1d1d34; color: #fff; box-shadow: 0 0 0 3px #7a7af022; }
+
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; } .seg button { border: 1.5px solid #34344a; background: #14141c; color: var(--text); padding: 8px 13px; border-radius: 9px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.seg button[aria-checked="true"] { border-color: #7a7af0; background: #26264a; } .seg button:hover { border-color: #5a5a7a; }
+.swatches { display: flex; flex-wrap: wrap; gap: 9px; } .sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #0008; cursor: pointer; box-shadow: inset 0 0 0 1px #ffffff30; position: relative; }
+.sw[aria-checked="true"] { outline: 2px solid #7a7af0; outline-offset: 2px; } .sw:hover { transform: scale(1.08); }
+
+.gm-prev { position: sticky; top: 0; align-self: start; text-align: center; background: #14141c; border: 1px solid #2a2a3a; border-radius: 14px; padding: 14px 12px 16px; }
+.gm-prev .gpic { height: 330px; width: 100%; max-width: 170px; } .gm-prev .pn { font-weight: 800; margin-top: 10px; font-size: 16px; min-height: 22px; overflow-wrap: anywhere; }
+.gm-prev .pm { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+.toast button { margin-left: 12px; background: none; border: 0; color: #9d9dff; font-weight: 700; cursor: pointer; font-size: 14px; }

@@ -2,4 +2,3 @@ mido
 python-rtmidi
 pywebview
 claude-agent-sdk
-pillow

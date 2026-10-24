@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tonai</title>
+<link rel="stylesheet" href="guitar-manager.css">
 <style>
   :root {
     --bg: #0b0b0f; --panel: #16161d; --text: #f4f4f6; --muted: #9a9aa8; --accent: #e50914;
@@ -94,15 +95,6 @@
   .gtr.best { outline: 2px solid #3ddc84; } .gtr .m { flex: 1; min-width: 0; } .gtr .n { font-weight: 700; } .gtr .d { color: var(--muted); font-size: 13px; }
   .stars { color: #ffd75e; letter-spacing: 2px; white-space: nowrap; } .stars i { color: #444455; font-style: normal; }
   .best-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #0b0b0f; background: #3ddc84; padding: 2px 7px; border-radius: 4px; margin-left: 8px; }
-  .gform { display: grid; grid-template-columns: 1fr 150px; gap: 10px 22px; padding: 0 30px 26px; align-items: start; }
-  .gform .gfields { display: grid; gap: 10px; } .gform .gshape { position: sticky; top: 8px; text-align: center; } .gform .gshape svg { width: 140px; height: auto; }
-  .gform .gsave { grid-column: 1 / -1; } .gform .gshape .cap { color: var(--muted); font-size: 12px; margin-top: 4px; }
-  @media (max-width: 560px) { .gform { grid-template-columns: 1fr; } }
-  .gthumb { flex: none; width: 34px; display: flex; justify-content: center; } .gthumb .gpic { height: 56px; }
-  .gpic { display: inline-flex; align-items: center; justify-content: center; background: #dcdce4; border-radius: 8px; overflow: hidden; }
-  .gpic img { height: 100%; width: auto; max-width: 100%; object-fit: contain; mix-blend-mode: multiply; display: block; }
-  .gpic svg { height: 100%; width: auto; padding: 3px; } .gform .gshape .gpic { height: 270px; width: 140px; } .gform .gshape svg { width: auto; } .gform label { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .5px; }
-  .gform input, .gform select { width: 100%; margin-top: 4px; padding: 9px 12px; border-radius: 8px; border: 1px solid #2c2c38; background: #14141b; color: var(--text); font-size: 14px; }
   .glist { padding: 6px 30px 14px; } .gempty { color: var(--muted); padding: 6px 0 12px; } .xbtn { background: none; border: 0; color: #ff8a85; cursor: pointer; font-size: 13px; }
   .badge2 { font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 3px 9px; border-radius: 5px; margin-left: 8px; vertical-align: 1px; }
   .badge2.yes { background: #1f4d36; color: #7dffb0; } .badge2.optional { background: #5a4a1a; color: #ffd75e; } .badge2.no { background: #2a2a37; color: #9a9aa8; }
@@ -136,6 +128,8 @@
 <div class="modal" id="gmodal"><div class="sheet" id="gsheet"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="guitars.js"></script>
+<script src="guitar-manager.js"></script>
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
 let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [];   // RES = search results view (set when the user presses Enter)
@@ -258,61 +252,6 @@ function bandCard(s) {
 }
 
 
-const GUITAR_SHAPES = {   // simplified silhouettes, viewBox 0 0 100 270 (headstock top, body bottom)
-  "Stratocaster": { c: ["#e8b33c", "#8e2a0e"], hs: "fender", pg: "M34,150 C37,160 30,176 30,198 C30,216 44,228 58,224 C70,220 72,202 68,186 C66,172 70,158 66,148 C58,152 42,152 34,150 Z", pgc: "#f4f1e8", body: "M38,130 C30,112 20,114 22,132 C24,148 30,152 26,166 C18,184 12,204 18,226 C26,252 44,262 58,262 C78,262 90,246 88,224 C86,204 76,188 70,170 C68,156 76,146 74,132 C72,116 64,114 60,130 Z",
-    d: '<rect x="38" y="164" width="24" height="5" rx="2"/><rect x="38" y="178" width="24" height="5" rx="2"/><rect x="38" y="192" width="24" height="5" rx="2"/><rect x="36" y="224" width="28" height="3" rx="1.5"/><circle cx="64" cy="238" r="3"/><circle cx="72" cy="230" r="3"/><circle cx="56" cy="244" r="3"/>' },
-  "Telecaster": { c: ["#e6c36a", "#b88b32"], hs: "fender", pg: "M36,146 C34,164 36,184 34,206 C34,226 52,232 62,226 C72,218 70,196 68,176 C66,160 70,150 66,142 Z", pgc: "#1d1d22", body: "M36,134 C30,134 26,142 28,152 C20,164 14,184 16,210 C18,242 36,262 54,262 C76,262 88,244 88,214 C88,192 80,176 76,158 C74,146 76,134 72,124 C70,118 64,118 62,128 L60,134 Z",
-    d: '<rect x="38" y="156" width="24" height="6" rx="2"/><rect x="34" y="208" width="30" height="16" rx="3"/><rect x="38" y="230" width="22" height="3" rx="1.5"/><circle cx="68" cy="240" r="3"/><circle cx="58" cy="248" r="3"/>' },
-  "Les Paul": { c: ["#e08a2e", "#6a1706"], hs: "gibson", st: "#f3e7c0", body: "M36,134 C30,132 24,134 22,146 C14,156 10,176 14,200 C16,236 34,262 54,262 C80,262 92,240 90,208 C88,184 82,168 80,152 C78,140 70,126 62,124 L60,134 Z",
-    d: '<rect x="38" y="168" width="24" height="9" rx="2"/><rect x="38" y="200" width="24" height="9" rx="2"/><rect x="36" y="224" width="28" height="3" rx="1.5"/><circle cx="72" cy="226" r="3"/><circle cx="78" cy="214" r="3"/><circle cx="70" cy="240" r="3"/><circle cx="62" cy="248" r="3"/>' },
-  "SG": { c: ["#b02222", "#4a0707"], hs: "gibson", pg: "M38,150 C34,170 34,196 40,214 C50,226 64,214 66,196 C68,178 66,160 62,148 Z", pgc: "#1d1d22", body: "M36,134 C30,126 26,100 22,98 C20,112 22,140 26,152 C22,176 24,214 36,238 C44,254 58,262 66,248 C70,240 64,226 70,210 C78,190 78,170 76,154 C80,140 80,116 78,100 C74,104 70,124 62,134 Z",
-    d: '<rect x="38" y="164" width="24" height="9" rx="2"/><rect x="38" y="196" width="24" height="9" rx="2"/><rect x="36" y="220" width="28" height="3" rx="1.5"/><circle cx="62" cy="232" r="3"/><circle cx="54" cy="240" r="3"/>' },
-  "ES-335 / semi-hollow": { c: ["#d98a3a", "#5c1405"], hs: "gibson", st: "#f3e7c0", body: "M34,134 C26,130 18,134 16,146 C10,158 8,180 14,202 C10,224 16,250 36,258 C56,266 82,262 88,242 C92,224 88,206 90,194 C92,172 88,152 80,146 C76,132 66,126 60,134 Z",
-    d: '<rect x="38" y="164" width="24" height="9" rx="2"/><rect x="38" y="198" width="24" height="9" rx="2"/><path d="M24,180 q-4,16 2,30 M76,180 q4,16 -2,30" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><rect x="36" y="228" width="28" height="3" rx="1.5"/><circle cx="72" cy="236" r="3"/><circle cx="64" cy="244" r="3"/>' },
-  "Jazzmaster / Jaguar": { c: ["#7ec8c0", "#2a6f78"], hs: "fender", body: "M38,130 C30,124 24,126 24,138 C24,152 18,160 14,176 C10,194 18,206 24,214 C20,232 26,250 42,258 C62,266 84,258 88,236 C90,214 80,198 82,180 C84,164 78,152 72,142 C72,128 66,124 60,130 Z",
-    d: '<rect x="36" y="160" width="26" height="9" rx="2"/><rect x="38" y="190" width="24" height="9" rx="2"/><rect x="32" y="222" width="34" height="4" rx="2"/><circle cx="26" cy="196" r="3"/><circle cx="30" cy="204" r="3"/>' },
-  "Explorer / Flying V": { c: ["#d8c7a0", "#6b5a3a"], hs: "gibson", body: "M42,134 L26,120 L16,152 L36,176 L12,262 L30,262 L50,214 L70,262 L88,262 L64,176 L84,152 L74,120 L58,134 Z",
-    d: '<rect x="40" y="152" width="20" height="8" rx="2"/><rect x="40" y="170" width="20" height="8" rx="2"/><circle cx="62" cy="196" r="3"/><circle cx="38" cy="196" r="3"/>' },
-  "PRS / Superstrat": { c: ["#2f8f6a", "#0c3b2a"], hs: "prs", st: "#ffffff66", body: "M38,130 C32,112 22,106 20,126 C20,144 30,150 24,164 C14,182 14,214 22,234 C30,254 44,262 54,262 C72,262 84,250 86,226 C88,204 82,182 74,166 C70,152 80,144 80,126 C80,108 68,112 62,130 Z",
-    d: '<rect x="38" y="164" width="24" height="9" rx="2"/><rect x="38" y="178" width="24" height="5" rx="2"/><rect x="38" y="194" width="24" height="9" rx="2"/><rect x="36" y="224" width="28" height="3" rx="1.5"/><circle cx="66" cy="238" r="3"/><circle cx="56" cy="246" r="3"/>' },
-  "P-90 guitar (Junior, Special…)": { c: ["#e9d9a8", "#a98a3c"], hs: "gibson", body: "M38,132 C30,128 24,130 24,142 C24,156 18,166 16,184 C14,214 20,240 36,254 C50,264 70,264 82,250 C92,236 92,206 88,184 C84,168 78,158 78,142 C78,130 70,128 62,132 Z",
-    d: '<rect x="37" y="168" width="26" height="9" rx="3"/><rect x="37" y="200" width="26" height="9" rx="3"/><rect x="36" y="228" width="28" height="3" rx="1.5"/><circle cx="68" cy="238" r="3"/><circle cx="60" cy="246" r="3"/>' },
-  "Acoustic": { c: ["#d9a15a", "#7a4a1c"], hs: "gibson", body: "M40,120 C30,118 24,126 24,140 C24,156 34,160 34,168 C34,176 18,184 16,214 C14,246 36,262 56,262 C76,262 92,246 90,216 C88,188 70,178 70,168 C70,160 80,154 80,140 C80,126 70,118 60,120 Z",
-    d: '<circle cx="52" cy="146" r="11" fill="#1a1a1a"/><rect x="38" y="228" width="28" height="5" rx="2"/>' },
-  "Other": { c: ["#8c8c9c", "#3c3c48"], hs: "fender", body: "M38,132 C30,128 24,130 24,142 C24,156 18,166 16,184 C14,214 20,240 36,254 C50,264 70,264 82,250 C92,236 92,206 88,184 C84,168 78,158 78,142 C78,130 70,128 62,132 Z",
-    d: '<rect x="38" y="170" width="24" height="8" rx="2"/><rect x="38" y="204" width="24" height="8" rx="2"/><rect x="36" y="230" width="28" height="3" rx="1.5"/>' },
-};
-const FLYING_V = { c: ["#d8c7a0", "#6b5a3a"], hs: "gibson", body: "M40,134 L12,236 L26,256 L50,176 L74,256 L88,236 L60,134 Z", d: '<rect x="44" y="150" width="12" height="8" rx="2"/><circle cx="50" cy="196" r="3"/>' };
-function guitarSVG(kind, name) {
-  let g = GUITAR_SHAPES[kind] || GUITAR_SHAPES.Other;
-  if (kind === "Explorer / Flying V" && /flying|\bv\b/i.test(name || "")) g = FLYING_V;
-  const id = "gg" + Math.abs([...(kind + name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7));
-  const head = { fender: "M45,2 C41,6 41,14 45,22 L55,22 C59,14 59,6 55,2 Z", gibson: "M41,4 L59,4 L57,24 L43,24 Z", prs: "M43,2 C41,8 42,16 44,24 L56,24 C58,16 59,8 57,2 Z" }[g.hs];
-  const frets = [40, 52, 63, 73, 82, 90, 98, 105, 111, 117, 122, 127].map(y => `<line x1="46" x2="54" y1="${y}" y2="${y}" stroke="#d8d8d8" stroke-width=".6"/>`).join("");
-  const pg = g.pg ? `<path d="${g.pg}" fill="${g.pgc}" fill-opacity=".92"/>` : "";
-  return `<svg viewBox="0 0 100 238" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g.c[0]}"/><stop offset="1" stop-color="${g.c[1]}"/></linearGradient></defs>
-    <path d="${head}" fill="#3a2a1e"/><rect x="46" y="22" width="8" height="90" fill="#6b4529"/>${frets.replace(/y1="(\d+)" y2="\d+"/g, (m, y) => (+y > 108 ? 'y1="0" y2="0" display="none"' : m))}
-    <g transform="translate(0,-26)"><path d="${g.body}" fill="url(#${id})" stroke="${g.st || "#0008"}" stroke-width="${g.st ? 2 : 1.5}" stroke-linejoin="round"/>${pg}
-    <g fill="#14141b" fill-opacity=".72">${g.d}</g></g></svg>`;
-}
-
-const GIMG = {}, GLOAD = {};   // kind -> data URL of a real photo (downloaded once, cached on disk by the backend)
-function guitarPic(kind, name) {
-  const key = kind === "Explorer / Flying V" && /flying|\bv\b/i.test(name || "") ? "Flying V" : kind;
-  return `<span class="gpic" data-gk="${esc(key)}">${GIMG[key] ? `<img src="${GIMG[key]}" alt="${esc(kind)}">` : guitarSVG(kind, name)}</span>`;
-}
-async function hydratePics(root) {
-  const a = api(); if (!a) return;
-  for (const el of (root || document).querySelectorAll(".gpic[data-gk]")) {
-    const k = el.dataset.gk; if (GIMG[k] === "") continue;
-    if (!GIMG[k]) { GLOAD[k] = GLOAD[k] || a.guitar_image(k).then(r => { GIMG[k] = r.image || ""; }); await GLOAD[k]; }
-    if (GIMG[k] && el.isConnected && !el.querySelector("img")) el.innerHTML = `<img src="${GIMG[k]}" alt="">`;
-  }
-}
-
-const KINDS = [["Stratocaster", "single-coil"], ["Telecaster", "single-coil"], ["Les Paul", "humbucker"], ["SG", "humbucker"], ["ES-335 / semi-hollow", "humbucker"],
-  ["Jazzmaster / Jaguar", "single-coil"], ["Explorer / Flying V", "humbucker"], ["PRS / Superstrat", "hsh"], ["P-90 guitar (Junior, Special…)", "p90"], ["Acoustic", "acoustic"], ["Other", "humbucker"]];
-const PK = { "single-coil": "Single-coil", humbucker: "Humbucker", p90: "P-90", hss: "HSS (humbucker + 2 single-coils)", hsh: "HSH (2 humbuckers + single)", acoustic: "Acoustic" };
 const MODELS = ["les paul", "stratocaster", "strat", "telecaster", "tele", "sg", "es-335", "335", "explorer", "flying v", "jazzmaster", "jaguar", "prs", "firebird", "rd", "v"];
 
 function modelMatch(g, originals) {
@@ -341,45 +280,13 @@ function guitarCard(s) {
   if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">Add the guitars you own and I'll tell you which one to play.</p><button class="p" data-guitars="1">🎸 Add my guitars</button>`;
   else {
     const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
-    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
+    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name, r.g.finish)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
       <div class="d">${esc(r.why)}</div></div><div class="stars">${"★".repeat(r.stars)}<i>${"★".repeat(3 - r.stars)}</i></div></div>`).join("");
   }
   return `<div class="band"><h4>Guitar${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(gi.confidence.toUpperCase())}</span>` : ""}</h4>
     <div class="chips">${chips}${gi.pickups_needed && gi.pickups_needed !== "any" ? `<span class="chip"><b>Pickups</b>${esc(gi.pickups_needed)}</span>` : ""}</div>
     ${gi.position ? `<p style="margin:0 0 10px">Set up: <b>${esc(gi.position)}</b></p>` : ""}${rec}
     ${gi.tone_notes ? `<div class="tip" style="margin-top:8px">${esc(gi.tone_notes)}</div>` : ""}</div>`;
-}
-
-const BRANDS = ["Fender", "Gibson", "Epiphone", "PRS", "Ibanez", "ESP", "Jackson", "Squier", "Gretsch", "Schecter", "Yamaha", "Rickenbacker",
-  "Music Man", "G&L", "Charvel", "Danelectro", "Martin", "Taylor", "Takamine", "Cort", "LTD", "Hagstrom", "Reverend", "Godin", "Sterling"];
-function kindWord(k) { return k === "Other" ? "" : k.replace(/\(.*?\)/g, "").split("/")[0].trim(); }   // "ES-335 / semi-hollow" -> "ES-335"
-
-function openGuitars(editId) {
-  const ed = editId ? GUITARS.find(g => g.id === editId) : null;
-  const rows = GUITARS.map(g => `<div class="gtr"><div class="gthumb">${guitarPic(g.kind, g.name)}</div><div class="m"><div class="n">${esc(g.name)}</div><div class="d">${esc(g.brand || "")}${g.brand ? " · " : ""}${esc(g.kind)} · ${esc(PK[g.pickups] || g.pickups)}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
-    <button class="xbtn" style="color:#9a9aa8" data-gedit="${esc(g.id)}">Edit</button><button class="xbtn" data-gdel="${esc(g.id)}">Remove</button></div>`).join("");
-  $("#gsheet").innerHTML = `<div class="top" style="background:linear-gradient(155deg,#6b2f1d,#1a0f0b)"><h3>My guitars</h3><div class="by">Tonai recommends the best one for each song · Photos: Wikimedia Commons (CC BY-SA / public domain)</div></div>
-    <div class="glist">${rows || '<div class="gempty">No guitars yet. Add the ones you have available.</div>'}</div>
-    <div class="gform"><input type="hidden" id="g-id" value="${ed ? esc(ed.id) : ""}">
-      <div class="gfields">
-      <label>BRAND (pick one or type your own)<input id="g-brand" list="g-brands" placeholder="e.g. Gibson" autocomplete="off"></label>
-      <datalist id="g-brands">${BRANDS.map(x => `<option value="${esc(x)}">`).join("")}</datalist>
-      <label>TYPE<select id="g-kind">${KINDS.map(k => `<option>${esc(k[0])}</option>`).join("")}</select></label>
-      <label>NAME (suggested from brand + type; edit it if you like)<input id="g-name" placeholder="e.g. Gibson Les Paul"></label>
-      <label>PICKUPS<select id="g-pk">${Object.keys(PK).map(k => `<option value="${k}">${esc(PK[k])}</option>`).join("")}</select></label>
-      <label>NOTES (optional)<input id="g-notes" placeholder="e.g. 57 Classic pickups, coil split on tone knob"></label></div>
-      <div class="gshape"><div id="g-shape"></div><div class="cap" id="g-cap"></div></div>
-      <button class="p main gsave" id="g-save">${ed ? "Save changes" : "Add guitar"}</button></div>`;
-  let touched = !!ed;                                   // stop auto-suggesting once the user edits the name
-  const shape = () => { $("#g-shape").innerHTML = guitarPic($("#g-kind").value, $("#g-name").value); hydratePics($("#g-shape")); $("#g-cap").textContent = kindWord($("#g-kind").value); };
-  const suggest = () => { if (!touched) $("#g-name").value = [$("#g-brand").value.trim(), kindWord($("#g-kind").value)].filter(Boolean).join(" "); shape(); };
-  $("#g-name").addEventListener("input", () => { touched = $("#g-name").value !== ""; shape(); });
-  $("#g-brand").addEventListener("input", suggest);
-  $("#g-kind").addEventListener("change", e => { const k = KINDS.find(x => x[0] === e.target.value); if (k) $("#g-pk").value = k[1]; suggest(); });
-  if (ed) { $("#g-brand").value = ed.brand || ""; $("#g-kind").value = ed.kind; $("#g-pk").value = ed.pickups; $("#g-name").value = ed.name; $("#g-notes").value = ed.notes || ""; }
-  else { $("#g-pk").value = KINDS[0][1]; suggest(); }
-  shape();
-  $("#gmodal").classList.add("open"); hydratePics($("#gsheet"));
 }
 
 const WH_EFFECTS = ["2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN", "5TH DOWN", "OCT DOWN", "2 OCT DOWN", "DIVE BOMB"];
@@ -411,7 +318,7 @@ function openSong(id) {
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
     ${guitarCard(s)}${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
       <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
-  $("#modal").classList.add("open"); hydratePics($("#sheet"));
+  $("#modal").classList.add("open"); 
 }
 
 async function play(id, i) {
@@ -472,11 +379,7 @@ document.addEventListener("click", async e => {
   const bd = e.target.closest("[data-band]"); if (bd) return startExtra(bd.dataset.band, "band");
   const gg = e.target.closest("[data-genguitar]"); if (gg) return startExtra(gg.dataset.genguitar, "guitar");
   if (e.target.closest("[data-guitars]")) return openGuitars();
-  const ge = e.target.closest("[data-gedit]"); if (ge) return openGuitars(ge.dataset.gedit);
-  const gd = e.target.closest("[data-gdel]"); if (gd) { const r = await api().delete_guitar(gd.dataset.gdel); GUITARS = r.guitars; openGuitars(); return; }
-  if (e.target.id === "g-save") { const r = await api().save_guitar({ id: $("#g-id").value || undefined, brand: $("#g-brand").value, name: $("#g-name").value, kind: $("#g-kind").value, pickups: $("#g-pk").value, notes: $("#g-notes").value });
-    if (!r.ok) return toast(r.error, true); GUITARS = r.guitars; openGuitars(); toast("Guitar saved"); if (SHEET && $("#modal").classList.contains("open")) openSong(SHEET); return; }
-  if (e.target.id === "gmodal") { $("#gmodal").classList.remove("open"); if (SHEET && $("#modal").classList.contains("open")) openSong(SHEET); return; }
+  if (e.target.id === "gmodal") { gmClose(); return; }
   const wh = e.target.closest("[data-whammy]"); if (wh) return startExtra(wh.dataset.whammy, "whammy");
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
@@ -497,7 +400,7 @@ document.addEventListener("click", async e => {
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
-  else if ($("#gmodal").classList.contains("open")) $("#gmodal").classList.remove("open");
+  else if ($("#gmodal").classList.contains("open")) gmClose();
   else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
 });
 $("#gbtn").addEventListener("click", openGuitars);
