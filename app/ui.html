@@ -206,9 +206,9 @@ function render() {
   const liveSong = LIVE && SONGS.find(s => s.id === LIVE.id);
   const heroSong = liveSong || SONGS[0];
   $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${bg(heroSong)}">
-      <div class="eyebrow">${liveSong ? "Now playing on your Katana" : "Pick a song to start"}</div>
+      <div class="eyebrow">${liveSong ? "Now playing on your Katana" : "Latest added"}</div>
       <h1>${esc(heroSong.title)}</h1><div class="by">${esc(heroSong.artist)}</div>
-      <div class="btns">${heroSong.patches.map(p => `<button class="p ${LIVE && LIVE.id === heroSong.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(heroSong.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}</div></div>` : "";
+      <div class="btns">${heroSong.patches.map(p => `<button class="p ${LIVE && LIVE.id === heroSong.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(heroSong.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}<button class="p" data-scroll="all">Change song ↓</button></div></div>` : "";
   let html = "";
   if (!q) {
     const rec = recents().map(id => SONGS.find(s => s.id === id)).filter(Boolean);
@@ -458,6 +458,7 @@ async function refreshStatus() {
 
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
+  if (e.target.closest("[data-scroll]")) { const h = [...document.querySelectorAll("section.row h2")].find(x => x.textContent.startsWith("All")) || document.querySelector("section.row h2"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
   const fv = e.target.closest("[data-fav]");
   if (fv) { e.stopPropagation(); const id = fv.dataset.fav, on = !FAVS.includes(id); const r = await api().set_favorite(id, on);
     if (r.ok) { FAVS = r.favorites; const st = $("#sheet").scrollTop, open = $("#modal").classList.contains("open"); render(); if (open && SHEET === id) { openSong(SHEET); $("#sheet").scrollTop = st; } toast(on ? "Adicionada às favoritas" : "Removida das favoritas"); } return; }
