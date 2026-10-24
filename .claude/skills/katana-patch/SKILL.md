@@ -31,3 +31,23 @@ it is set by hand, not by MIDI). Look up the real tempo/key/structure with a web
 - `genre` must be one of the Trio+'s 12: Blues, R&B, Rock, Alternative Rock, Metal, Pop, Electronic Pop, Hip-Hop, Country,
   Folk, Latin, Jazz. Each genre has 12 styles (some 3/4): describe the feel, the user picks the style number.
 - The Trio+ learns up to 5 song parts, so give at most 5 `parts` in play order.
+
+## Whammy DT setup (DigiTech Whammy DT)
+The user also has a Whammy DT in the chain. It is set by hand (5-pin MIDI in only, no USB). Add a `"whammy"` object to the FIRST
+patch of every song file. Research the song's real tuning on the recording and where a pitch effect is actually used; never invent.
+```json
+"whammy": {"use": "yes|optional|no", "tuning": "D standard (D G C F A D)", "when": "Whole song",
+           "settings": {"effect": null, "harmony": null, "transpose_down": 2, "transpose_up": null, "detune": null},
+           "how": ["Tune your guitar to standard (E A D G B E).", "Turn the right knob to TRANSPOSE DOWN 2.", "Press DROPTUNE (light on) before the song."],
+           "tips": "Play it as if in standard tuning; the pedal sounds it a whole step lower."}
+```
+Pedal facts (from the panel): left knob picks WHAMMY effects (2 OCT UP, OCT UP, 5TH UP, 4TH UP, 2ND UP, 4TH DOWN, 5TH DOWN,
+OCT DOWN, 2 OCT DOWN, DIVE BOMB) or HARMONY pairs; DETUNE has SHALLOW/DEEP; right knob picks TRANSPOSE UP or DOWN: 1-7 semitones,
+OCT, or OCT DRY. Footswitches: WHAMMY (on/off, heel-toe rocker sweeps the effect), DROPTUNE (latches the transpose on), MOMENTARY
+(effect only while held).
+- `effect` must be one of the ten whammy names above (or null); `harmony` a short text like "5th down / 4th up" (or null);
+  `transpose_down` / `transpose_up` an integer 1-7, "OCT" or "OCT DRY" (or null); `detune` "SHALLOW", "DEEP" or null.
+- The DT shifts the WHOLE guitar equally: a whole-step-down song = transpose down 2. It cannot make true Drop D (only the low
+  string lowered) from standard; say so if the song is in Drop D and suggest retuning the 6th string instead.
+- `use`: "yes" if the song needs it (tuning change, or a signature whammy/octave part), "optional" for a nice-to-have,
+  "no" if not needed (still fill `tuning`).

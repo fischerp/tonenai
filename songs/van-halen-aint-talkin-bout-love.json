@@ -10,7 +10,11 @@
   "band": {"genre": "Rock", "style_feel": "driving straight eighths, heavy kick on 1 and 3, snare on 2 and 4, simple hard-rock groove", "bpm": 139, "time_signature": "4/4",
            "key": "G# minor (album is tuned a half step down; sources disagree, check by ear)",
            "parts": ["Part A: intro riff - staccato chords, sparse drums", "Part B: verse - riff continues, steady groove", "Part C: pre-chorus - sliding chords, syncopated build", "Part D: chorus - full band", "Part E: solo - tapping lead over the riff"],
-           "tips": "Tempo is about 138-139 BPM. Play the opening riff 2 bars cleanly before the Trio+ starts learning; keep the staccato chords tight and steady."}
+           "tips": "Tempo is about 138-139 BPM. Play the opening riff 2 bars cleanly before the Trio+ starts learning; keep the staccato chords tight and steady."},
+  "whammy": {"use": "yes", "tuning": "Half step down (Eb Ab Db Gb Bb Eb)", "when": "Whole song",
+           "settings": {"effect": null, "harmony": null, "transpose_down": 1, "transpose_up": null, "detune": null},
+           "how": ["Tune your guitar to standard (E A D G B E).", "Turn the right knob to TRANSPOSE DOWN 1.", "Press DROPTUNE (light on) before the song."],
+           "tips": "Play it as if in standard tuning; the pedal sounds it a half step lower, matching the record. No whammy or octave effect was found on this track, only the tuning change. One forum measurement puts the recording a bit sharp of exact Eb (about 27-30 cents), so trust your ear against the record."}
  },
  {
   "name": "AintTalkin Lead",

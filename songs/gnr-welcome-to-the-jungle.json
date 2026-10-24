@@ -17,6 +17,18 @@
    ],
    "tips": "Tempo is about 122-124 BPM depending on the source; the user's guitar is likely in standard tuning, so match the key by tuning down a half step or capo-free transposing. Play the intro riff cleanly for 2 bars before the Trio+ starts learning, and keep strumming steady."
   },
+  "whammy": {
+   "use": "yes",
+   "tuning": "Eb standard (Eb Ab Db Gb Bb Eb), half step down",
+   "when": "Whole song",
+   "settings": {"effect": null, "harmony": null, "transpose_down": 1, "transpose_up": null, "detune": null},
+   "how": [
+    "Tune your guitar to standard (E A D G B E).",
+    "Turn the right knob to TRANSPOSE DOWN 1.",
+    "Press DROPTUNE (light on) before the song."
+   ],
+   "tips": "Play the riffs as in standard tuning; the pedal sounds them a half step lower, matching the recording. No whammy, octave or harmony effect is documented on the recording, so none is set; the intro delay was studio reverb/delay. Alternatively just retune the guitar to Eb and leave the pedal off."
+  },
   "amp": {
    "type": "BROWN",
    "gain": 70,

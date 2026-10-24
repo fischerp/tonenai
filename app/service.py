@@ -47,7 +47,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"),
+                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"), "whammy": specs[0].get("whammy"),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -200,8 +200,8 @@ class Service:
             "Figure out the song (artist and title) and research the guitar tone (amp, pedals, effects, "
             "rhythm vs lead parts) with a web search. Then create ONE new file songs/<artist>-<title>.json "
             "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
-            "The first patch memo must start with 'Artist - Title: ' . Also add a \"band\" object to the FIRST patch "
-            "(see 'Band setup' in the instructions). Validate and export by running "
+            "The first patch memo must start with 'Artist - Title: ' . Also add a \"band\" object and a \"whammy\" object "
+            "to the FIRST patch (see 'Band setup' and 'Whammy DT setup' in the instructions). Validate and export by running "
             "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
             "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done.")
 
@@ -212,33 +212,47 @@ class Service:
             f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "Reply with one short line when done.")
 
+    def _whammy_prompt(self, sid):
+        return (
+            f"Add (or replace) the \"whammy\" object on the FIRST patch of songs/{sid}.json, following 'Whammy DT setup' in the "
+            "instructions. Use a web search to find the tuning actually used on the recording and where a whammy/octave/harmony "
+            "effect is used. Edit only that file, "
+            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            "If you cannot verify the tuning, say so in tips and set use to optional. Reply with one short line when done.")
+
+    def generate_whammy(self, song_id):
+        return self._generate(song_id, "whammy")
+
     def generate_band(self, song_id):
+        return self._generate(song_id, "band")
+
+    def _generate(self, song_id, kind):
         """Ask the Claude agent to add the DigiTech Trio+ band setup to an existing song."""
         if self._job.get("state") == "running":
             return {"ok": False, "error": "Already working on something"}
         if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or "") or not os.path.exists(os.path.join(SONGS, song_id + ".json")):
             return {"ok": False, "error": "Song not found"}
-        self._job = {"state": "running", "note": "Starting Claude…", "query": "band setup", "kind": "band", "id": song_id}
-        threading.Thread(target=self._run_band, args=(song_id,), daemon=True).start()
+        self._job = {"state": "running", "note": "Starting Claude…", "query": kind + " setup", "kind": kind, "id": song_id}
+        threading.Thread(target=self._run_band, args=(song_id, kind), daemon=True).start()
         return {"ok": True}
 
-    def _run_band(self, sid):
+    def _run_band(self, sid, kind="band"):
         try:
             for attempt in range(2):          # the agent occasionally finishes without saving; try once more
-                asyncio.run(self._agent(self._band_prompt(sid)))
+                asyncio.run(self._agent(self._band_prompt(sid) if kind == "band" else self._whammy_prompt(sid)))
                 self._validate(sid)
                 specs = json.load(open(os.path.join(SONGS, sid + ".json")))
                 specs = specs if isinstance(specs, list) else [specs]
-                if specs[0].get("band"):
+                if specs[0].get(kind):
                     break
             else:
-                raise RuntimeError((self._last_text or "Claude could not add a Trio+ setup for this song")[:300])
-            self._job = {"state": "done", "id": sid, "kind": "band"}
+                raise RuntimeError((self._last_text or f"Claude could not add the {kind} setup for this song")[:300])
+            self._job = {"state": "done", "id": sid, "kind": kind}
         except Exception as e:
             msg = str(e)
             if "Not logged in" in msg or "authentication" in msg.lower():
                 msg = "Claude is not signed in. See the README: run the one-time login."
-            self._job = {"state": "error", "error": msg, "kind": "band"}
+            self._job = {"state": "error", "error": msg, "kind": kind}
 
     # -------------------------------------------------------------- cover art (iTunes Search API, cached)
     def cover(self, song_id):

@@ -5,9 +5,9 @@ const IDS = ["rhcp-under-the-bridge","thin-lizzy-whiskey-in-the-jar","acdc-back-
 const MOCK = `<script>
 let cur="Jungle Rhythm";
 window.pywebview={api:{
-  songs: async()=>{const out=[];for(const id of ${JSON.stringify(IDS)}){let s=await (await fetch("../songs/"+id+".json")).json();s=Array.isArray(s)?s:[s];
+  songs: async()=>{const out=[];for(const id of ${JSON.stringify(IDS)}){let s=await (await fetch("../songs/"+id+".json",{cache:"no-store"})).json();s=Array.isArray(s)?s:[s];
     const head=(s[0].memo||"").split(":")[0].split(" - ");
-    out.push({id,artist:head[0],title:head[1],band:s[0].band||null,cover:"../songs/covers/"+id+".jpg",patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
+    out.push({id,artist:head[0],title:head[1],band:s[0].band||null,whammy:s[0].whammy||null,cover:"../songs/covers/"+id+".jpg",patches:s.map((p,i)=>({index:i,name:p.name,amp:p.amp.type,note:(p.memo||"").split(":").slice(1).join(":").trim()}))});}return out;},
   import_tsl: async()=>({ok:false,cancelled:true}),
   cover: async(id)=>({cover:"../songs/covers/"+id+".jpg"}),
   search_songs: async(t)=>({ok:true,items:[
@@ -18,11 +18,12 @@ window.pywebview={api:{
     {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
   delete_song: async()=>({ok:true}),
   generate_band: async()=>({ok:true}),
+  generate_whammy: async()=>({ok:true}),
   reveal: async()=>({ok:true}),
   create_song: async(t)=>{window._j={state:"running",note:"Researching the tone…",t:Date.now()};return{ok:true};},
   job_status: async()=>{const e=Date.now()-window._j.t;if(e>5000)return{state:"done",id:"pearl-jam-animal"};return{state:"running",note:e>2500?"Writing the patch…":"Researching the tone…"};},
   status: async()=>({connected:true,patch:cur}),
-  play: async(id,i)=>{const s=await (await fetch("../songs/"+id+".json")).json();cur=(Array.isArray(s)?s:[s])[i].name;return{ok:true,patch:cur};}
+  play: async(id,i)=>{const s=await (await fetch("../songs/"+id+".json",{cache:"no-store"})).json();cur=(Array.isArray(s)?s:[s])[i].name;return{ok:true,patch:cur};}
 }};
 addEventListener("load",()=>dispatchEvent(new Event("pywebviewready")));
 <\/script>`;

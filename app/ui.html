@@ -90,6 +90,13 @@
   .stylerow { display: flex; gap: 4px; margin-top: 6px; } .sty { width: 26px; height: 26px; border-radius: 6px; background: #2a2a37; color: #9a9aa8; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   .sty.ok { background: #1f4d36; color: #7dffb0; } .sty.three { border: 1px dashed #6d6d80; }
   .steps { margin: 10px 0 8px; padding-left: 20px; } .steps li { margin: 6px 0; } .steps b { color: #fff; }
+  .badge2 { font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 3px 9px; border-radius: 5px; margin-left: 8px; vertical-align: 1px; }
+  .badge2.yes { background: #1f4d36; color: #7dffb0; } .badge2.optional { background: #5a4a1a; color: #ffd75e; } .badge2.no { background: #2a2a37; color: #9a9aa8; }
+  .wh { display: flex; gap: 22px; flex-wrap: wrap; margin: 6px 0 12px; } .wh .col { min-width: 120px; }
+  .wh .lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; font-weight: 700; margin-bottom: 5px; }
+  .pill { display: block; padding: 3px 10px; margin-bottom: 3px; border-radius: 12px; background: #2a2a37; color: #9a9aa8; font-size: 12px; font-weight: 700; }
+  .pill.on { background: #c62828; color: #fff; box-shadow: 0 0 10px #c6282888; }
+  .nums { display: flex; gap: 3px; margin-bottom: 8px; flex-wrap: wrap; max-width: 250px; } .nums .pill { display: inline-block; margin: 0; padding: 4px 8px; min-width: 26px; text-align: center; }
   .band { margin: 0 30px 18px; padding: 16px 18px; border-radius: 10px; background: #1b1b25; }
   .band h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -234,13 +241,34 @@ function bandCard(s) {
     ${b.tips ? `<div class="tip">${esc(b.tips)}</div>` : ""}</div>`;
 }
 
+const WH_EFFECTS = ["2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN", "5TH DOWN", "OCT DOWN", "2 OCT DOWN", "DIVE BOMB"];
+function whammyCard(s) {
+  const w = s.whammy;
+  if (!w) return `<div class="band"><h4>Whammy DT</h4><p class="tip" style="margin:0 0 10px">No suggestion yet. Claude can check the song's real tuning and where a pitch effect is used.</p>
+    <button class="p" data-whammy="${esc(s.id)}">✦ Generate Whammy setup</button></div>`;
+  const st = w.settings || {}, eff = (st.effect || "").toUpperCase();
+  const nums = (dir, val) => ["1", "2", "3", "4", "5", "6", "7", "OCT", "OCT DRY"].map(n => `<span class="pill${val != null && String(val).toUpperCase() === n ? " on" : ""}">${n}</span>`).join("");
+  const showPedal = w.use !== "no" && (eff || st.transpose_down != null || st.transpose_up != null || st.detune || st.harmony);
+  const label = { yes: "USE IT", optional: "OPTIONAL", no: "NOT NEEDED" }[w.use] || "";
+  return `<div class="band"><h4>Whammy DT <span class="badge2 ${esc(w.use || "no")}">${label}</span></h4>
+    <div class="chips">${w.tuning ? `<span class="chip"><b>Tuning</b>${esc(w.tuning)}</span>` : ""}${w.when ? `<span class="chip"><b>When</b>${esc(w.when)}</span>` : ""}</div>
+    ${showPedal ? `<div class="wh">
+      ${eff ? `<div class="col"><div class="lbl">WHAMMY</div>${WH_EFFECTS.map(e => `<span class="pill${e === eff ? " on" : ""}">${e}</span>`).join("")}</div>` : ""}
+      ${st.harmony ? `<div class="col"><div class="lbl">HARMONY</div><span class="pill on">${esc(st.harmony)}</span></div>` : ""}
+      ${st.transpose_down != null || st.transpose_up != null ? `<div class="col"><div class="lbl">TRANSPOSE UP</div><div class="nums">${nums("up", st.transpose_up)}</div>
+        <div class="lbl">TRANSPOSE DOWN</div><div class="nums">${nums("down", st.transpose_down)}</div></div>` : ""}
+      ${st.detune ? `<div class="col"><div class="lbl">DETUNE</div><span class="pill on">${esc(st.detune)}</span></div>` : ""}</div>` : ""}
+    ${(w.how || []).length ? `<ol class="steps">${w.how.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+    ${w.tips ? `<div class="tip">${esc(w.tips)}</div>` : ""}</div>`;
+}
+
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
   SHEET = id;
   $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
     <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
-    ${bandCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
+    ${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
       <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
   $("#modal").classList.add("open");
 }
@@ -269,17 +297,18 @@ async function startCreate(text) {
   }, 1200);
 }
 
-async function startBand(id) {
+async function startExtra(id, kind) {
   const a = api(); if (!a) return;
-  const r = await a.generate_band(id);
+  const r = await (kind === "whammy" ? a.generate_whammy(id) : a.generate_band(id));
   if (!r.ok) return toast(r.error, true);
-  const btn = document.querySelector("[data-band]"); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Researching…'; }
+  const sel = kind === "whammy" ? "[data-whammy]" : "[data-band]", again = kind === "whammy" ? "✦ Generate Whammy setup" : "✦ Generate Trio+ setup";
+  const btn = document.querySelector(sel); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Researching…'; }
   const t = setInterval(async () => {
     const j = await a.job_status();
     if (j.state === "running") { if (btn) btn.innerHTML = '<span class="spin"></span>' + esc(j.note || "Working…"); return; }
     clearInterval(t);
-    if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast("Band setup added"); }
-    else { toast(j.error || "Could not build the band setup", true); if (btn) { btn.disabled = false; btn.textContent = "✦ Generate Trio+ setup"; } }
+    if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast("Setup added"); }
+    else { toast(j.error || "Could not build the setup", true); if (btn) { btn.disabled = false; btn.textContent = again; } }
   }, 1500);
 }
 
@@ -299,7 +328,8 @@ async function refreshStatus() {
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
   const ck = e.target.closest("[data-click]"); if (ck) return toggleClick(Number(ck.dataset.click));
-  const bd = e.target.closest("[data-band]"); if (bd) return startBand(bd.dataset.band);
+  const bd = e.target.closest("[data-band]"); if (bd) return startExtra(bd.dataset.band, "band");
+  const wh = e.target.closest("[data-whammy]"); if (wh) return startExtra(wh.dataset.whammy, "whammy");
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
   const dl = e.target.closest("[data-del]");
