@@ -30,6 +30,10 @@ def _cover_url(sid):
 
 DATA = os.path.join(ROOT, "data")
 GUITARS = os.path.join(DATA, "guitars.json")
+LIVESETS = os.path.join(DATA, "livesets.json")
+BACKUPS = os.path.join(DATA, "backups")
+EXPORTS = os.path.join(DATA, "exports")
+BANK_KEYS = P.SLOT_KEYS[1:]            # A1..A4, B1..B4: the 8 channels that can be written (the Panel cannot)
 
 
 class Service:
@@ -381,3 +385,119 @@ class Service:
         os.makedirs(DATA, exist_ok=True)
         json.dump(items, open(GUITARS, "w"), indent=1)
         return {"ok": True, "guitars": items}
+
+    # -------------------------------------------------------------- livesets (set lists for the amp's banks)
+    def _blocks_for(self, song_id, index):
+        """Full patch blocks for a library patch (from its spec, or from an imported .tsl)."""
+        path = os.path.join(SONGS, song_id + ".json")
+        if os.path.exists(path):
+            specs = json.load(open(path)); specs = specs if isinstance(specs, list) else [specs]
+            return PT.build(specs[int(index)]), specs[int(index)]["name"]
+        _, patches = PT.from_tsl(os.path.join(SONGS, song_id + ".tsl"))
+        b = patches[int(index)]
+        return b, bytes(b["PatchName"]).decode("ascii", "replace").strip()
+
+    def livesets(self):
+        try:
+            return json.load(open(LIVESETS))
+        except (OSError, ValueError):
+            return []
+
+    def _save_livesets(self, items):
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(items, open(LIVESETS, "w"), indent=1)
+
+    def liveset_save(self, ls):
+        """Create or update a liveset: {id?, name, slots: {A1..B4: {song, index} | null}, notes}."""
+        name = (ls.get("name") or "").strip()[:40]
+        if not name:
+            return {"ok": False, "error": "Give the liveset a name"}
+        slots = {}
+        for key in BANK_KEYS:
+            v = (ls.get("slots") or {}).get(key)
+            if v and v.get("song") and re.fullmatch(r"[a-z0-9][a-z0-9\-]*", v["song"]):
+                slots[key] = {"song": v["song"], "index": int(v.get("index", 0))}
+        items = self.livesets()
+        lid = ls.get("id") or (re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "liveset") + "-" + str(int(time.time()) % 100000)
+        entry = {"id": lid, "name": name, "slots": slots, "notes": (ls.get("notes") or "")[:300]}
+        items = [x for x in items if x["id"] != lid] + [entry]
+        self._save_livesets(items)
+        return {"ok": True, "livesets": items, "id": lid}
+
+    def liveset_delete(self, lid):
+        items = [x for x in self.livesets() if x["id"] != lid]
+        self._save_livesets(items)
+        return {"ok": True, "livesets": items}
+
+    def amp_slots(self):
+        """Read the names stored in the amp's 9 memory slots (Panel, A1-A4, B1-B4)."""
+        with self._lock:
+            try:
+                self._connect()
+                k.dt1(self._out, 0x7F000001, [1]); time.sleep(0.15)
+                res = []
+                for i in range(9):
+                    d = k.rq1(self._inp, self._out, P.slot_base(i), 16, tries=3)
+                    res.append({"index": i, "key": P.SLOT_KEYS[i], "label": P.SLOT_LABELS[i],
+                                "name": bytes(d).decode("ascii", "replace").strip() if len(d) == 16 else None})
+                if all(r["name"] is None for r in res):
+                    raise IOError("The amp did not answer")
+                return {"ok": True, "slots": res}
+            except Exception as e:
+                self._drop()
+                return {"ok": False, "error": str(e)}
+
+    def liveset_send(self, lid, keys=None):
+        """Write a liveset into the amp's banks. Each slot's previous contents are backed up first (data/backups)."""
+        ls = next((x for x in self.livesets() if x["id"] == lid), None)
+        if not ls:
+            return {"ok": False, "error": "Liveset not found"}
+        todo = [(key, ls["slots"][key]) for key in BANK_KEYS if key in ls["slots"] and (keys is None or key in keys)]
+        if not todo:
+            return {"ok": False, "error": "Nothing assigned to send"}
+        try:
+            prepared = [(key, v, *self._blocks_for(v["song"], v["index"])) for key, v in todo]
+        except Exception as e:
+            return {"ok": False, "error": f"Could not build a patch: {e}"}
+        with self._lock:
+            try:
+                self._connect()
+                os.makedirs(BACKUPS, exist_ok=True)
+                stamp = time.strftime("%Y%m%d-%H%M%S"); saved = {}
+                for key, v, blocks, name in prepared:                       # 1) back up what is there now (skip empty INIT slots)
+                    idx = P.SLOT_KEYS.index(key); base = P.slot_base(idx)
+                    cur = bytes(k.rq1(self._inp, self._out, base, 16, tries=3)).decode("ascii", "replace").strip()
+                    if cur and "INIT TONE" not in cur.upper():
+                        saved[key] = PT.snapshot(self._inp, self._out, base=base)
+                if saved:
+                    json.dump({k_: PT.to_tsl([b], k_)["data"][0][0]["paramSet"] for k_, b in saved.items()}, open(os.path.join(BACKUPS, f"slots-{stamp}.json"), "w"))
+                k.dt1(self._out, 0x7F000001, [1]); time.sleep(0.15)
+                for key, v, blocks, name in prepared:                       # 2) write the new patches
+                    PT.write_blocks(blocks, self._out, P.slot_base(P.SLOT_KEYS.index(key)), [b for b in P.TSL_BLOCKS if b != "Status"])
+                time.sleep(0.3)
+                names = {}
+                for key, v, blocks, name in prepared:                       # 3) read back to verify
+                    names[key] = bytes(k.rq1(self._inp, self._out, P.slot_base(P.SLOT_KEYS.index(key)), 16, tries=3)).decode("ascii", "replace").strip()
+                bad = [key for key, v, blocks, name in prepared if names.get(key, "") != name.strip()[:16]]
+                return {"ok": not bad, "written": len(prepared), "names": names, "backup": bool(saved), "error": ("Verification failed for " + ", ".join(bad)) if bad else ""}
+            except Exception as e:
+                self._drop()
+                return {"ok": False, "error": str(e)}
+
+    def liveset_export(self, lid):
+        """Export a liveset as a Tone Studio .tsl file (patches in A1..B4 order)."""
+        ls = next((x for x in self.livesets() if x["id"] == lid), None)
+        if not ls:
+            return {"ok": False, "error": "Liveset not found"}
+        patches = []
+        for key in BANK_KEYS:
+            if key in ls["slots"]:
+                v = ls["slots"][key]
+                blocks, name = self._blocks_for(v["song"], v["index"]); patches.append(blocks)
+        if not patches:
+            return {"ok": False, "error": "Nothing assigned to export"}
+        os.makedirs(EXPORTS, exist_ok=True)
+        path = os.path.join(EXPORTS, re.sub(r"[^A-Za-z0-9]+", "-", ls["name"]).strip("-") + ".tsl")
+        json.dump(PT.to_tsl(patches, ls["name"]), open(path, "w"), indent=1)
+        subprocess.run(["open", "-R", path])
+        return {"ok": True, "path": path, "count": len(patches)}

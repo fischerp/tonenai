@@ -100,9 +100,18 @@ def decode(e, data):
     return data[0] - e["ofs"]
 
 
-def abs_addr(block, offset7):
-    """Absolute temp-patch address of byte `offset7` (7-bit form) inside a block."""
-    return TEMP + to_7bit(to_linear(BLOCK_BASE[block]) + to_linear(offset7))
+SLOT_KEYS = ["PANEL", "A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"]          # amp memory: index 0 is the Panel, then bank A and B, 4 channels each
+SLOT_LABELS = ["PANEL", "A: CH-1", "A: CH-2", "A: CH-3", "A: CH-4", "B: CH-1", "B: CH-2", "B: CH-3", "B: CH-4"]
+
+
+def slot_base(index):
+    """Address of user patch `index` (0 = Panel, 1-4 = A1-A4, 5-8 = B1-B4); same layout as the temporary patch."""
+    return 0x10000000 + (index << 16)
+
+
+def abs_addr(block, offset7, base=TEMP):
+    """Absolute address of byte `offset7` (7-bit form) inside a block of the patch stored at `base`."""
+    return base + to_7bit(to_linear(BLOCK_BASE[block]) + to_linear(offset7))
 
 
 def default_block(block):

@@ -113,22 +113,28 @@ def _chunks(block, step=32):
         yield P.to_7bit(off), min(step, n - off)
 
 
-def apply_live(blocks, inp, out):
+def write_blocks(blocks, out, base=P.TEMP, only=None):
+    """Send patch blocks to the patch stored at `base` (the temporary patch, or a memory slot)."""
     import katana as k
-    k.dt1(out, 0x7F000001, [1])
-    time.sleep(0.2)
-    for blk in ["PatchName", "Patch_0", "Fx(1)", "Fx(2)", "Delay(1)", "Delay(2)", "Patch_1", "Patch_2", "Eq(2)",
-                "Patch_Mk2V2", "Status"]:
+    for blk in (only or P.TSL_BLOCKS):
         if blk not in blocks:
             continue
         data = blocks[blk]
         for off7, ln in _chunks(blk):
             lin = P.to_linear(off7)
-            k.dt1(out, P.abs_addr(blk, off7), data[lin:lin + ln])
+            k.dt1(out, P.abs_addr(blk, off7, base), data[lin:lin + ln])
+
+
+def apply_live(blocks, inp, out):
+    import katana as k
+    k.dt1(out, 0x7F000001, [1])
+    time.sleep(0.2)
+    write_blocks(blocks, out, P.TEMP, ["PatchName", "Patch_0", "Fx(1)", "Fx(2)", "Delay(1)", "Delay(2)", "Patch_1", "Patch_2", "Eq(2)",
+                                       "Patch_Mk2V2", "Status"])
     time.sleep(0.3)
 
 
-def snapshot(inp, out, blocks=None):
+def snapshot(inp, out, blocks=None, base=P.TEMP):
     import katana as k
     k.dt1(out, 0x7F000001, [1])
     time.sleep(0.2)
@@ -136,12 +142,12 @@ def snapshot(inp, out, blocks=None):
     for blk in blocks or P.TSL_BLOCKS:
         buf, dflt = [], P.default_block(blk)
         for off7, ln in _chunks(blk):
-            got = k.rq1(inp, out, P.abs_addr(blk, off7), ln, tries=2)
+            got = k.rq1(inp, out, P.abs_addr(blk, off7, base), ln, tries=2)
             if len(got) != ln:  # amp skips unmapped gaps: retry in 8-byte pieces, default the holes
                 lin, got = P.to_linear(off7), []
                 for sub in range(0, ln, 8):
                     n = min(8, ln - sub)
-                    r = k.rq1(inp, out, P.abs_addr(blk, P.to_7bit(lin + sub)), n, tries=1)
+                    r = k.rq1(inp, out, P.abs_addr(blk, P.to_7bit(lin + sub), base), n, tries=1)
                     got += r if len(r) == n else dflt[lin + sub:lin + sub + n]
             buf += got
         res[blk] = buf

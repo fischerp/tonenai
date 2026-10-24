@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tonai</title>
 <link rel="stylesheet" href="guitar-manager.css">
+<link rel="stylesheet" href="livesets.css">
 <style>
   :root {
     --bg: #0b0b0f; --panel: #16161d; --text: #f4f4f6; --muted: #9a9aa8; --accent: #e50914;
@@ -141,6 +142,7 @@
 <header>
   <div class="logo">TONAI</div>
   <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
+  <button class="p" id="lbtn" title="Plan what goes into the amp's banks">📻 Livesets</button>
   <button class="p" id="gbtn" title="Register the guitars you own">🎸 My guitars</button>
   <button class="p" id="imp" title="Load a Tone Studio .tsl file">＋ Import .tsl</button>
   <div class="status"><span class="dot" id="dot"></span><span id="stxt">connecting…</span></div>
@@ -149,11 +151,13 @@
 <main id="rows"></main>
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 <div class="modal" id="gmodal"><div class="sheet" id="gsheet"></div></div>
+<div class="modal" id="lmodal"><div class="sheet xl" id="lsheet"></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="guitar-shapes.js"></script>
 <script src="guitars.js"></script>
 <script src="guitar-manager.js"></script>
+<script src="livesets.js"></script>
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
 let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [];   // RES = search results view (set when the user presses Enter)
@@ -451,6 +455,7 @@ document.addEventListener("click", async e => {
   const gg = e.target.closest("[data-genguitar]"); if (gg) return startExtra(gg.dataset.genguitar, "guitar");
   if (e.target.closest("[data-guitars]")) return openGuitars();
   if (e.target.id === "gmodal") { gmClose(); return; }
+  if (e.target.id === "lmodal") { lsClose(); return; }
   const wh = e.target.closest("[data-whammy]"); if (wh) return startExtra(wh.dataset.whammy, "whammy");
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
@@ -471,11 +476,13 @@ document.addEventListener("click", async e => {
 document.addEventListener("keydown", e => {
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
   if (e.key !== "Escape") return;
+  if ($("#lmodal").classList.contains("open")) { const o = $("#lconfirm") || $("#lpick"); if (o) { o.remove(); } else lsClose(); return; }
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
   else if ($("#gmodal").classList.contains("open")) gmClose();
   else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
 });
 $("#gbtn").addEventListener("click", openGuitars);
+$("#lbtn").addEventListener("click", openLivesets);
 $("#imp").addEventListener("click", async () => {
   const a = api(); if (!a) return;
   const r = await a.import_tsl();
