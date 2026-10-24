@@ -16,8 +16,20 @@
     ["cherry", "Cherry"], ["red", "Red"], ["black", "Black"], ["white", "White"], ["blue", "Blue"], ["teal", "Seafoam"], ["green", "Green burst"], ["grey", "Grey"]]
     .map(([k, label]) => { const f = FIN[k], c = f.burst || f.solid; return { key: k, label, css: f.burst ? `radial-gradient(circle at 50% 60%, ${c[0]}, ${c[1]} 55%, ${c[2]})` : `linear-gradient(135deg, ${c[0]}, ${c[1]})` }; });
 
-  // Hand-drawn outlines for the two models without a usable reference photo.
-  const EXPLORER = "M87.4,200 L34.4,313 Q32,321 41,320 L183,268 Q191,265 187,257 L171.5,205 L198.5,181 Q201,178 196,177 L112.6,198 Z";
+  // Rounded polygon: each vertex [x, y, radius] becomes a smooth quadratic corner.
+  function rpoly(vs) {
+    const n = vs.length, pt = i => vs[(i + n) % n], d = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const near = (a, b, r) => { const l = d(a, b), k = Math.min(r, l / 2) / l; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; };
+    const q = v => Math.round(v * 100) / 100;
+    let out = "";
+    for (let i = 0; i < n; i++) {
+      const p = pt(i), r = p[2] || 0, a = near(p, pt(i - 1), r), b = near(p, pt(i + 1), r);
+      out += (i ? "L" : "M") + q(a[0]) + "," + q(a[1]) + (r ? "Q" + p[0] + "," + p[1] + " " + q(b[0]) + "," + q(b[1]) : "");
+    }
+    return out + "Z";
+  }
+  // Hand-drawn outlines for the models without a usable reference photo.
+  const EXPLORER = rpoly([[87.4, 198, 0], [33, 313, 7], [186, 266, 6], [171, 207, 5], [199, 180, 5], [112.6, 198, 0]]);
   const ACOUSTIC = "M100,196 C140,196 163.5,210 163.5,244 C163.5,272 157,282 157,298 C157,316 189,330 189,372 C189,408 150,425 100,425 C50,425 11,408 11,372 C11,330 43,316 43,298 C43,282 36.5,272 36.5,244 C36.5,210 60,196 100,196 Z";
 
   // Pickup spec: [type, cx, cy, cover]  ·  bridge: [type, cy, tail cy]  ·  knob: [x, y, colour]
@@ -31,8 +43,8 @@
     SG: { shape: "sg", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots",
       pups: [["hum", 100, 213, "chrome"], ["hum", 100, 249, "chrome"]], bridge: ["tom", 264, 281], knobs: [[56, 286, "black"], [52, 302, "black"], [70, 310, "black"], [86, 314, "black"]], sw: [62, 222] },
     "ES-335 / semi-hollow": { shape: "es335", fin: "cherryburst", hs: "gibson", fb: "rosewood", bind: "#f3e8c4", inlay: "blocks",
-      pups: [["hum", 100, 254, "chrome"], ["hum", 100, 302, "chrome"]], bridge: ["tom", 324, 342], knobs: [[164, 354, "gold"], [139, 372, "gold"], [170, 384, "gold"], [144, 398, "gold"]], sw: [131, 349],
-      fholes: [[36, 318, 29, 352], [152, 352, 160, 388]] },
+      pups: [["hum", 100, 254, "chrome"], ["hum", 100, 302, "chrome"]], bridge: ["tom", 324, 342], knobs: [[160, 366, "gold"], [136, 380, "gold"], [166, 394, "gold"], [142, 404, "gold"]], sw: [128, 349],
+      fholes: [[41, 300, 33, 340], [159, 300, 167, 340]] },
     "Jazzmaster / Jaguar": { shape: "jazz", fin: "sunburst", hs: "fender", fb: "rosewood", inlay: "dots",
       pups: [["wide", 100, 240], ["wide", 100, 285]], bridge: ["offset", 297, 342], knobs: [[158, 322, "chrome"], [166, 334, "chrome"]], sw: null, plate: [48, 214, 28, 44] },
     "Explorer / Flying V": { path: EXPLORER, bottom: 322, fin: "black", hs: "gibson", fb: "rosewood", inlay: "dots",
@@ -45,7 +57,7 @@
     Other: { shape: "prs", fin: "grey", hs: "fender", fb: "rosewood", inlay: "dots",
       pups: [["hum", 100, 215, "chrome"], ["hum", 100, 254, "chrome"]], bridge: ["hardtail", 279], knobs: [[126, 309, "black"]], sw: null },
   };
-  const FLYING_V_PATH = "M88,204 L8,436 Q6,446 16,448 L34,450 Q42,450 45,442 L100,318 L155,442 Q158,450 166,450 L184,448 Q194,446 192,436 L112,204 Z";
+  const FLYING_V_PATH = rpoly([[88, 204, 0], [5, 441, 8], [36, 452, 8], [100, 320, 6], [164, 452, 8], [195, 441, 8], [112, 204, 0]]);
   const FLYING_V = { path: FLYING_V_PATH, bottom: 452, fin: "honey", hs: "gibson", fb: "rosewood", inlay: "dots",
     pups: [["hum", 100, 218, "chrome"], ["hum", 100, 278, "chrome"]], bridge: ["tom", 298, 306], knobs: [[124, 317, "black"], [137, 346, "black"], [151, 376, "black"]], sw: null };
 
@@ -88,22 +100,29 @@
   }
 
   function headstock(kind) {
-    const wood = "#4a2f1d", edge = "#24150b";
+    const wood = "#4a2f1d", edge = "#1c1109";
+    const tuner = (x, y, side, col = "#d6d8de", stroke = "#6c6f78") => {      // button outside the edge, post inside
+      const bx = side < 0 ? x - 5.5 : x + 1.5;
+      return `<circle cx="${x}" cy="${y}" r="1.5" fill="#c9ccd4" stroke="${stroke}" stroke-width=".4"/><rect x="${bx}" y="${y - 2.4}" width="4.6" height="4.8" rx="2" fill="${col}" stroke="${stroke}" stroke-width=".4"/>`;
+    };
+    const gloss = d => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="1.2" clip-path="url(#hsclip)"/>`;
     if (kind === "fender") {
-      const ys = [14, 22, 30, 38, 46, 54];
-      return `<path d="M91.5,${NECK_TOP} L91.5,50 C86,40 84,22 90,9 C94,3 108,3 112,9 C118,22 114,40 108.5,50 L108.5,${NECK_TOP} Z" fill="${wood}" stroke="${edge}" stroke-width=".8"/>
-        <path d="M93,66 L93,50 C89,40 88,24 92,12" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1.4"/>
-        ${ys.map(y => `<circle cx="96" cy="${y}" r="1.7" fill="#c9ccd4" stroke="#6c6f78" stroke-width=".4"/><rect x="108" y="${y - 2.2}" width="6" height="4.4" rx="1.8" fill="#d6d8de" stroke="#6c6f78" stroke-width=".4"/>`).join("")}`;
+      const d = "M91.4,70 L91.4,54 C91.4,47 86,43 82,37 C77.5,30 77.5,17 84,10.5 C89,5.5 98,3.5 104,5 C110,6.5 113.5,11.5 111.5,19 C109.5,26 108.6,34 108.6,46 L108.6,70 Z";
+      const posts = [[85, 13], [80, 20], [79.5, 28], [82, 35.5], [86.5, 41.5], [91, 48]];
+      return `<defs><clipPath id="hsclip"><path d="${d}"/></clipPath></defs><path d="${d}" fill="${wood}" stroke="${edge}" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
+        <path d="M106,8 C110,10 110,16 108,22" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1"/>${posts.map(([x, y]) => tuner(x, y, -1)).join("")}<rect x="96" y="58" width="8" height="2.2" rx="1" fill="#c9ccd4" opacity=".85"/>`;
     }
     if (kind === "prs") {
-      const ys = [18, 30, 42];
-      return `<path d="M91,${NECK_TOP} L90,52 C84,42 82,24 86,12 C90,4 96,2 100,2 C104,2 110,4 114,12 C118,24 116,42 110,52 L109,${NECK_TOP} Z" fill="${wood}" stroke="${edge}" stroke-width=".8"/>
-        ${ys.map(y => `<circle cx="92" cy="${y}" r="1.7" fill="#c9ccd4"/><rect x="80" y="${y - 2.3}" width="9" height="4.6" rx="2" fill="#d9c27a" stroke="#7a6620" stroke-width=".4"/><circle cx="108" cy="${y}" r="1.7" fill="#c9ccd4"/><rect x="111" y="${y - 2.3}" width="9" height="4.6" rx="2" fill="#d9c27a" stroke="#7a6620" stroke-width=".4"/>`).join("")}`;
+      const d = "M91,70 L90,54 C84,45 82,26 86,13 C89,5 95,2.5 100,2.5 C105,2.5 111,5 114,13 C118,26 116,45 110,54 L109,70 Z";
+      const ys = [17, 29, 41];
+      return `<defs><clipPath id="hsclip"><path d="${d}"/></clipPath></defs><path d="${d}" fill="${wood}" stroke="${edge}" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
+        ${ys.map(y => tuner(90.6, y, -1, "#e0cd85", "#7a6620") + tuner(109.4, y, 1, "#e0cd85", "#7a6620")).join("")}<path d="M96,22 q4,-6 8,0 q-4,2 -4,6 q0,-4 -4,-6 Z" fill="#efe6c8" opacity=".9"/>`;
     }
-    const ys = [16, 30, 44];
-    return `<path d="M88,${NECK_TOP} L87,56 C80,46 79,24 83,12 C90,5 110,5 117,12 C121,24 120,46 113,56 L112,${NECK_TOP} Z" fill="#17120e" stroke="#000" stroke-width=".8"/>
-      <path d="M89,${NECK_TOP - 3} L88.5,56 C83,46 82,26 86,15" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="1.4"/>
-      ${ys.map(y => `<circle cx="90" cy="${y}" r="1.7" fill="#c9ccd4"/><rect x="77" y="${y - 2.6}" width="11" height="5.2" rx="2.3" fill="#e5d27c" stroke="#8a7424" stroke-width=".4"/><circle cx="110" cy="${y}" r="1.7" fill="#c9ccd4"/><rect x="112" y="${y - 2.6}" width="11" height="5.2" rx="2.3" fill="#e5d27c" stroke="#8a7424" stroke-width=".4"/>`).join("")}`;
+    const d = "M88,70 L88.4,58 C85.5,52 80,48 78,38 C76,27 79,16 88,9.5 C94,5.5 106,5.5 112,9.5 C121,16 124,27 122,38 C120,48 114.5,52 111.6,58 L112,70 Z";   // gibson "open book"
+    const ys = [15, 28, 41];
+    return `<defs><clipPath id="hsclip"><path d="${d}"/></clipPath></defs><path d="${d}" fill="#15100c" stroke="#000" stroke-width=".9" stroke-linejoin="round"/>${gloss(d)}
+      ${ys.map(y => tuner(86.6, y + 1, -1, "#e5d27c", "#8a7424") + tuner(113.4, y + 1, 1, "#e5d27c", "#8a7424")).join("")}
+      <path d="M95,33 L96.2,25 L98.2,28 L100,22 L101.8,28 L103.8,25 L105,33 Z" fill="#efe6c8" opacity=".92"/><path d="M97,38 h6" stroke="#efe6c8" stroke-width="1" opacity=".7"/>`;
   }
 
   function inlays(style, fb) {
@@ -137,7 +156,7 @@
     const fbCol = g.fb === "maple" ? "#e9c98b" : "#3a2013";
     const neckPoly = `M91,${NECK_TOP} L109,${NECK_TOP} L${100 + 12.6},${NECK_END + 8} L${100 - 12.6},${NECK_END + 8} Z`;
     const fbPoly = `M${100 - 7.6},${NECK_TOP + 2} L${100 + 7.6},${NECK_TOP + 2} L${100 + 11},${NECK_END + 8} L${100 - 11},${NECK_END + 8} Z`;
-    const pgPath = g.pgc && shp && shp.pg ? `<g clip-path="url(#${id}c)"><path d="${shp.pg}" fill="${g.pgc}"/><path d="${shp.pg}" fill="none" stroke="#000" stroke-opacity=".28" stroke-width=".7"/></g>` : "";
+    const pgPath = g.pgc && shp && shp.pg ? `<g clip-path="url(#${id}c)"><path d="${shp.pg}" fill="${g.pgc}"/><path d="${shp.pg}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><path d="${shp.pg}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.6" transform="translate(-.5,-.5)" clip-path="url(#${id}c)"/></g>` : "";
     const plate = g.plate ? `<rect x="${g.plate[0]}" y="${g.plate[1]}" width="${g.plate[2]}" height="${g.plate[3]}" rx="3" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5" opacity=".95"/>` : "";
     const fh = (g.fholes || []).map(([x1, y1, x2, y2]) => `<path d="M${x1},${y1} q${(x2 - x1) / 2 + (x2 > x1 ? -3 : 3)},${(y2 - y1) / 2} ${x2 - x1},${y2 - y1}" fill="none" stroke="#0a0a0a" stroke-width="3.4" stroke-linecap="round"/>`).join("");
     const ac = g.acoustic ? `<circle cx="100" cy="250" r="23" fill="#2a1b10"/><circle cx="100" cy="250" r="20" fill="#050403"/><circle cx="100" cy="250" r="25.5" fill="none" stroke="#e8dcc0" stroke-width="1.2" opacity=".7"/>
@@ -147,13 +166,15 @@
     const bind = g.bind ? `<path d="${body}" fill="none" stroke="${g.bind}" stroke-width="2.6" stroke-linejoin="round"/>` : "";
     return `<svg viewBox="0 0 200 ${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>${bodyFill}${sheen}${metal(m)}<clipPath id="${id}c"><path d="${body}"/></clipPath><filter id="${id}f" x="-20%" y="-10%" width="140%" height="130%"><feGaussianBlur stdDeviation="3"/></filter>
+        <linearGradient id="${id}e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".45" stop-color="#fff" stop-opacity=".05"/><stop offset=".55" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>
         <linearGradient id="${id}n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".3" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient></defs>
       <g transform="translate(5,7)" opacity=".38" filter="url(#${id}f)"><path d="${body}" fill="#000"/></g>
       ${headstock(g.hs)}
       <path d="${neckPoly}" fill="${g.fb === "maple" ? "#d8b176" : "#5a3a22"}"/><path d="${fbPoly}" fill="${fbCol}"/><path d="${fbPoly}" fill="url(#${id}n)"/>
       ${frets}${inlays(g.inlay, g.fb)}<rect x="${100 - 7.6}" y="${NECK_TOP}" width="15.2" height="3" rx="1" fill="#f2ead0"/>
       <path d="${body}" fill="url(#${id}b)"/><g clip-path="url(#${id}c)"><path d="${body}" fill="url(#${id}s)"/></g>
-      ${bind}<path d="${body}" fill="none" stroke="#000" stroke-opacity=".55" stroke-width=".8" stroke-linejoin="round"/>
+      ${bind}<g clip-path="url(#${id}c)"><path d="${body}" fill="none" stroke="url(#${id}e)" stroke-width="5" stroke-linejoin="round"/></g>
+      <path d="${body}" fill="none" stroke="#000" stroke-opacity=".6" stroke-width=".9" stroke-linejoin="round"/>
       ${pgPath}${plate}${fh}${ac}${g.acoustic ? "" : (g.pups || []).map(p => pickup(p, m)).join("")}
       ${strings}${g.bridge ? bridge(g.bridge, m) : ""}${(g.knobs || []).map(knob).join("")}${sw}</svg>`;
   };

@@ -6,10 +6,14 @@ are original vector paths (app/guitar-shapes.js) with real proportions. See READ
 import cv2, numpy as np, os, sys, json
 
 REF = "/tmp/mkprev/ref"
-SIMPLE = {"sg": "white", "flyingv": "black", "explorer": "dark", "strat": "whitefill"}   # plain backgrounds
+SIMPLE = {"sg": "white", "flyingv": "black", "strat": "whitefill"}   # plain backgrounds
 FLOOD = {"lp": 3, "es335": 3}
 CLOSE_BODY = {}
 GROW = {"es335": 2}                     # dark rims that blend into a dark backdrop: grow the mask a few pixels
+SEEDS = {   # hand-placed GrabCut scribbles (normalised x, y) for photos where the guitar fills the frame
+    "explorer": {"fg": [[(0.14, 0.52), (0.55, 0.33)], [(0.72, 0.20), (0.97, 0.12)], [(0.84, 0.78), (0.9, 0.9)], [(0.3, 0.7), (0.5, 0.78)]],
+                 "bg": [(0.03, 0.04), (0.03, 0.95), (0.50, 0.96), (0.97, 0.98), (0.86, 0.45), (0.98, 0.02), (0.45, 0.03), (0.2, 0.2), (0.62, 0.1)]},
+}
 FLIP = set()                            # (add names photographed left-handed)      # smooth, spot-lit backdrops: flood the background from the edges
 
 def segment(path, name):
@@ -24,7 +28,16 @@ def segment(path, name):
         im = im[:, :, :3]
     bgr = im
     h, w = bgr.shape[:2]
-    if name in FLOOD:
+    if name in SEEDS:
+        m = np.full((h, w), cv2.GC_PR_BGD, np.uint8)
+        for poly in SEEDS[name]["fg"]:
+            pts = np.array([[int(x * w), int(y * h)] for x, y in poly], np.int32); cv2.polylines(m, [pts], False, cv2.GC_FGD, max(6, w // 40))
+        for x, y in SEEDS[name]["bg"]:
+            cv2.circle(m, (int(x * w), int(y * h)), max(8, w // 30), cv2.GC_BGD, -1)
+        bgm, fgm = np.zeros((1, 65)), np.zeros((1, 65))
+        cv2.grabCut(bgr, m, None, bgm, fgm, 8, cv2.GC_INIT_WITH_MASK)
+        m = np.where((m == cv2.GC_FGD) | (m == cv2.GC_PR_FGD), 1, 0).astype(np.uint8)
+    elif name in FLOOD:
         sm = cv2.GaussianBlur(bgr, (0, 0), 2.0)
         bgmask = np.zeros((h + 2, w + 2), np.uint8)
         t = FLOOD[name]
@@ -117,7 +130,7 @@ def analyse(name):
     yy, xx = np.nonzero(mask); pts = np.stack([xx, yy], 1).astype(float); mu = pts.mean(0)
     ev, evec = np.linalg.eigh(np.cov((pts - mu).T)); ax = evec[:, 1]               # major axis (x, y)
     ang = np.degrees(np.arctan2(ax[0], ax[1]))                                    # tilt away from vertical
-    if abs(ang) > 45: ang = ang - np.sign(ang) * 90 if abs(ang) < 135 else ang    # axis may be horizontal
+    ang = (ang + 90) % 180 - 90                                                   # an axis has no direction: wrap to [-90, 90)
     M = cv2.getRotationMatrix2D((float(mu[0]), float(mu[1])), -ang, 1.0)
     # enlarge canvas so rotation never crops
     hh, ww = mask.shape; diag = int(np.hypot(hh, ww)); M[0, 2] += (diag - ww) / 2; M[1, 2] += (diag - hh) / 2
@@ -162,24 +175,104 @@ def analyse(name):
     body[last + 1:] = 0
     return dict(name=name, mask=mask, body=body, rgb=rgb, r0=r0, join=join, last=last, neckW=nW, neckMid=neckW, cx=cx, ang=ang)
 
-def to_path(body, d, nsamp=120):
-    cnts, _ = cv2.findContours(body, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    c = max(cnts, key=cv2.contourArea)[:, 0, :].astype(float)
+NECK_CUT = {"lp": 221, "es335": 229}
+SMOOTH_FROM = {"strat": 244, "tele": 240, "lp": 248, "es335": 262, "sg": 262, "jazz": 252, "prs": 252}
+STRONG_SIGMA = 4.6
+SYMMETRIC = {"sg", "prs", "es335"}
+LOWER_SYM = {"strat": (246, "max"), "tele": (250, "max"), "lp": (246, "mean")}   # lower bouts are symmetric: union/mean with the mirror image from this canvas y down      # models that are symmetrical about the neck axis in real life
+
+def clean_outline(d, s, sigma_units=2.0, ppu=6):
+    """Raster-domain smoothing: warp the body mask to canvas units at high resolution, (optionally) mirror-average it,
+    blur and threshold. This rounds corners naturally and removes pixel jitter. Returns an Nx2 closed contour in canvas units."""
+    M = np.array([[s * ppu, 0, (100 - d["cx"] * s) * ppu], [0, s * ppu, (NECK_END - d["join"] * s) * ppu]], dtype=np.float64)
+    W, H = 200 * ppu, 480 * ppu
+    m = cv2.warpAffine(d["body"].astype(np.float32), M, (W, H), flags=cv2.INTER_CUBIC)
+    if d["name"] in SYMMETRIC:
+        m = (m + m[:, ::-1]) / 2
+    elif d["name"] in LOWER_SYM:
+        y0, op = LOWER_SYM[d["name"]]; r0_ = int(y0 * ppu); lo = m[r0_:]; mir = lo[:, ::-1]
+        m[r0_:] = np.maximum(lo, mir) if op == "max" else (lo + mir) / 2
+    if d["name"] in NECK_CUT:                                   # neck stub still present in the mask: remove it above this canvas y
+        m[:int(NECK_CUT[d["name"]] * ppu), int(86.5 * ppu):int(113.5 * ppu)] = 0
+    weak = cv2.GaussianBlur(m, (0, 0), sigma_units * ppu)
+    strong = cv2.GaussianBlur(m, (0, 0), STRONG_SIGMA * ppu)
+    yb = SMOOTH_FROM.get(d["name"], 250) * ppu
+    w = np.clip((np.arange(H)[:, None] - yb) / (18 * ppu), 0, 1).astype(np.float32)   # gentle near horns, strong along the big lower curves
+    m = (1 - w) * weak + w * strong
+    bw = (m > 0.5).astype(np.uint8)
+    cnts, _ = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    c = max(cnts, key=cv2.contourArea)[:, 0, :].astype(float) / ppu
+    return c
+
+def resample_closed(c, step):
+    c2 = np.vstack([c, c[:1]]); seg = np.r_[0, np.cumsum(np.hypot(*np.diff(c2, axis=0).T))]
+    n = max(8, int(seg[-1] / step)); t = np.linspace(0, seg[-1], n, endpoint=False)
+    return np.stack([np.interp(t, seg, c2[:, i]) for i in range(2)], 1)
+
+# --- Schneider's least-squares cubic Bezier fitting (Graphics Gems): a few clean nodes instead of hundreds of tiny segments
+def _unit(v):
+    n = np.hypot(*v); return v / n if n > 1e-9 else v
+
+def _bez(b, t):
+    mt = 1 - t
+    return (mt ** 3)[:, None] * b[0] + (3 * mt ** 2 * t)[:, None] * b[1] + (3 * mt * t ** 2)[:, None] * b[2] + (t ** 3)[:, None] * b[3]
+
+def _gen_bezier(pts, u, t1, t2):
+    p0, p3 = pts[0], pts[-1]
+    A1 = (3 * (1 - u) ** 2 * u)[:, None] * t1; A2 = (3 * (1 - u) * u ** 2)[:, None] * t2
+    C = np.zeros((2, 2)); X = np.zeros(2)
+    for i in range(len(pts)):
+        a1, a2 = A1[i], A2[i]
+        C[0, 0] += a1 @ a1; C[0, 1] += a1 @ a2; C[1, 1] += a2 @ a2
+        tmp = pts[i] - _bez(np.array([p0, p0, p3, p3]), np.array([u[i]]))[0]
+        X[0] += a1 @ tmp; X[1] += a2 @ tmp
+    C[1, 0] = C[0, 1]
+    det = C[0, 0] * C[1, 1] - C[1, 0] * C[0, 1]
+    seg = np.hypot(*(p3 - p0))
+    if abs(det) > 1e-12:
+        al = (X[0] * C[1, 1] - X[1] * C[0, 1]) / det; ar = (C[0, 0] * X[1] - C[1, 0] * X[0]) / det
+    else:
+        al = ar = 0
+    if al < 1e-6 * seg or ar < 1e-6 * seg:
+        al = ar = seg / 3
+    return np.array([p0, p0 + t1 * al, p3 + t2 * ar, p3])
+
+def _chord(pts):
+    d = np.r_[0, np.cumsum(np.hypot(*np.diff(pts, axis=0).T))]; return d / d[-1]
+
+def _max_err(pts, b, u):
+    d = np.hypot(*(_bez(b, u) - pts).T); i = int(np.argmax(d)); return d[i], i
+
+def _reparam(pts, b, u):
+    d1 = 3 * (b[1:] - b[:-1]); d2 = 2 * (d1[1:] - d1[:-1]); out = []
+    for p, t in zip(pts, u):
+        q = _bez(b, np.array([t]))[0]; mt = 1 - t
+        q1 = mt ** 2 * d1[0] + 2 * mt * t * d1[1] + t ** 2 * d1[2]; q2 = mt * d2[0] + t * d2[1]
+        den = q1 @ q1 + (q - p) @ q2
+        out.append(t - ((q - p) @ q1) / den if abs(den) > 1e-12 else t)
+    return np.clip(np.array(out), 0, 1)
+
+def fit_cubic(pts, t1, t2, err):
+    if len(pts) == 2:
+        dist = np.hypot(*(pts[1] - pts[0])) / 3; return [np.array([pts[0], pts[0] + t1 * dist, pts[1] + t2 * dist, pts[1]])]
+    u = _chord(pts); b = _gen_bezier(pts, u, t1, t2); e, sp = _max_err(pts, b, u)
+    if e < err: return [b]
+    if e < err * 4:
+        for _ in range(12):
+            u = _reparam(pts, b, u); b = _gen_bezier(pts, u, t1, t2); e, sp = _max_err(pts, b, u)
+            if e < err: return [b]
+    sp = min(max(sp, 1), len(pts) - 2); ct = _unit(pts[sp - 1] - pts[sp + 1])
+    return fit_cubic(pts[:sp + 1], t1, ct, err) + fit_cubic(pts[sp:], -ct, t2, err)
+
+def to_path(body, d, nsamp=None):
     s = OUR_NECK_JOIN_W / d["neckW"]
-    P = np.stack([100 + (c[:, 0] - d["cx"]) * s, NECK_END + (c[:, 1] - d["join"]) * s], 1)
-    # light smoothing + uniform resampling along the outline
-    k = 5; Pc = np.concatenate([P[-k:], P, P[:k]])
-    ker = np.ones(2 * k + 1) / (2 * k + 1)
-    Ps = np.stack([np.convolve(Pc[:, i], ker, "valid") for i in range(2)], 1)
-    seg = np.r_[0, np.cumsum(np.hypot(*np.diff(Ps, axis=0).T))]
-    t = np.linspace(0, seg[-1], nsamp, endpoint=False)
-    Q = np.stack([np.interp(t, seg, Ps[:, i]) for i in range(2)], 1)
-    # closed Catmull-Rom -> cubic beziers
-    n = len(Q); out = [f"M{Q[0][0]:.1f},{Q[0][1]:.1f}"]
-    for i in range(n):
-        p0, p1, p2, p3 = Q[(i - 1) % n], Q[i], Q[(i + 1) % n], Q[(i + 2) % n]
-        c1 = p1 + (p2 - p0) / 6; c2 = p2 - (p3 - p1) / 6
-        out.append(f"C{c1[0]:.1f},{c1[1]:.1f} {c2[0]:.1f},{c2[1]:.1f} {p2[0]:.1f},{p2[1]:.1f}")
+    c = clean_outline(d, s)
+    P = resample_closed(c, 1.0)
+    # start the path at the neck-notch corner (top-most point of the body next to the neck) so the seam sits on a real corner
+    i0 = int(np.argmin(np.hypot(P[:, 0] - (100 - 12.6), P[:, 1] - NECK_END)))
+    P = np.roll(P, -i0, axis=0); P = np.vstack([P, P[:1]])
+    segs = fit_cubic(P, _unit(P[3] - P[0]), _unit(P[-4] - P[-1]), 0.55)
+    out = [f"M{segs[0][0][0]:.1f},{segs[0][0][1]:.1f}"] + [f"C{b[1][0]:.1f},{b[1][1]:.1f} {b[2][0]:.1f},{b[2][1]:.1f} {b[3][0]:.1f},{b[3][1]:.1f}" for b in segs]
     return "".join(out) + "Z", s
 
 def calib_image(d, s, path):
@@ -199,7 +292,7 @@ def calib_image(d, s, path):
 
 if __name__ == "__main__" and os.environ.get("TRACE"):
     res = {}
-    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "p90", "flyingv"]:
+    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer"]:
         d = analyse(n); path, s = to_path(d["body"], d)
         h = d["last"]; bottom = NECK_END + (d["last"] - d["join"]) * s
         res[n] = {"path": path, "bottom": round(bottom, 1), "scale": round(s, 4), "neckW": round(d["neckW"], 1)}
@@ -236,10 +329,14 @@ def pickguard_path(name, d, s, ppu=3):
     n, lab, st, _ = cv2.connectedComponentsWithStats(m)
     if n < 2: return None
     m = (lab == 1 + np.argmax(st[1:, cv2.CC_STAT_AREA])).astype(np.uint8)
-    cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    mf = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 2.6 * ppu)                   # round and clean the guard outline
+    cnts, _ = cv2.findContours((mf > 0.5).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if not cnts: return None
     c = max(cnts, key=cv2.contourArea)[:, 0, :].astype(float) / ppu
     if len(c) < 20: return None
-    return smooth_path(c, 70)
+    P = resample_closed(c, 1.0); i0 = int(np.argmin(P[:, 1])); P = np.roll(P, -i0, axis=0); P = np.vstack([P, P[:1]])
+    segs = fit_cubic(P, _unit(P[3] - P[0]), _unit(P[-4] - P[-1]), 0.6)
+    return f"M{segs[0][0][0]:.1f},{segs[0][0][1]:.1f}" + "".join(f"C{b[1][0]:.1f},{b[1][1]:.1f} {b[2][0]:.1f},{b[2][1]:.1f} {b[3][0]:.1f},{b[3][1]:.1f}" for b in segs) + "Z"
 
 def smooth_path(c, nsamp):
     k = 3; Pc = np.concatenate([c[-k:], c, c[:k]]); ker = np.ones(2 * k + 1) / (2 * k + 1)
@@ -256,7 +353,8 @@ def export(out_js="app/guitar-shapes.js"):
     shapes = {}
     for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs"]:
         d = analyse(n); path, s = to_path(d["body"], d)
-        shapes[n] = {"body": path, "bottom": round(NECK_END + (d["last"] - d["join"]) * s, 1), "pg": pickguard_path(n, d, s)}
+        cc = clean_outline(d, s)
+        shapes[n] = {"body": path, "bottom": round(float(cc[:, 1].max()), 1), "pg": pickguard_path(n, d, s)}
         print(n, shapes[n]["bottom"], "pg" if shapes[n]["pg"] else "-")
     js = ("/* Generated by tools/trace_guitars.py: original vector outlines (canvas units, 200 wide, neck join at y=196).\n"
           "   Derived by tracing silhouettes of public photographs (see README, Credits); no photo data is included. */\n"
