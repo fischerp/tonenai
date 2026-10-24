@@ -76,7 +76,7 @@ file names are listed in the credits above). Needs `pip install opencv-python-he
   (needs OpenCV; only vector paths in `app/guitar-shapes.js` ship, no photo pixels): Fender Stratocaster 004-2 (public domain),
   Fender Telecaster American Vintage 1952 (CC BY-SA 3.0), Full front R9 Les Paul (CC BY-SA 4.0), Iommi SG (CC BY-SA 2.0),
   1960 Gibson ES-335TD (CC BY-SA 4.0), Fender Jaguar 3 tone burst (CC BY-SA 4.0), PRS Custom (1988) Santana (CC BY-SA 4.0).
-  The Explorer, Flying V and acoustic outlines are hand-drawn. Credit and share-alike apply to `app/guitar-shapes.js`.
+  Gibson Explorer dark red (CC0) was traced for the Explorer. The Les Paul outline was redrawn by hand from measurements of the traced shape; the Flying V and acoustic outlines are hand-drawn. Credit and share-alike apply to `app/guitar-shapes.js`.
 - Album art and song search use Apple's public iTunes Search API; covers are downloaded to a local cache for your own
   use and are not part of this repo. Artwork belongs to its respective owners.
 - Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.

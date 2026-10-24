@@ -6,11 +6,12 @@ are original vector paths (app/guitar-shapes.js) with real proportions. See READ
 import cv2, numpy as np, os, sys, json
 
 REF = "/tmp/mkprev/ref"
-SIMPLE = {"sg": "white", "flyingv": "black", "strat": "whitefill"}   # plain backgrounds
+SIMPLE = {"sg": "white", "flyingv": "black", "strat": "whitefill", "explorer": "whitefill"}   # plain backgrounds
 FLOOD = {"lp": 3, "es335": 3}
 CLOSE_BODY = {}
 GROW = {"es335": 2}                     # dark rims that blend into a dark backdrop: grow the mask a few pixels
-SEEDS = {   # hand-placed GrabCut scribbles (normalised x, y) for photos where the guitar fills the frame
+SEEDS = {}
+SEEDS_OLD = {   # hand-placed GrabCut scribbles (normalised x, y) for photos where the guitar fills the frame
     "explorer": {"fg": [[(0.14, 0.52), (0.55, 0.33)], [(0.72, 0.20), (0.97, 0.12)], [(0.84, 0.78), (0.9, 0.9)], [(0.3, 0.7), (0.5, 0.78)]],
                  "bg": [(0.03, 0.04), (0.03, 0.95), (0.50, 0.96), (0.97, 0.98), (0.86, 0.45), (0.98, 0.02), (0.45, 0.03), (0.2, 0.2), (0.62, 0.1)]},
 }
@@ -142,6 +143,13 @@ def analyse(name):
     if wd[:k].mean() > wd[-k:].mean():                                             # wider end must be the body: flip 180
         mask, rgb = mask[::-1, ::-1].copy(), rgb[::-1, ::-1].copy()
     ys = np.where(mask.any(1))[0]; top, bot = ys[0], ys[-1]
+    if name in REFINE_NECK:
+        a0_, a1_ = int(top + .20 * (bot - top)), int(top + .30 * (bot - top))
+        pts_ = [(np.mean(np.where(mask[y])[0]), y) for y in range(a0_, a1_) if mask[y].any()]
+        xs_, ys_ = np.array([q[0] for q in pts_]), np.array([q[1] for q in pts_]); sl = np.polyfit(ys_, xs_, 1)[0]
+        M2 = cv2.getRotationMatrix2D((float(xs_.mean()), float(ys_.mean())), -np.degrees(np.arctan(sl)), 1.0)
+        mask = cv2.warpAffine(mask, M2, (mask.shape[1], mask.shape[0]), flags=cv2.INTER_NEAREST); rgb = cv2.warpAffine(rgb, M2, (mask.shape[1], mask.shape[0]), flags=cv2.INTER_LINEAR)
+        ys = np.where(mask.any(1))[0]; top, bot = ys[0], ys[-1]
     if (bot - top) < 0.5 * h_orig:                    # dark neck merged into the dark backdrop: body-only mode (ES-335)
         widths = np.array([mask[y].sum() for y in range(h)])
         last = max(y for y in range(top, bot) if widths[y] > 0.30 * widths.max())
@@ -161,6 +169,9 @@ def analyse(name):
         join = next(y for y in range(r0, bot) if len(runs(mask[y])) == 1)
     # neck width at the join (use rows just above the join/horn tips)
     nW = float(np.median(widths[max(a1, r0 - 40):max(a1 + 1, r0 - 8)]))
+    if name in REFINE_NECK:                                   # centre on the neck as it enters the body
+        rows_ = [y for y in range(max(a1, r0 - 70), r0 - 12) if mask[y].any()]
+        cx = float(np.median([np.mean(np.where(mask[y])[0]) for y in rows_]))
     # 3) body mask: drop the neck column above the join, trim the stand below
     body = mask.copy(); body[:r0] = 0
     x0, x1 = int(cx - 0.56 * nW), int(cx + 0.56 * nW) + 1      # only the neck columns go; horns that touch the neck stay
@@ -175,8 +186,10 @@ def analyse(name):
     body[last + 1:] = 0
     return dict(name=name, mask=mask, body=body, rgb=rgb, r0=r0, join=join, last=last, neckW=nW, neckMid=neckW, cx=cx, ang=ang)
 
-NECK_CUT = {"lp": 221, "es335": 229}
-SMOOTH_FROM = {"strat": 244, "tele": 240, "lp": 248, "es335": 262, "sg": 262, "jazz": 252, "prs": 252}
+REFINE_NECK = {"explorer"}
+NECK_COLS = {"explorer": (83, 119)}
+NECK_CUT = {"explorer": 205, "lp": 221, "es335": 229}
+SMOOTH_FROM = {"explorer": 300, "strat": 244, "tele": 240, "lp": 248, "es335": 262, "sg": 262, "jazz": 252, "prs": 252}
 STRONG_SIGMA = 4.6
 SYMMETRIC = {"sg", "prs", "es335"}
 LOWER_SYM = {"strat": (246, "max"), "tele": (250, "max"), "lp": (246, "mean")}   # lower bouts are symmetric: union/mean with the mirror image from this canvas y down      # models that are symmetrical about the neck axis in real life
@@ -193,7 +206,7 @@ def clean_outline(d, s, sigma_units=2.0, ppu=6):
         y0, op = LOWER_SYM[d["name"]]; r0_ = int(y0 * ppu); lo = m[r0_:]; mir = lo[:, ::-1]
         m[r0_:] = np.maximum(lo, mir) if op == "max" else (lo + mir) / 2
     if d["name"] in NECK_CUT:                                   # neck stub still present in the mask: remove it above this canvas y
-        m[:int(NECK_CUT[d["name"]] * ppu), int(86.5 * ppu):int(113.5 * ppu)] = 0
+        c0, c1 = NECK_COLS.get(d["name"], (86.5, 113.5)); m[:int(NECK_CUT[d["name"]] * ppu), int(c0 * ppu):int(c1 * ppu)] = 0
     weak = cv2.GaussianBlur(m, (0, 0), sigma_units * ppu)
     strong = cv2.GaussianBlur(m, (0, 0), STRONG_SIGMA * ppu)
     yb = SMOOTH_FROM.get(d["name"], 250) * ppu
@@ -311,6 +324,7 @@ def canvas_view(d, s, ppu=3):
 
 PG_RULES = {   # name -> (colour test, region of interest in canvas units x0,y0,x1,y1)
     "strat": (lambda hsv: (hsv[..., 2] > 185) & (hsv[..., 1] < 55), (30, 190, 175, 330)),
+    "explorer": (lambda hsv: (hsv[..., 2] > 165) & (hsv[..., 1] < 70), (75, 150, 200, 330)),
     "tele": (lambda hsv: (hsv[..., 2] < 60), (45, 195, 150, 300)),
     "flyingv": (lambda hsv: (hsv[..., 2] > 170) & (hsv[..., 1] < 70), (60, 200, 200, 470)),
     "jazz": (lambda hsv: ((hsv[..., 0] < 12) | (hsv[..., 0] > 168)) & (hsv[..., 1] > 130) & (hsv[..., 2] > 40) & (hsv[..., 2] < 150), (70, 215, 150, 330)),
@@ -351,7 +365,7 @@ def smooth_path(c, nsamp):
 
 def export(out_js="app/guitar-shapes.js"):
     shapes = {}
-    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs"]:
+    for n in ["strat", "tele", "lp", "sg", "es335", "jazz", "prs", "explorer"]:
         d = analyse(n); path, s = to_path(d["body"], d)
         cc = clean_outline(d, s)
         shapes[n] = {"body": path, "bottom": round(float(cc[:, 1].max()), 1), "pg": pickguard_path(n, d, s)}

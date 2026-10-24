@@ -29,7 +29,7 @@
     return out + "Z";
   }
   // Hand-drawn outlines for the models without a usable reference photo.
-  const EXPLORER = rpoly([[87.4, 198, 0], [33, 313, 7], [186, 266, 6], [171, 207, 5], [199, 180, 5], [112.6, 198, 0]]);
+  const LES_PAUL = "M87.0,197.0C86.1,197.1 78.3,197.0 74.0,198.0C69.6,199.0 64.9,200.9 61.0,203.0C57.3,205.0 53.6,207.3 51.0,210.0C48.7,212.4 47.2,215.1 46.0,218.0C44.8,221.0 44.3,224.8 44.0,228.0C43.7,230.8 43.7,233.4 44.0,236.0C44.3,238.7 45.2,241.4 46.0,244.0C46.8,246.7 47.9,249.4 49.0,252.0C50.2,254.7 52.0,257.3 53.0,260.0C54.0,262.6 55.0,265.3 55.0,268.0C55.0,270.9 54.3,274.2 53.0,277.0C51.7,279.9 49.2,282.5 47.0,285.0C44.8,287.5 42.3,289.5 40.0,292.0C37.6,294.5 35.2,297.2 33.0,300.0C30.8,302.8 28.7,305.9 27.0,309.0C25.4,311.9 24.0,314.9 23.0,318.0C22.0,321.2 21.5,324.5 21.0,328.0C20.5,331.8 20.2,336.0 20.0,340.0C19.8,344.0 19.8,348.2 20.0,352.0C20.2,355.5 20.2,358.7 21.0,362.0C21.8,365.4 23.3,368.8 25.0,372.0C26.7,375.2 28.7,378.2 31.0,381.0C33.4,383.9 36.0,386.6 39.0,389.0C42.3,391.6 46.0,394.2 50.0,396.0C54.3,397.9 59.0,398.9 64.0,400.0C69.6,401.2 76.0,402.0 82.0,402.5C88.0,403.0 94.0,403.0 100.0,403.0C106.0,403.0 112.0,403.0 118.0,402.5C124.0,402.0 130.4,401.2 136.0,400.0C141.0,398.9 145.7,397.9 150.0,396.0C154.0,394.2 157.7,391.6 161.0,389.0C164.0,386.6 166.6,383.9 169.0,381.0C171.3,378.2 173.3,375.2 175.0,372.0C176.7,368.8 178.2,365.4 179.0,362.0C179.8,358.7 179.8,355.5 180.0,352.0C180.2,348.2 180.2,344.0 180.0,340.0C179.8,336.0 179.5,331.8 179.0,328.0C178.5,324.5 178.0,321.2 177.0,318.0C176.0,314.9 174.6,311.9 173.0,309.0C171.3,305.9 169.2,302.8 167.0,300.0C164.8,297.2 162.4,294.5 160.0,292.0C157.7,289.5 155.2,287.5 153.0,285.0C150.8,282.5 148.3,279.9 147.0,277.0C145.7,274.2 145.0,270.9 145.0,268.0C145.0,265.3 146.0,262.6 147.0,260.0C148.0,257.3 149.8,254.7 151.0,252.0C152.1,249.4 153.2,246.7 154.0,244.0C154.8,241.4 155.5,238.7 156.0,236.0C156.5,233.3 157.2,230.5 157.0,228.0C156.8,225.8 156.3,223.5 155.0,222.0C153.7,220.5 151.0,219.0 149.0,219.0C147.0,219.0 144.7,220.6 143.0,222.0C141.4,223.3 140.6,225.5 139.0,227.0C137.3,228.6 135.1,230.4 133.0,231.0C131.1,231.6 128.8,231.6 127.0,231.0C125.1,230.3 123.5,228.6 122.0,227.0C120.4,225.3 119.2,223.3 118.0,221.0C116.5,218.4 114.8,215.3 114.0,212.0C113.1,208.4 113.1,202.7 113.0,200.0C112.9,198.7 113.0,197.4 113.0,197.0Z";
   const ACOUSTIC = "M100,196 C140,196 163.5,210 163.5,244 C163.5,272 157,282 157,298 C157,316 189,330 189,372 C189,408 150,425 100,425 C50,425 11,408 11,372 C11,330 43,316 43,298 C43,282 36.5,272 36.5,244 C36.5,210 60,196 100,196 Z";
 
   // Pickup spec: [type, cx, cy, cover]  ·  bridge: [type, cy, tail cy]  ·  knob: [x, y, colour]
@@ -38,7 +38,7 @@
       pups: [["single", 100, 215], ["single", 100, 239], ["single", 100, 263]], bridge: ["strat", 285], knobs: [[126, 271, "cream"], [144, 278, "cream"], [158, 289, "cream"]], sw: [148, 263] },
     Telecaster: { shape: "tele", fin: "butter", hs: "fender", fb: "maple", inlay: "dots", pgc: "#1c1c20",
       pups: [["telecover", 100, 213]], bridge: ["tele", 274], knobs: [[143, 301, "chrome"], [143, 315, "chrome"]], sw: [143, 283], plate: [136, 272, 14, 52] },
-    "Les Paul": { shape: "lp", fin: "cherryburst", hs: "gibson", fb: "rosewood", bind: "#f3e8c4", inlay: "trapezoid",
+    "Les Paul": { path: LES_PAUL, bottom: 403, fin: "cherryburst", hs: "gibson", fb: "rosewood", bind: "#f3e8c4", inlay: "trapezoid",
       pups: [["hum", 100, 246, "cream"], ["hum", 100, 295, "cream"]], bridge: ["tom", 314, 334], knobs: [[155, 326, "gold"], [133, 339, "gold"], [154, 354, "gold"], [133, 368, "gold"]], sw: [64, 226] },
     SG: { shape: "sg", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots",
       pups: [["hum", 100, 213, "chrome"], ["hum", 100, 249, "chrome"]], bridge: ["tom", 264, 281], knobs: [[56, 286, "black"], [52, 302, "black"], [70, 310, "black"], [86, 314, "black"]], sw: [62, 222] },
@@ -47,11 +47,11 @@
       fholes: [[41, 300, 33, 340], [159, 300, 167, 340]] },
     "Jazzmaster / Jaguar": { shape: "jazz", fin: "sunburst", hs: "fender", fb: "rosewood", inlay: "dots",
       pups: [["wide", 100, 240], ["wide", 100, 285]], bridge: ["offset", 297, 342], knobs: [[158, 322, "chrome"], [166, 334, "chrome"]], sw: null, plate: [48, 214, 28, 44] },
-    "Explorer / Flying V": { path: EXPLORER, bottom: 322, fin: "black", hs: "gibson", fb: "rosewood", inlay: "dots",
-      pups: [["hum", 100, 216, "chrome"], ["hum", 100, 240, "chrome"]], bridge: ["tom", 262, 276], knobs: [[110, 288, "gold"], [124, 280, "gold"]], sw: null },
+    "Explorer / Flying V": { shape: "explorer", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots", pgc: "#f4f0e2", dx: -9,
+      pups: [["hum", 97, 217, "chrome"], ["hum", 99, 263, "chrome"]], bridge: ["tom", 284, 301], knobs: [[147, 301, "black"], [138, 322, "black"], [129, 343, "black"]], sw: null },
     "PRS / Superstrat": { shape: "prs", fin: "cherryburst", hs: "prs", fb: "rosewood", bind: "#0006", inlay: "birds",
       pups: [["hum", 100, 215, "cream"], ["hum", 100, 254, "cream"]], bridge: ["hardtail", 279], knobs: [[126, 309, "gold"]], sw: [127, 336] },
-    "P-90 guitar (Junior, Special…)": { shape: "lp", fin: "tv", hs: "gibson", fb: "rosewood", bind: "#f8f2d8", inlay: "dots",
+    "P-90 guitar (Junior, Special…)": { path: LES_PAUL, bottom: 403, fin: "tv", hs: "gibson", fb: "rosewood", bind: "#f8f2d8", inlay: "dots",
       pups: [["p90", 100, 246], ["p90", 100, 295]], bridge: ["wrap", 316], knobs: [[150, 340, "black"], [132, 356, "black"]], sw: null },
     Acoustic: { path: ACOUSTIC, bottom: 425, acoustic: true, fin: "natural", hs: "gibson", fb: "rosewood", bind: "#2a1b10", inlay: "dots" },
     Other: { shape: "prs", fin: "grey", hs: "fender", fb: "rosewood", inlay: "dots",
@@ -168,6 +168,7 @@
       <defs>${bodyFill}${sheen}${metal(m)}<clipPath id="${id}c"><path d="${body}"/></clipPath><filter id="${id}f" x="-20%" y="-10%" width="140%" height="130%"><feGaussianBlur stdDeviation="3"/></filter>
         <linearGradient id="${id}e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".45" stop-color="#fff" stop-opacity=".05"/><stop offset=".55" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>
         <linearGradient id="${id}n" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".3" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient></defs>
+      <g transform="translate(${g.dx || 0},0)">
       <g transform="translate(5,7)" opacity=".38" filter="url(#${id}f)"><path d="${body}" fill="#000"/></g>
       ${headstock(g.hs)}
       <path d="${neckPoly}" fill="${g.fb === "maple" ? "#d8b176" : "#5a3a22"}"/><path d="${fbPoly}" fill="${fbCol}"/><path d="${fbPoly}" fill="url(#${id}n)"/>
@@ -176,7 +177,7 @@
       ${bind}<g clip-path="url(#${id}c)"><path d="${body}" fill="none" stroke="url(#${id}e)" stroke-width="5" stroke-linejoin="round"/></g>
       <path d="${body}" fill="none" stroke="#000" stroke-opacity=".6" stroke-width=".9" stroke-linejoin="round"/>
       ${pgPath}${plate}${fh}${ac}${g.acoustic ? "" : (g.pups || []).map(p => pickup(p, m)).join("")}
-      ${strings}${g.bridge ? bridge(g.bridge, m) : ""}${(g.knobs || []).map(knob).join("")}${sw}</svg>`;
+      ${strings}${g.bridge ? bridge(g.bridge, m) : ""}${(g.knobs || []).map(knob).join("")}${sw}</g></svg>`;
   };
 
   window.guitarPic = function (kind, name, finish) { return `<span class="gpic">${window.guitarSVG(kind, name, finish)}</span>`; };
