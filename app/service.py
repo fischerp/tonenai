@@ -33,6 +33,7 @@ class Service:
         self._lock = threading.Lock()
         self._inp = self._out = None
         self._job = {"state": "idle"}
+        self._last_text = ""
 
     # -------------------------------------------------------------- library
     def songs(self):
@@ -46,7 +47,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "",
+                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -152,7 +153,7 @@ class Service:
     def _run_job(self, text):
         before = set(glob.glob(os.path.join(SONGS, "*.json")))
         try:
-            asyncio.run(self._agent(text))
+            asyncio.run(self._agent(self._create_prompt(text)))
             new = sorted(set(glob.glob(os.path.join(SONGS, "*.json"))) - before)
             if not new:
                 raise RuntimeError("Claude finished but did not create a song file")
@@ -173,22 +174,14 @@ class Service:
             PT.json.dump(PT.to_tsl(specs if isinstance(specs, list) else [specs], sid),
                          open(os.path.join(SONGS, sid + ".tsl"), "w"), indent=1)
 
-    async def _agent(self, text):
-        from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock
+    async def _agent(self, prompt):
+        from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock, TextBlock
+        self._last_text = ""
         skill = open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read()
         skill = re.sub(r"^---.*?---", "", skill, flags=re.S)
-        prompt = (
-            f"The user searched their song library for: {text!r} and nothing matched. "
-            "Figure out the song (artist and title) and research the guitar tone (amp, pedals, effects, "
-            "rhythm vs lead parts) with a web search. Then create ONE new file songs/<artist>-<title>.json "
-            "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
-            "The first patch memo must start with 'Artist - Title: ' . Validate and export by running "
-            "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
-            "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done."
-        )
         opts = ClaudeAgentOptions(
             cwd=ROOT, system_prompt={"type": "preset", "preset": "claude_code", "append": skill},
-            allowed_tools=["Read", "Write", "WebSearch", "WebFetch",
+            allowed_tools=["Read", "Write", "Edit", "WebSearch", "WebFetch",
                            "Bash(.venv/bin/python tools/patch.py export:*)"],
             permission_mode="acceptEdits", max_turns=25)
         labels = {"WebSearch": "Researching the tone…", "WebFetch": "Reading about the gear…",
@@ -198,6 +191,54 @@ class Service:
                 for b in msg.content:
                     if isinstance(b, ToolUseBlock):
                         self._job = {**self._job, "note": labels.get(b.name, "Working…")}
+                    elif isinstance(b, TextBlock) and b.text.strip():
+                        self._last_text = b.text.strip()
+
+    def _create_prompt(self, text):
+        return (
+            f"The user searched their song library for: {text!r} and nothing matched. "
+            "Figure out the song (artist and title) and research the guitar tone (amp, pedals, effects, "
+            "rhythm vs lead parts) with a web search. Then create ONE new file songs/<artist>-<title>.json "
+            "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
+            "The first patch memo must start with 'Artist - Title: ' . Also add a \"band\" object to the FIRST patch "
+            "(see 'Band setup' in the instructions). Validate and export by running "
+            "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
+            "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done.")
+
+    def _band_prompt(self, sid):
+        return (
+            f"Add (or replace) the \"band\" object on the FIRST patch of songs/{sid}.json, following 'Band setup' in the "
+            "instructions. Look up the song's real tempo, key and structure with a web search. Edit only that file, "
+            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            "Reply with one short line when done.")
+
+    def generate_band(self, song_id):
+        """Ask the Claude agent to add the DigiTech Trio+ band setup to an existing song."""
+        if self._job.get("state") == "running":
+            return {"ok": False, "error": "Already working on something"}
+        if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or "") or not os.path.exists(os.path.join(SONGS, song_id + ".json")):
+            return {"ok": False, "error": "Song not found"}
+        self._job = {"state": "running", "note": "Starting Claude…", "query": "band setup", "kind": "band", "id": song_id}
+        threading.Thread(target=self._run_band, args=(song_id,), daemon=True).start()
+        return {"ok": True}
+
+    def _run_band(self, sid):
+        try:
+            for attempt in range(2):          # the agent occasionally finishes without saving; try once more
+                asyncio.run(self._agent(self._band_prompt(sid)))
+                self._validate(sid)
+                specs = json.load(open(os.path.join(SONGS, sid + ".json")))
+                specs = specs if isinstance(specs, list) else [specs]
+                if specs[0].get("band"):
+                    break
+            else:
+                raise RuntimeError((self._last_text or "Claude could not add a Trio+ setup for this song")[:300])
+            self._job = {"state": "done", "id": sid, "kind": "band"}
+        except Exception as e:
+            msg = str(e)
+            if "Not logged in" in msg or "authentication" in msg.lower():
+                msg = "Claude is not signed in. See the README: run the one-time login."
+            self._job = {"state": "error", "error": msg, "kind": "band"}
 
     # -------------------------------------------------------------- cover art (iTunes Search API, cached)
     def cover(self, song_id):

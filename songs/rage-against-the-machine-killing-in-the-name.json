@@ -2,6 +2,9 @@
  {
   "name": "KITN Rhythm",
   "memo": "Rage Against the Machine - Killing in the Name: rhythm. Tom Morello: JCM800 2205 boost channel, tight mid-forward grit, no effects.",
+  "band": {"genre": "Metal", "style_feel": "heavy half-time-ish groove, tight kick locked to the riff, open snare/crash on the big chorus hits", "bpm": 89, "time_signature": "4/4",
+           "key": "D minor (D Phrygian flavour; analyzers disagree)", "parts": ["Part A: intro riff - sparse, drums and bass lock in", "Part B: verse - same riff, restrained groove", "Part C: chorus 'Killing in the name of' - full band", "Part D: bridge/build 'Some of those that work forces' - rising intensity", "Part E: final 'Fuck you I won't do what you tell me' outburst and outro - full on"],
+           "tips": "Tempo is about 88-89 BPM (sources vary). Play the main riff cleanly for 2 bars before starting the Trio+ learn pass; keep it tight and steady, since the song is built on repetition."},
   "amp": {"type": "BROWN", "gain": 68, "bass": 50, "mid": 70, "treble": 62, "presence": 60, "volume": 50},
   "booster": {"type": "T-SCREAM", "on": false},
   "mod": {"type": "PHASER", "on": false},

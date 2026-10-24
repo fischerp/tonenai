@@ -1,6 +1,9 @@
 [
  {
   "name": "Wasting Love Cln",
+  "band": {"genre": "Rock", "style_feel": "slow, brooding rock ballad: sparse half-time drums building to a full, driving band in the choruses", "bpm": 85, "time_signature": "4/4",
+           "key": "E minor", "parts": ["Part A: intro/verse - clean arpeggio, quiet sparse drums", "Part B: chorus - full band, power chords", "Part C: guitar solo - lead section"],
+           "tips": "BPM (85) and key (E minor, from a fan tab) are unverified web-search estimates; check by ear. Play the intro riff cleanly for 2 bars before the Trio+ starts learning; keep strumming steady."},
   "memo": "Iron Maiden - Wasting Love: clean arpeggio intro/verses. Strat-style sparkle, chorus and a touch of delay, lots of reverb. Informed approximation.",
   "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 50, "treble": 60, "presence": 55, "volume": 45},
   "mod": {"type": "CHORUS", "on": true},

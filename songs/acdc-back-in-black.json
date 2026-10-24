@@ -1,6 +1,9 @@
 [
  {
   "name": "BackInBlack Rhy",
+  "band": {"genre": "Rock", "style_feel": "straight-eight hard rock shuffle-free groove, kick on 1 and 3, snare on 2 and 4, open hi-hat; sparse and heavy", "bpm": 92, "time_signature": "4/4",
+           "key": "E (riff on open E-D-A, E minor pentatonic)", "parts": ["Part A: intro riff - sparse, riff only", "Part B: verse - tight, muted power chords", "Part C: chorus - full band, open chords", "Part D: solo - same groove, E pentatonic lead"],
+           "tips": "Sources give 91-96 BPM; 92 is the middle of that range. Play the riff 2 bars cleanly before it starts learning; leave space between hits and keep strumming steady."},
   "memo": "AC/DC - Back in Black: rhythm. Plexi-style crunch (Marshall 1959 + SG), amp run fairly clean with natural breakup, presence low, no pedals.",
   "amp": {"type": "CRUNCH", "gain": 45, "bass": 50, "mid": 55, "treble": 55, "presence": 30, "volume": 50},
   "booster": {"type": "MID BOOST", "on": false},

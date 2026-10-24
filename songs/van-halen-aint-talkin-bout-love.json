@@ -6,7 +6,11 @@
   "mod": {"type": "FLANGER", "on": false},
   "delay": {"type": "ANALOG", "on": true, "time": 320, "feedback": 20, "level": 25},
   "reverb": {"type": "ROOM", "on": true, "time": 15, "level": 12},
-  "noise_suppressor": {"on": true, "threshold": 15}
+  "noise_suppressor": {"on": true, "threshold": 15},
+  "band": {"genre": "Rock", "style_feel": "driving straight eighths, heavy kick on 1 and 3, snare on 2 and 4, simple hard-rock groove", "bpm": 139, "time_signature": "4/4",
+           "key": "G# minor (album is tuned a half step down; sources disagree, check by ear)",
+           "parts": ["Part A: intro riff - staccato chords, sparse drums", "Part B: verse - riff continues, steady groove", "Part C: pre-chorus - sliding chords, syncopated build", "Part D: chorus - full band", "Part E: solo - tapping lead over the riff"],
+           "tips": "Tempo is about 138-139 BPM. Play the opening riff 2 bars cleanly before the Trio+ starts learning; keep the staccato chords tight and steady."}
  },
  {
   "name": "AintTalkin Lead",

@@ -19,3 +19,15 @@ description: Configure the BOSS Katana MkII for a song or band. Use when the use
 Rules: never overwrite the user's stored patches without a backup; keep rhythm/lead variants as separate patches;
 Katana MkII has 5 amp types + Variation, 5 effect slots (booster, mod, fx, delay, reverb).
 Hardware facts are in README.md. Commit straight to `main`; the user tags releases themselves.
+
+## Band setup (DigiTech Trio+)
+Add a `"band"` object to the FIRST patch of every song file (the Trio+ is a band-creator pedal the user plays along with;
+it is set by hand, not by MIDI). Look up the real tempo/key/structure with a web search; never invent numbers.
+```json
+"band": {"genre": "Rock", "style_feel": "driving straight eighths, kick on 1 and 3", "bpm": 117, "time_signature": "4/4",
+         "key": "F minor", "parts": ["Part A: intro/verse - quiet, sparse drums", "Part B: chorus - full band"],
+         "tips": "Play the riff 2 bars cleanly before it starts learning; keep strumming steady."}
+```
+- `genre` must be one of the Trio+'s 12: Blues, R&B, Rock, Alternative Rock, Metal, Pop, Electronic Pop, Hip-Hop, Country,
+  Folk, Latin, Jazz. Each genre has 12 styles (some 3/4): describe the feel, the user picks the style number.
+- The Trio+ learns up to 5 song parts, so give at most 5 `parts` in play order.

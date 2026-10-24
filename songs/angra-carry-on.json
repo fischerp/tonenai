@@ -1,6 +1,9 @@
 [
  {
   "name": "Carry On Rhy",
+  "band": {"genre": "Metal", "style_feel": "fast driving double-time metal, straight eighths, snare on 2 and 4 (or half-time feel at 80)", "bpm": 160, "time_signature": "4/4",
+           "key": "C# minor", "parts": ["Part A: intro riff - two-guitar riff, drums tight", "Part B: verse - sparser, minor progression", "Part C: pre-chorus - building", "Part D: chorus - full band, open and big", "Part E: solo - same drive as the verse"],
+           "tips": "Tempo and key are Spotify-derived estimates (songbpm.com) and the song is recorded half a step down, so check against the record. Play the intro riff cleanly for 2 bars before the Trio+ starts learning; keep palm-muted 8ths steady."},
   "memo": "Angra - Carry On: rhythm. Tight, scooped-mid high-gain power-metal chug (Ibanez + Marshall/Mesa-style stack, 90s Helloween-school sound), Brown amp with a boost for tightening.",
   "amp": {"type": "BROWN", "gain": 68, "bass": 50, "mid": 50, "treble": 62, "presence": 58, "volume": 50},
   "booster": {"type": "T-SCREAM", "drive": 20, "level": 55},

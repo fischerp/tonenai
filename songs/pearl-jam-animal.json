@@ -1,5 +1,9 @@
 [
  {"name":"Animal Riff","memo":"Pearl Jam - Animal: driving riff. 90s rock crunch (Les Paul/Tele into cranked Marshall-style amp), mids forward, tight room.",
+  "band":{"genre":"Alternative Rock","style_feel":"driving straight eighths, punchy kick and snare, tight and aggressive","bpm":106,"time_signature":"4/4",
+          "key":"A minor (A5-C5-D5-G5 power chords)",
+          "parts":["Part A: intro riff - guitar riff, drums enter","Part B: verse - D-based, tighter and sparser","Part C: chorus - full band, A-C-D-G","Part D: solo/interlude - same drive as the chorus","Part E: outro - final chorus and ending"],
+          "tips":"Tempo and key vary by source (about 106 BPM, A). Check by ear. Play the intro riff cleanly for 2 bars before the Trio+ learns, and keep strumming steady."},
   "amp":{"type":"CRUNCH","gain":58,"bass":55,"mid":62,"treble":58,"presence":55,"volume":55},
   "booster":{"type":"T-SCREAM","drive":28,"level":50},
   "reverb":{"type":"ROOM","on":true,"time":12,"level":10},

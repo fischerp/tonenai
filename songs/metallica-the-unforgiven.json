@@ -1,6 +1,9 @@
 [
  {
   "name": "Unforgiven Clean",
+  "band": {"genre": "Metal", "style_feel": "slow half-time ballad, heavy snare backbeat on 3, sparse intro drums", "bpm": 70, "time_signature": "4/4",
+           "key": "G major / E minor", "parts": ["Part A: intro/verse - clean arpeggio, sparse drums", "Part B: heavy riff/chorus - full band", "Part C: bridge/solo - full band, slower build"],
+           "tips": "Analyzers read 139-140 BPM, which is double time; set the Trio+ to about 70 BPM half-time. Play the intro arpeggio cleanly for 2 bars before it starts learning."},
   "memo": "Metallica - The Unforgiven: clean chorused arpeggio intro/verse, JC-style clean with chorus and a touch of delay.",
   "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 45, "treble": 60, "presence": 50, "volume": 40},
   "mod": {"type": "CHORUS", "on": true},

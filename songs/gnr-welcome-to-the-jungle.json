@@ -2,6 +2,21 @@
  {
   "name": "Jungle Rhythm",
   "memo": "Guns N' Roses - Welcome to the Jungle: rhythm. Brown amp with a T-Scream style boost, tight and mid-forward.",
+  "band": {
+   "genre": "Rock",
+   "style_feel": "driving straight eighths, hard backbeat on 2 and 4, open hi-hat in the verses",
+   "bpm": 123,
+   "time_signature": "4/4",
+   "key": "E-flat (recorded tuned down a half step; A Mixolydian riff shapes in standard tuning, Eb minor pentatonic solos)",
+   "parts": [
+    "Part A: intro riff and verse - sparse drums, steady eighth-note groove",
+    "Part B: pre-chorus - building drums and bass",
+    "Part C: chorus - full band, open and loud",
+    "Part D: breakdown/bridge (\"I wanna see you bleed\") - half-time feel",
+    "Part E: solo and outro - full band, driving"
+   ],
+   "tips": "Tempo is about 122-124 BPM depending on the source; the user's guitar is likely in standard tuning, so match the key by tuning down a half step or capo-free transposing. Play the intro riff cleanly for 2 bars before the Trio+ starts learning, and keep strumming steady."
+  },
   "amp": {
    "type": "BROWN",
    "gain": 70,

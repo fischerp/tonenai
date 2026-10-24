@@ -1,5 +1,5 @@
 [
- {"name":"Snow Riff","memo":"Red Hot Chili Peppers - Snow (Hey Oh): arpeggiated riff. Frusciante-style clean Strat tone, light compression, touch of grit and room.",
+ {"name":"Snow Riff","band":{"genre":"Alternative Rock","style_feel":"mid-tempo straight eighths, steady kick on 1 and 3 with open snare backbeat, sparse in the intro and fuller in the chorus","bpm":104,"time_signature":"4/4","key":"G# minor","parts":["Part A: intro - arpeggiated riff, drums and bass sparse","Part B: verse - same riff, light groove","Part C: chorus - full band, 16th-note strumming","Part D: bridge/lead - fuller band, guitar harmonies","Part E: outro - riff returns, winding down"],"tips":"Sources give 104-108 BPM (drum transcription says 104); the riff is in G#m (Em shape, capo 4). Play the riff cleanly for 2 bars before the Trio+ starts learning and keep the pulse steady."},"memo":"Red Hot Chili Peppers - Snow (Hey Oh): arpeggiated riff. Frusciante-style clean Strat tone, light compression, touch of grit and room.",
   "amp":{"type":"CLEAN","gain":38,"bass":50,"mid":55,"treble":58,"presence":55,"volume":50},
   "mod":{"type":"COMP","on":true},
   "delay":{"type":"ANALOG","on":false,"time":350,"feedback":18,"level":18},

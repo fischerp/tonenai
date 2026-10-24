@@ -1,6 +1,9 @@
 [
  {
   "name": "Whiskey Rhythm",
+  "band": {"genre": "Rock", "style_feel": "medium-fast straight-eighths rock shuffle-free groove, kick on 1 and 3, snare on 2 and 4", "bpm": 128, "time_signature": "4/4",
+           "key": "G major", "parts": ["Part A: intro/interlude - twin-guitar riff, light drums", "Part B: verse - steady groove, chords G Em C D", "Part C: chorus - full band, open crash hits", "Part D: solo - same groove, louder", "Part E: outro - riff and fade"],
+           "tips": "Tempo and key from Tunebat/SongBPM (studio version); play the riff 2 bars cleanly before the Trio+ starts learning and keep strumming steady."},
   "memo": "Thin Lizzy - Whiskey in the Jar: rhythm. Eric Bell style, edge-of-breakup crunch with a light boost, slapback echo.",
   "amp": {"type": "CRUNCH", "gain": 45, "bass": 50, "mid": 60, "treble": 60, "presence": 55, "volume": 45},
   "booster": {"type": "T-SCREAM", "drive": 20, "level": 50},

@@ -82,6 +82,20 @@
   .pitem:hover { background: #2a2a37; } .pitem.live { outline: 2px solid var(--accent); }
   .pitem .n { font-weight: 700; } .pitem .d { color: var(--muted); font-size: 13px; }
   .pitem .go { margin-left: auto; font-weight: 700; white-space: nowrap; }
+  .bpm { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .bpm .big { font-size: 46px; font-weight: 800; line-height: 1; } .bpm .big small { font-size: 14px; color: var(--muted); font-weight: 600; margin-left: 6px; }
+  .bpm button { margin-left: auto; white-space: nowrap; }
+  .dials { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 4px 0 14px; }
+  .dial text { fill: #9a9aa8; font-size: 8.5px; text-anchor: middle; } .dial .on text { fill: #fff; font-weight: 700; }
+  .stylerow { display: flex; gap: 4px; margin-top: 6px; } .sty { width: 26px; height: 26px; border-radius: 6px; background: #2a2a37; color: #9a9aa8; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .sty.ok { background: #1f4d36; color: #7dffb0; } .sty.three { border: 1px dashed #6d6d80; }
+  .steps { margin: 10px 0 8px; padding-left: 20px; } .steps li { margin: 6px 0; } .steps b { color: #fff; }
+  .band { margin: 0 30px 18px; padding: 16px 18px; border-radius: 10px; background: #1b1b25; }
+  .band h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip { background: #2a2a37; padding: 4px 11px; border-radius: 14px; font-size: 13px; font-weight: 600; } .chip b { color: var(--muted); font-weight: 600; margin-right: 5px; }
+  .band .feel { margin: 0 0 8px; } .band ol { margin: 0 0 8px; padding-left: 20px; color: #d6d6de; } .band li { margin: 2px 0; }
+  .band .tip { color: var(--muted); font-size: 13px; }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #222230; padding: 10px 18px;
     border-radius: 8px; transition: transform .25s; z-index: 99; } .toast.show { transform: translateX(-50%); }
   .toast.err { background: #5a1f22; }
@@ -166,13 +180,67 @@ function createCta() {
     : `<div class="empty"><h2>No songs yet</h2><p>Search for a song to have Claude create one.</p></div>`;
 }
 
+const TRIO_GENRES = ["Blues", "R&B", "Rock", "Alt Rock", "Metal", "Pop", "E-Pop", "Hip-Hop", "Country", "Folk", "Latin", "Jazz"];
+function genreIndex(g) {
+  const t = (g || "").toLowerCase();
+  const map = [["alt", 3], ["electronic", 6], ["e-pop", 6], ["hip", 7], ["r&b", 1], ["metal", 4], ["blues", 0], ["rock", 2], ["pop", 5], ["country", 8], ["folk", 9], ["latin", 10], ["jazz", 11]];
+  for (const [k, i] of map) if (t.includes(k)) return i;
+  return -1;
+}
+function genreDial(sel) {   // 12 positions, same layout as the pedal's GENRE knob (Blues bottom-left, clockwise to Jazz bottom-right)
+  const cx = 84, cy = 84, R = 62; let out = "";
+  TRIO_GENRES.forEach((g, i) => {
+    const a = (-150 + i * (300 / 11)) * Math.PI / 180, x = cx + R * Math.sin(a), y = cy - R * Math.cos(a), on = i === sel;
+    out += `<g class="${on ? "on" : ""}"><circle cx="${x}" cy="${y}" r="${on ? 6 : 3.5}" fill="${on ? "#3ddc84" : "#555566"}"/>` +
+      `<text x="${cx + (R + 21) * Math.sin(a)}" y="${cy - (R + 21) * Math.cos(a) + 3}">${esc(g)}</text></g>`;
+  });
+  const a = sel >= 0 ? (-150 + sel * (300 / 11)) * Math.PI / 180 : null;
+  const hand = a === null ? "" : `<line x1="${cx}" y1="${cy}" x2="${cx + 30 * Math.sin(a)}" y2="${cy - 30 * Math.cos(a)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
+  return `<svg class="dial" width="224" height="170" viewBox="-28 -2 224 170"><circle cx="${cx}" cy="${cy}" r="24" fill="#2a2a37"/>${hand}${out}</svg>`;
+}
+let CLICK = null;
+function toggleClick(bpm) {
+  if (CLICK) { clearInterval(CLICK.t); CLICK.c.close(); CLICK = null; return refreshClickBtn(); }
+  const c = new (window.AudioContext || window.webkitAudioContext)(); let n = 0;
+  const beep = () => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = n++ % 4 === 0 ? 1500 : 1000;
+    g.gain.setValueAtTime(.4, c.currentTime); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + .06); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + .07); };
+  beep(); CLICK = { c, t: setInterval(beep, 60000 / bpm) }; refreshClickBtn();
+}
+function refreshClickBtn() { const b = document.querySelector("[data-click]"); if (b) b.textContent = CLICK ? "■ Stop click" : "▶ Click track"; }
+
+function bandCard(s) {
+  const b = s.band;
+  if (!b) return `<div class="band"><h4>Set up your Trio+</h4><p class="tip" style="margin:0 0 10px">No setup yet. Claude can look up the tempo, key and structure and work out the best genre and style.</p>
+    <button class="p" data-band="${esc(s.id)}">✦ Generate Trio+ setup</button></div>`;
+  const chip = (k, v) => v ? `<span class="chip"><b>${k}</b>${esc(v)}</span>` : "";
+  const gi = genreIndex(b.genre), three = (b.time_signature || "").startsWith("3");
+  const styles = Array.from({ length: 12 }, (_, i) => { const n = i + 1, is3 = n >= 10, ok = three === is3;
+    return `<div class="sty${ok ? " ok" : ""}${is3 ? " three" : ""}" title="${is3 ? "3/4 styles" : "4/4 styles"}">${n}</div>`; }).join("");
+  const parts = (b.parts || []).slice(0, 5);
+  return `<div class="band"><h4>Set up your Trio+</h4>
+    <div class="bpm"><div class="big">${b.bpm || "?"}<small>BPM</small></div>
+      <div class="chips" style="margin:0">${chip("Genre", b.genre)}${chip("Time", b.time_signature)}${chip("Key", b.key)}</div>
+      ${b.bpm ? `<button class="p" data-click="${b.bpm}">▶ Click track</button>` : ""}</div>
+    <div class="dials">${genreDial(gi)}<div><div class="tip" style="margin-bottom:4px">STYLE knob: green = ${three ? "3/4" : "4/4"} styles</div><div class="stylerow">${styles}</div>
+      <div class="tip" style="margin-top:8px;max-width:300px">Look for: <b style="color:#fff">${esc(b.style_feel || "")}</b></div></div></div>
+    <ol class="steps">
+      <li><b>Pick an empty part.</b> Press a PART button that isn't lit; the BAND light should blink red slowly. Set the BASS and DRUMS knobs to about 10 o'clock.</li>
+      <li><b>Genre knob → ${esc(b.genre || "?")}.</b></li>
+      <li><b>Teach it at ${b.bpm || "the song's"} BPM.</b> Start the click track, press BAND as you begin, strum clean, steady chords${parts.length ? " (see the parts below)" : ""}, then press BAND again on the same downbeat. Keep it under 32 bars. The pedal has no BPM display: it learns the tempo from your playing.</li>
+      <li><b>Choose the style.</b> The STYLE lights show the best matches. Pick one that fits ${three ? "3/4 (positions 10–12)" : "4/4 (positions 1–9)"} and the feel above. If all lights flash red, play the part again, clearer.</li>
+      <li><b>Tempo knob at 12 o'clock</b> = exactly what you taught (the AUDIOLASTIC light is off). If it feels like half or double speed, press ALT TIME.</li>
+      ${parts.length > 1 ? `<li><b>Repeat for the other parts</b> (each on its own PART button, up to 5), then tap through them with BAND:<ul>${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul></li>` : ""}
+    </ol>
+    ${b.tips ? `<div class="tip">${esc(b.tips)}</div>` : ""}</div>`;
+}
+
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
   SHEET = id;
   $("#sheet").innerHTML = `<div class="top" style="background:${bg(s)}"><h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div></div>
     <div class="plist">${s.patches.map(p => `<div class="pitem${LIVE && LIVE.id === s.id && LIVE.index === p.index ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}">
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
-    <div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
+    ${bandCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
       <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
   $("#modal").classList.add("open");
 }
@@ -201,6 +269,20 @@ async function startCreate(text) {
   }, 1200);
 }
 
+async function startBand(id) {
+  const a = api(); if (!a) return;
+  const r = await a.generate_band(id);
+  if (!r.ok) return toast(r.error, true);
+  const btn = document.querySelector("[data-band]"); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Researching…'; }
+  const t = setInterval(async () => {
+    const j = await a.job_status();
+    if (j.state === "running") { if (btn) btn.innerHTML = '<span class="spin"></span>' + esc(j.note || "Working…"); return; }
+    clearInterval(t);
+    if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast("Band setup added"); }
+    else { toast(j.error || "Could not build the band setup", true); if (btn) { btn.disabled = false; btn.textContent = "✦ Generate Trio+ setup"; } }
+  }, 1500);
+}
+
 function syncLive(name) {   // match the amp's current patch to a library song
   for (const s of SONGS) for (const p of s.patches) if (p.name === name) { LIVE = { id: s.id, index: p.index }; return; }
   LIVE = null;
@@ -216,6 +298,8 @@ async function refreshStatus() {
 
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
+  const ck = e.target.closest("[data-click]"); if (ck) return toggleClick(Number(ck.dataset.click));
+  const bd = e.target.closest("[data-band]"); if (bd) return startBand(bd.dataset.band);
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
   const dl = e.target.closest("[data-del]");
@@ -230,11 +314,11 @@ document.addEventListener("click", async e => {
   const rv = e.target.closest("[data-reveal]"); if (rv) return api().reveal(rv.dataset.reveal);
   const pl = e.target.closest("[data-play]"); if (pl) return play(pl.dataset.play, pl.dataset.i);
   const c = e.target.closest(".card"); if (c) return openSong(c.dataset.id);
-  if (e.target.id === "modal") $("#modal").classList.remove("open");
+  if (e.target.id === "modal") { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
 });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
-  if ($("#modal").classList.contains("open")) $("#modal").classList.remove("open");
+  if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
   else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
 });
 $("#imp").addEventListener("click", async () => {
