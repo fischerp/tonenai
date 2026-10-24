@@ -27,6 +27,16 @@
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; }
   .dot.on { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; } .dot.off { background: #d9534f; }
 
+  .car { position: relative; margin: 0 4vw 24px; border-radius: 14px; overflow: hidden; height: clamp(270px, 40vh, 380px); background: #14141c; }
+  .slide { position: absolute; inset: 0; padding: 0 5vw 52px; display: flex; flex-direction: column; justify-content: flex-end; opacity: 0; transition: opacity .7s ease; pointer-events: none; background-size: cover; background-position: center; }
+  .slide.on { opacity: 1; pointer-events: auto; } .slide::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0b0fee 12%, #0b0b0f77 58%, #0b0b0f11), linear-gradient(0deg, #0b0b0fcc, transparent 55%); }
+  .slide > * { position: relative; z-index: 1; } .slide .eyebrow { color: #ffffffb8; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: 700; } .slide.live .eyebrow { color: #7dffb0; }
+  .slide h1 { margin: 6px 0 2px; font-size: clamp(28px, 4.6vw, 52px); line-height: 1.05; cursor: pointer; outline-offset: 4px; } .slide h1:hover { text-decoration: underline; text-decoration-thickness: 2px; }
+  .slide .by { color: #ffffffd0; font-size: 18px; margin-bottom: 16px; } .slide .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .car-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #000a; color: #fff; font-size: 28px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s, background .15s; }
+  .car:hover .car-arrow, .car-arrow:focus-visible { opacity: 1; } .car-arrow:hover { background: #000e; } .car-arrow.prev { left: 12px; } .car-arrow.next { right: 12px; }
+  .car-dots { position: absolute; left: 0; right: 0; bottom: 16px; z-index: 3; display: flex; justify-content: center; gap: 8px; }
+  .car-dot { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: #ffffff55; cursor: pointer; transition: width .2s, background .2s; } .car-dot.on { width: 26px; border-radius: 5px; background: #fff; }
   .hero { position: relative; margin: 0 4vw 24px; border-radius: 14px; padding: 7vh 4vw; min-height: 34vh;
     display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
   .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0b0fee 15%, #0b0b0f66 60%, transparent), linear-gradient(0deg, #0b0b0f, transparent 55%); }
@@ -202,13 +212,8 @@ function resultsView() {
 
 function render() {
   const list = SONGS.filter(match);
-  if (RES) { $("#hero").innerHTML = ""; $("#rows").innerHTML = JOB && JOB.state === "running" ? createCta() : resultsView(); return; }
-  const liveSong = LIVE && SONGS.find(s => s.id === LIVE.id);
-  const heroSong = liveSong || SONGS[0];
-  $("#hero").innerHTML = heroSong && !q ? `<div class="hero" style="background:${bg(heroSong)}">
-      <div class="eyebrow">${liveSong ? "Now playing on your Katana" : "Latest added"}</div>
-      <h1>${esc(heroSong.title)}</h1><div class="by">${esc(heroSong.artist)}</div>
-      <div class="btns">${heroSong.patches.map(p => `<button class="p ${LIVE && LIVE.id === heroSong.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(heroSong.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}<button class="p" data-scroll="all">Change song ↓</button></div></div>` : "";
+  if (RES) { $("#hero").innerHTML = ""; CAR.sig = ""; $("#rows").innerHTML = JOB && JOB.state === "running" ? createCta() : resultsView(); return; }
+  renderCarousel();
   let html = "";
   if (!q) {
     const rec = recents().map(id => SONGS.find(s => s.id === id)).filter(Boolean);
@@ -349,6 +354,42 @@ function whammyCard(s) {
     ${w.tips ? `<div class="tip">${esc(w.tips)}</div>` : ""}</div>`;
 }
 
+// ---- hero carousel: what is on the amp now, what you played last, what was added last
+let CAR = { i: 0, sig: "", timer: null, paused: false };
+function carouselSlides() {
+  const out = [], seen = new Set(), add = (s, label, cls) => { if (s && !seen.has(s.id)) { seen.add(s.id); out.push({ s, label, cls }); } };
+  if (LIVE) add(SONGS.find(x => x.id === LIVE.id), "Now playing on your Katana", "live");
+  recents().map(id => SONGS.find(x => x.id === id)).filter(Boolean).slice(0, 3).forEach(x => add(x, "Last played"));
+  SONGS.slice(0, 4).forEach(x => add(x, "Latest added"));       // SONGS is newest first
+  return out.slice(0, 8);
+}
+function renderCarousel() {
+  const host = $("#hero"), slides = carouselSlides();
+  if (!slides.length || q) { host.innerHTML = ""; CAR.sig = ""; clearInterval(CAR.timer); return; }
+  const sig = slides.map(x => x.s.id + "|" + x.label + "|" + (x.s.cover ? 1 : 0) + "|" + (LIVE && LIVE.id === x.s.id ? LIVE.index : "")).join(";");
+  if (sig !== CAR.sig) {
+    CAR.sig = sig; if (CAR.i >= slides.length) CAR.i = 0;
+    host.innerHTML = `<div class="car" role="region" aria-roledescription="carousel" aria-label="Recent songs">
+      ${slides.map((x, i) => `<div class="slide${i === CAR.i ? " on" : ""}${x.cls ? " " + x.cls : ""}" style="background:${bg(x.s)}" aria-hidden="${i !== CAR.i}">
+        <div class="eyebrow">${esc(x.label)}</div><h1 data-open="${esc(x.s.id)}" tabindex="0" role="link">${esc(x.s.title)}</h1><div class="by">${esc(x.s.artist)}</div>
+        <div class="btns">${x.s.patches.map(p => `<button class="p ${LIVE && LIVE.id === x.s.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(x.s.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}<button class="p" data-open="${esc(x.s.id)}">Details</button></div></div>`).join("")}
+      ${slides.length > 1 ? `<button class="car-arrow prev" data-car="-1" aria-label="Previous">‹</button><button class="car-arrow next" data-car="1" aria-label="Next">›</button>
+        <div class="car-dots">${slides.map((x, i) => `<button class="car-dot${i === CAR.i ? " on" : ""}" data-cardot="${i}" aria-label="Slide ${i + 1}: ${esc(x.s.title)}"></button>`).join("")}</div>` : ""}</div>`;
+    const car = host.querySelector(".car"); car.addEventListener("mouseenter", () => CAR.paused = true); car.addEventListener("mouseleave", () => CAR.paused = false);
+    car.addEventListener("focusin", () => CAR.paused = true); car.addEventListener("focusout", () => CAR.paused = false);
+  }
+  clearInterval(CAR.timer);
+  if (slides.length > 1 && !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches))
+    CAR.timer = setInterval(() => { if (!CAR.paused && !document.hidden && !$("#modal").classList.contains("open") && !$("#gmodal").classList.contains("open") && !$("#lmodal").classList.contains("open")) carGo(1); }, 6500);
+}
+function carShow(i) {
+  const slides = document.querySelectorAll("#hero .slide"), dots = document.querySelectorAll("#hero .car-dot"); if (!slides.length) return;
+  CAR.i = (i + slides.length) % slides.length;
+  slides.forEach((el, k) => { el.classList.toggle("on", k === CAR.i); el.setAttribute("aria-hidden", String(k !== CAR.i)); });
+  dots.forEach((el, k) => el.classList.toggle("on", k === CAR.i));
+}
+const carGo = d => carShow(CAR.i + d);
+
 let TAB = null;      // which detail panel is open in the song window: "guitar" | "trio" | "whammy" | null
 const keyShort = k => (k || "").replace(/\s*\(.*?\)/g, "").replace(/[,;].*$/, "").trim();
 const tuningShort = t => (t || "").replace(/\s*\(.*?\)/g, "").split(/[;,]| per | from | - /)[0].trim().slice(0, 34);
@@ -458,6 +499,8 @@ async function refreshStatus() {
 
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
+  const ca = e.target.closest("[data-car]"); if (ca) { carGo(Number(ca.dataset.car)); return; }
+  const cd = e.target.closest("[data-cardot]"); if (cd) { carShow(Number(cd.dataset.cardot)); return; }
   if (e.target.closest("[data-scroll]")) { const h = [...document.querySelectorAll("section.row h2")].find(x => x.textContent.startsWith("All")) || document.querySelector("section.row h2"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
   const fv = e.target.closest("[data-fav]");
   if (fv) { e.stopPropagation(); const id = fv.dataset.fav, on = !FAVS.includes(id); const r = await api().set_favorite(id, on);
@@ -490,6 +533,8 @@ document.addEventListener("click", async e => {
   if (e.target.id === "modal") { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
 });
 document.addEventListener("keydown", e => {
+  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && e.target.closest && e.target.closest("#hero .car")) { carGo(e.key === "ArrowRight" ? 1 : -1); return; }
+  if (e.key === "Enter" && e.target.matches && e.target.matches("#hero h1[data-open]")) { openSong(e.target.dataset.open); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
   if (e.key !== "Escape") return;
   if ($("#lmodal").classList.contains("open")) { const o = $("#lconfirm") || $("#lpick"); if (o) { o.remove(); } else lsClose(); return; }
