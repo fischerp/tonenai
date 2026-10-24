@@ -19,6 +19,12 @@ def _split_title(memo, fallback):
     return "", fallback
 
 
+def _added(path):
+    """When a song was added to the library (file creation time; falls back to the modification time)."""
+    st = os.stat(path)
+    return getattr(st, "st_birthtime", st.st_mtime)
+
+
 def _cover_url(sid):
     """Cached cover as a data URL (the window's web root can't reach songs/covers)."""
     path = os.path.join(COVERS, sid + ".jpg")
@@ -32,6 +38,7 @@ DATA = os.path.join(ROOT, "data")
 GUITARS = os.path.join(DATA, "guitars.json")
 LIVESETS = os.path.join(DATA, "livesets.json")
 TABS_CFG = os.path.join(DATA, "tabs.json")
+FAVS = os.path.join(DATA, "favorites.json")
 BACKUPS = os.path.join(DATA, "backups")
 EXPORTS = os.path.join(DATA, "exports")
 BANK_KEYS = P.SLOT_KEYS[1:]            # A1..A4, B1..B4: the 8 channels that can be written (the Panel cannot)
@@ -56,7 +63,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "", "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"),
+                "id": sid, "artist": artist, "title": title, "cover": "", "added": _added(path), "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -69,9 +76,10 @@ class Service:
                 name, patches = PT.from_tsl(path)
             except Exception:
                 continue
-            res.append({"id": sid, "artist": "Imported", "title": name or sid, "cover": "",
+            res.append({"id": sid, "artist": "Imported", "title": name or sid, "cover": "", "added": _added(path),
                         "patches": [{"index": i, "name": bytes(b["PatchName"]).decode("ascii", "replace").strip() or f"Patch {i + 1}",
                                      "amp": "", "note": "From a .tsl file"} for i, b in enumerate(patches)]})
+        res.sort(key=lambda x: -x["added"])           # newest songs first
         return res
 
     def import_tsl(self):
@@ -528,3 +536,20 @@ class Service:
             return {"ok": False, "error": "Not a web link"}
         subprocess.run(["open", url])
         return {"ok": True}
+
+    # -------------------------------------------------------------- favourites (your own list, stored locally)
+    def favorites(self):
+        try:
+            return [x for x in json.load(open(FAVS)) if isinstance(x, str)]
+        except (OSError, ValueError):
+            return []
+
+    def set_favorite(self, song_id, on):
+        if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or ""):
+            return {"ok": False, "error": "Invalid song"}
+        favs = [x for x in self.favorites() if x != song_id]
+        if on:
+            favs.insert(0, song_id)                # the most recently favourited first
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(favs, open(FAVS, "w"), indent=1)
+        return {"ok": True, "favorites": favs}

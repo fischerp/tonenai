@@ -1,0 +1,71 @@
+[
+ {
+  "name": "Johnny B Rhythm",
+  "memo": "Chuck Berry - Johnny B. Goode: rhythm and solos. Clean-edge CRUNCH, Fender-style amp with a hollowbody Gibson, slapback echo.",
+  "band": {
+   "genre": "Rock",
+   "style_feel": "fast driving shuffle-ish rock and roll, straight-ahead backbeat on 2 and 4, boogie bass pattern",
+   "bpm": 168,
+   "time_signature": "4/4",
+   "key": "B-flat major",
+   "parts": [
+    "Part A: intro lick and 12-bar verse - steady backbeat, boogie feel",
+    "Part B: chorus (\"Go, go, Johnny go\") - same 12-bar form, full band",
+    "Part C: solo - full band, driving"
+   ],
+   "tips": "Sources give about 168-170 BPM (the recording drifts a little); the Trio+ may need a Rock style with a fast straight feel. Play the intro lick, then 2 bars of steady double-stop boogie before it starts learning."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Tune your guitar to standard (E A D G B E).", "Leave the Whammy off."],
+   "tips": "The recording is in standard tuning and no pitch effect is documented, so the pedal is not needed."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Gibson ES-350T (1957, PAF humbuckers)", "player": "Chuck Berry", "pickups": "humbucker"},
+    {"guitar": "Gibson ES-350TN (1956, P-90s)", "player": "Chuck Berry", "pickups": "p90"}
+   ],
+   "pickups_needed": "humbucker",
+   "position": "bridge pickup, volume full, tone knob around 7",
+   "tone_notes": "Sources say Berry used either the 1957 ES-350T with PAF humbuckers or the 1956 ES-350TN with P-90s; the exact guitar on the session is not confirmed. A semi-hollow or humbucker guitar fits best; with single-coils roll back treble a little.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CRUNCH",
+   "gain": 40,
+   "bass": 45,
+   "mid": 60,
+   "treble": 60,
+   "presence": 50,
+   "volume": 50
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": false
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 110,
+   "feedback": 8,
+   "level": 25
+  },
+  "reverb": {
+   "type": "SPRING",
+   "on": true,
+   "time": 25,
+   "level": 20
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ }
+]

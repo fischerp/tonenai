@@ -17,6 +17,8 @@ window.pywebview={api:{
     {inLibrary:false,artist:"AC/DC",title:"You Shook Me All Night Long",album:"Back in Black",art:""},
     {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
   delete_song: async()=>({ok:true}),
+  favorites: async()=>JSON.parse(localStorage.getItem('fav')||'[]'),
+  set_favorite: async(id,on)=>{let f=JSON.parse(localStorage.getItem('fav')||'[]').filter(x=>x!==id); if(on) f.unshift(id); localStorage.setItem('fav',JSON.stringify(f)); return {ok:true,favorites:f};},
   tabs_config: async()=>JSON.parse(localStorage.getItem('tabs')||'{"service":"","template":"","links":{}}'),
   save_tabs_config: async(c)=>{const cur=JSON.parse(localStorage.getItem('tabs')||'{"service":"","template":"","links":{}}'); Object.assign(cur,c); localStorage.setItem('tabs',JSON.stringify(cur)); window._lastTabCfg=cur; return {ok:true,config:cur};},
   open_url: async(u)=>{window._opened=u; return {ok:true};},

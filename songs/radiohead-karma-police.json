@@ -1,0 +1,53 @@
+[
+ {
+  "name": "Karma Police",
+  "memo": "Radiohead - Karma Police: acoustic-style strummed rhythm (Thom Yorke) with piano-like space; clean, warm, light room reverb. Approximation.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "slow, laid-back straight eighths, soft kick on 1 and 3, snare on 2 and 4, sparse in the verses",
+   "bpm": 75,
+   "time_signature": "4/4",
+   "key": "ambiguous: usually given as G major; Wikipedia reads the verse as A minor/Dorian (or E minor/Phrygian)",
+   "parts": [
+    "Part A: verse - acoustic strum and piano, quiet drums",
+    "Part B: 'This is what you get' chorus - drums and bass enter, fuller",
+    "Part C: 'For a minute there' section - build",
+    "Part D: outro - feedback delay noise, drums out"
+   ],
+   "tips": "Tempo is about 75 BPM (sources say 73-76; some count it double-time at 150). Strum steady eighths for 2 bars before the Trio+ starts learning; key sources disagree, so go by the chords (Am, Bm, C, Em, G, D, F)."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Leave the Whammy DT off."],
+   "tips": "Standard tuning; no whammy or octave effect is documented on the recording. The closing 'melting' sound is a delay pushed into feedback, not a pitch effect."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Yairi DY-88 acoustic (live on the OK Computer tour; studio use not confirmed)", "player": "Thom Yorke", "pickups": "any"}
+   ],
+   "pickups_needed": "any",
+   "position": "neck or middle pickup for the strum, tone around 7",
+   "tone_notes": "The song is built on a strummed acoustic with piano; an electric on a clean, warm setting works. Roll treble back a little for a rounder sound.",
+   "confidence": "unknown"
+  },
+  "amp": {"type": "ACOUSTIC", "gain": 25, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 45},
+  "booster": {"type": "MID BOOST", "on": false},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 400, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 25, "level": 25},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Karma Outro",
+  "memo": "Radiohead - Karma Police: ending. Ed O'Brien's delay pushed into self-oscillation (DMX 15-80S); turn the delay level/feedback up by hand for the 'melting' wash.",
+  "amp": {"type": "CLEAN", "gain": 30, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 45},
+  "booster": {"type": "MID BOOST", "on": false},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 500, "feedback": 85, "level": 60},
+  "reverb": {"type": "HALL", "on": true, "time": 40, "level": 30},
+  "noise_suppressor": {"on": true, "threshold": 10}
+ }
+]
