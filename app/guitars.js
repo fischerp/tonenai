@@ -47,7 +47,7 @@
       fholes: [[41, 300, 33, 340], [159, 300, 167, 340]] },
     "Jazzmaster / Jaguar": { shape: "jazz", fin: "sunburst", hs: "fender", fb: "rosewood", inlay: "dots",
       pups: [["wide", 100, 240], ["wide", 100, 285]], bridge: ["offset", 297, 342], knobs: [[158, 322, "chrome"], [166, 334, "chrome"]], sw: null, plate: [54, 222, 24, 40], ctrl: true },
-    "Explorer / Flying V": { shape: "explorer", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots", pgc: "#f4f0e2", dx: -9,
+    Explorer: { shape: "explorer", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots", pgc: "#f4f0e2", dx: -9,
       pups: [["hum", 97, 217, "chrome"], ["hum", 99, 263, "chrome"]], bridge: ["tom", 284, 301], knobs: [[147, 301, "black"], [138, 322, "black"], [129, 343, "black"]], sw: null },
     "PRS / Superstrat": { shape: "prs", fin: "cherryburst", hs: "prs", fb: "rosewood", bind: "#0006", inlay: "birds",
       pups: [["hum", 100, 215, "cream"], ["hum", 100, 254, "cream"]], bridge: ["hardtail", 279], knobs: [[126, 309, "gold"]], sw: [127, 336] },
@@ -60,6 +60,9 @@
   const FLYING_V_PATH = rpoly([[88, 204, 0], [5, 441, 8], [36, 452, 8], [100, 320, 6], [164, 452, 8], [195, 441, 8], [112, 204, 0]]);
   const FLYING_V = { path: FLYING_V_PATH, bottom: 452, fin: "honey", hs: "gibson", fb: "rosewood", inlay: "dots",
     pups: [["hum", 100, 218, "chrome"], ["hum", 100, 278, "chrome"]], bridge: ["tom", 298, 306], knobs: [[124, 317, "black"], [137, 346, "black"], [151, 376, "black"]], sw: null };
+
+  S["Flying V"] = FLYING_V;
+  const LEGACY_EXPLORER = "Explorer / Flying V";   // old saved guitars used one combined type
 
   let uid = 0;
   const f = n => Math.round(n * 100) / 100;
@@ -138,7 +141,7 @@
 
   window.guitarSVG = function (kind, name, finish) {
     let g = S[kind] || S.Other;
-    if (kind === "Explorer / Flying V" && /flying|\bv\b/i.test(name || "")) g = FLYING_V;
+    if (kind === LEGACY_EXPLORER) g = /flying|\bv\b/i.test(name || "") ? FLYING_V : S.Explorer;
     const shp = g.shape ? SH[g.shape] : null;
     const body = g.path || (shp && shp.body) || ACOUSTIC;
     const bottom = g.bottom || (shp && shp.bottom) || 400;
