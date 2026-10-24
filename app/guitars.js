@@ -46,7 +46,7 @@
       pups: [["hum", 100, 254, "chrome"], ["hum", 100, 302, "chrome"]], bridge: ["tom", 324, 342], knobs: [[160, 366, "gold"], [136, 380, "gold"], [166, 394, "gold"], [142, 404, "gold"]], sw: [128, 349],
       fholes: [[41, 300, 33, 340], [159, 300, 167, 340]] },
     "Jazzmaster / Jaguar": { shape: "jazz", fin: "sunburst", hs: "fender", fb: "rosewood", inlay: "dots",
-      pups: [["wide", 100, 240], ["wide", 100, 285]], bridge: ["offset", 297, 342], knobs: [[158, 322, "chrome"], [166, 334, "chrome"]], sw: null, plate: [48, 214, 28, 44] },
+      pups: [["wide", 100, 240], ["wide", 100, 285]], bridge: ["offset", 297, 342], knobs: [[158, 322, "chrome"], [166, 334, "chrome"]], sw: null, plate: [54, 222, 24, 40], ctrl: true },
     "Explorer / Flying V": { shape: "explorer", fin: "cherry", hs: "gibson", fb: "rosewood", inlay: "dots", pgc: "#f4f0e2", dx: -9,
       pups: [["hum", 97, 217, "chrome"], ["hum", 99, 263, "chrome"]], bridge: ["tom", 284, 301], knobs: [[147, 301, "black"], [138, 322, "black"], [129, 343, "black"]], sw: null },
     "PRS / Superstrat": { shape: "prs", fin: "cherryburst", hs: "prs", fb: "rosewood", bind: "#0006", inlay: "birds",
@@ -157,7 +157,11 @@
     const neckPoly = `M91,${NECK_TOP} L109,${NECK_TOP} L${100 + 12.6},${NECK_END + 8} L${100 - 12.6},${NECK_END + 8} Z`;
     const fbPoly = `M${100 - 7.6},${NECK_TOP + 2} L${100 + 7.6},${NECK_TOP + 2} L${100 + 11},${NECK_END + 8} L${100 - 11},${NECK_END + 8} Z`;
     const pgPath = g.pgc && shp && shp.pg ? `<g clip-path="url(#${id}c)"><path d="${shp.pg}" fill="${g.pgc}"/><path d="${shp.pg}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><path d="${shp.pg}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.6" transform="translate(-.5,-.5)" clip-path="url(#${id}c)"/></g>` : "";
-    const plate = g.plate ? `<rect x="${g.plate[0]}" y="${g.plate[1]}" width="${g.plate[2]}" height="${g.plate[3]}" rx="3" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5" opacity=".95"/>` : "";
+    const plate = g.plate ? (g.ctrl
+      ? (([x, y, w, h]) => `<g transform="rotate(-9 ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2.6}" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5"/>
+          ${[0, 1].map(i => `<rect x="${x + 4 + i * 8.5}" y="${y + 5}" width="3" height="${h * .42}" rx="1.5" fill="#1b1b1f"/><rect x="${x + 3.4 + i * 8.5}" y="${y + 8 + i * 6}" width="4.2" height="5" rx="1.5" fill="#f2f2f4" stroke="#6c6f78" stroke-width=".3"/>`).join("")}
+          <circle cx="${x + w / 2}" cy="${y + h - 7.5}" r="3.6" fill="#5a5d66"/><circle cx="${x + w / 2}" cy="${y + h - 7.5}" r="1.6" fill="#c9ccd4"/></g>`)(g.plate)
+      : `<rect x="${g.plate[0]}" y="${g.plate[1]}" width="${g.plate[2]}" height="${g.plate[3]}" rx="3" fill="url(#${m})" stroke="#6c6f78" stroke-width=".5" opacity=".95"/>`) : "";
     const fh = (g.fholes || []).map(([x1, y1, x2, y2]) => `<path d="M${x1},${y1} q${(x2 - x1) / 2 + (x2 > x1 ? -3 : 3)},${(y2 - y1) / 2} ${x2 - x1},${y2 - y1}" fill="none" stroke="#0a0a0a" stroke-width="3.4" stroke-linecap="round"/>`).join("");
     const ac = g.acoustic ? `<circle cx="100" cy="250" r="23" fill="#2a1b10"/><circle cx="100" cy="250" r="20" fill="#050403"/><circle cx="100" cy="250" r="25.5" fill="none" stroke="#e8dcc0" stroke-width="1.2" opacity=".7"/>
         <path d="M116,262 C146,262 150,300 130,314 C112,326 98,300 104,282 C108,272 110,264 116,262 Z" fill="#2a1b10" opacity=".55"/>
