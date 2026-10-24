@@ -31,6 +31,7 @@ def _cover_url(sid):
 DATA = os.path.join(ROOT, "data")
 GUITARS = os.path.join(DATA, "guitars.json")
 LIVESETS = os.path.join(DATA, "livesets.json")
+TABS_CFG = os.path.join(DATA, "tabs.json")
 BACKUPS = os.path.join(DATA, "backups")
 EXPORTS = os.path.join(DATA, "exports")
 BANK_KEYS = P.SLOT_KEYS[1:]            # A1..A4, B1..B4: the 8 channels that can be written (the Panel cannot)
@@ -501,3 +502,29 @@ class Service:
         json.dump(PT.to_tsl(patches, ls["name"]), open(path, "w"), indent=1)
         subprocess.run(["open", "-R", path])
         return {"ok": True, "path": path, "count": len(patches)}
+
+    # -------------------------------------------------------------- guitar tabs links (your own tab site; nothing is downloaded)
+    def tabs_config(self):
+        try:
+            return json.load(open(TABS_CFG))
+        except (OSError, ValueError):
+            return {"service": "", "template": "", "links": {}}
+
+    def save_tabs_config(self, cfg):
+        """{service: ultimate-guitar|songsterr|google|custom, template: URL with {q}, links: {song_id: URL}}"""
+        cur = self.tabs_config()
+        for key in ("service", "template"):
+            if key in cfg:
+                cur[key] = str(cfg[key] or "")[:300]
+        if "links" in cfg:
+            cur["links"] = {k: v for k, v in cfg["links"].items() if re.fullmatch(r"[a-z0-9][a-z0-9\-]*", k) and re.match(r"https?://", v or "")}
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(cur, open(TABS_CFG, "w"), indent=1)
+        return {"ok": True, "config": cur}
+
+    def open_url(self, url):
+        """Open a web page in the default browser (http/https only)."""
+        if not re.match(r"https?://", url or ""):
+            return {"ok": False, "error": "Not a web link"}
+        subprocess.run(["open", url])
+        return {"ok": True}

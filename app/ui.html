@@ -109,6 +109,7 @@
   .sg-top { position: relative; padding: 26px 30px 16px; } .sg-top::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--panel) 4%, #16161d88 55%, #16161d22); }
   .sg-top > * { position: relative; z-index: 1; } .sg-top h3 { font-size: 32px; line-height: 1.05; margin: 0; } .sg-top .by { font-size: 16px; margin-top: 2px; }
   .sg-x { position: absolute; top: 14px; right: 16px; z-index: 2; display: flex; gap: 8px; }
+  .tabbtn { margin-top: 10px; padding: 7px 14px; font-size: 13.5px; background: #000a; } .tabbtn:hover { background: #000d; }
   .sg-x button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #000a; color: #fff; font-size: 17px; cursor: pointer; line-height: 1; } .sg-x button:hover { background: #000d; }
   .facts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: baseline; margin-top: 16px; }
   .fact .v { font-size: 26px; font-weight: 800; line-height: 1; } .fact .v small { font-size: 12px; color: var(--muted); font-weight: 700; margin-left: 4px; } .fact .l { font-size: 11px; letter-spacing: 1px; color: #ffffffa8; font-weight: 700; margin-top: 3px; }
@@ -158,6 +159,7 @@
 <script src="guitars.js"></script>
 <script src="guitar-manager.js"></script>
 <script src="livesets.js"></script>
+<script src="tabs.js"></script>
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
 let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [];   // RES = search results view (set when the user presses Enter)
@@ -340,7 +342,7 @@ function whammyCard(s) {
 
 let TAB = null;      // which detail panel is open in the song window: "guitar" | "trio" | "whammy" | null
 const keyShort = k => (k || "").replace(/\s*\(.*?\)/g, "").replace(/[,;].*$/, "").trim();
-const tuningShort = t => (t || "").replace(/\s*\(.*?\)/g, "").replace(/,.*$/, "").trim();
+const tuningShort = t => (t || "").replace(/\s*\(.*?\)/g, "").split(/[;,]| per | from | - /)[0].trim().slice(0, 34);
 function whammyLabel(w) {
   if (!w) return null;
   const st = w.settings || {};
@@ -377,8 +379,9 @@ function openSong(id) {
   const detail = TAB === "guitar" ? guitarCard(s) : TAB === "trio" ? bandCard(s) : TAB === "whammy" ? whammyCard(s) : "";
   $("#sheet").classList.add("wide");
   $("#sheet").innerHTML = `<div class="sg-top" style="background:${bg(s)}">
-      <div class="sg-x"><button data-reveal="${esc(s.id)}" title="Show the .tsl file (for BOSS Tone Studio)" aria-label="Show .tsl file">⤓</button><button data-gm-close-song="1" aria-label="Close">×</button></div>
+      <div class="sg-x"><button data-tabs-set="${esc(s.id)}" title="Choose your tab site or paste an exact link" aria-label="Tab settings">⚙</button><button data-reveal="${esc(s.id)}" title="Show the .tsl file (for BOSS Tone Studio)" aria-label="Show .tsl file">⤓</button><button data-gm-close-song="1" aria-label="Close">×</button></div>
       <h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div>
+      <button class="p tabbtn" data-tabs-open="${esc(s.id)}" title="Open the tabs for this song">🎼 Tabs ↗</button>
       <div class="facts">${fact(b.bpm, "BPM", "TEMPO")}${fact(keyShort(b.key), "", "KEY")}${fact(tun || null, "", "TUNING")}${fact(b.time_signature, "", "TIME")}</div></div>
     <div class="sg-h">Amp patches</div>
     <div class="patches">${s.patches.map(p => { const live = LIVE && LIVE.id === s.id && LIVE.index === p.index;
@@ -512,6 +515,7 @@ async function init() {
   const a = api();
   SONGS = a ? await a.songs() : [];
   GUITARS = a ? await a.guitars() : [];
+  loadTabCfg();
   render(); refreshStatus(); setInterval(refreshStatus, 5000);
   loadCovers();
 }
