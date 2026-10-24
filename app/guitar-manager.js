@@ -13,13 +13,15 @@ const GTYPES = [
   { k: "Explorer", short: "Explorer", w: "Explorer", pk: "humbucker", fin: "cherry", brands: ["Gibson", "Epiphone"] },
   { k: "Flying V", short: "Flying V", w: "Flying V", pk: "humbucker", fin: "honey", brands: ["Gibson", "Epiphone"] },
   { k: "PRS / Superstrat", short: "PRS", w: "Custom 24", pk: "hsh", fin: "cherryburst", brands: ["PRS", "Ibanez"] },
-  { k: "P-90 guitar (Junior, Special…)", short: "P-90", w: "Les Paul Special", pk: "p90", fin: "tv", brands: ["Gibson", "Epiphone"] },
   { k: "Acoustic", short: "Acoustic", w: "Acoustic", pk: "acoustic", fin: "natural", brands: ["Martin", "Taylor", "Yamaha"] },
   { k: "Other", short: "Other", w: "", pk: "humbucker", fin: "grey", brands: [] },
 ];
 const ALL_BRANDS = ["Fender", "Gibson", "Epiphone", "PRS", "Ibanez", "ESP", "LTD", "Jackson", "Charvel", "Squier", "Gretsch", "Schecter", "Yamaha", "Rickenbacker",
   "Music Man", "G&L", "Danelectro", "Hagstrom", "Reverend", "Godin", "Sterling", "Cort", "Martin", "Taylor", "Takamine"];
-const normKind = (k, name) => k === "Explorer / Flying V" ? (/flying|\bv\b/i.test(name || "") ? "Flying V" : "Explorer") : k;   // migrate the old combined type
+const LEGACY_P90 = "P-90 guitar (Junior, Special…)";
+const normKind = (k, name) => k === "Explorer / Flying V" ? (/flying|\bv\b/i.test(name || "") ? "Flying V" : "Explorer")   // old combined type
+  : k === LEGACY_P90 ? "Les Paul" : k;                                                                                       // P-90 is a pickup, not a body shape
+const defFinish = g => g.finish || (g.kind === LEGACY_P90 ? "tv" : gtype(normKind(g.kind, g.name)).fin);
 const gtype = k => GTYPES.find(t => t.k === k) || GTYPES[GTYPES.length - 1];
 let GM = null;   // { view: "list" | "form", f: form state }
 
@@ -27,7 +29,7 @@ function openGuitars(editId) {
   const id = typeof editId === "string" ? editId : null;
   const g = id && GUITARS.find(x => x.id === id);
   if (g) GM = { view: "form", f: { id: g.id, kind: normKind(g.kind, g.name), brand: g.brand || "", name: g.name, nameTouched: true, brandTouched: true, pickups: g.pickups, pkTouched: true,
-    finish: g.finish || gtype(g.kind).fin, finTouched: true, notes: g.notes || "" } };
+    finish: defFinish(g), finTouched: true, notes: g.notes || "" } };
   else if (GUITARS.length) GM = { view: "list" };
   else GM = { view: "form", f: newGuitarState("Stratocaster"), first: true };
   gmRender();
@@ -48,7 +50,7 @@ function gmRender() {
   const sheet = $("#gsheet");
   if (GM.view === "list") {
     const rows = GUITARS.map(g => `<div class="gm-row"><div class="gthumb">${guitarPic(g.kind, g.name, g.finish)}</div>
-      <div class="m"><div class="n">${esc(g.name)}</div><div class="d">${[g.brand, PK[g.pickups] || g.pickups, fin(g.finish || gtype(normKind(g.kind, g.name)).fin).label].filter(Boolean).map(esc).join(" · ")}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
+      <div class="m"><div class="n">${esc(g.name)}</div><div class="d">${[g.brand, PK[g.pickups] || g.pickups, fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
       <div class="act"><button class="gm-link" data-gm="edit" data-id="${esc(g.id)}">Edit</button><button class="gm-link danger" data-gm="remove" data-id="${esc(g.id)}">Remove</button></div></div>`).join("");
     sheet.innerHTML = `<div class="gm"><div class="gm-head"><button class="gm-x" data-gm="close" aria-label="Close">×</button><h3>My guitars</h3><div class="sub">Tonai recommends the best one for each song</div></div>
       <div class="gm-body"><div class="gm-list">${rows}</div></div>
