@@ -289,17 +289,21 @@ function modelMatch(g, originals) {
   return (originals || []).some(o => { const t = (o.guitar || "").toLowerCase();
     return MODELS.some(m => (m.length > 3 ? mine.includes(m) && t.includes(m) : new RegExp("\\b" + m + "\\b").test(mine) && new RegExp("\\b" + m + "\\b").test(t))); });
 }
-function rate(g, gi) {   // -> {stars 0-3, why}
+function rate(g, gi) {   // -> {stars 0-3, score (for sorting), why, exact}
   const need = gi.pickups_needed || "any", pk = g.pickups;
-  if (pk === "acoustic") return { stars: 0, why: "Acoustic: it won't suit this electric patch." };
-  if (modelMatch(g, gi.originals)) return { stars: 3, why: "Same kind of guitar as the record." };
-  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, why: "Pickup type isn't critical for this song." };
-  if (pk === need) return { stars: 3, why: `${PK[pk]} pickups, like the original.` };
-  if (pk === "hss" || pk === "hsh") return { stars: 3, why: need === "humbucker" ? "Use a humbucker position (bridge)." : "Use the single-coil positions (middle/neck)." };
-  if (pk === "p90" || need === "p90") return { stars: 2, why: "P-90s sit between single-coil and humbucker; a close match." };
+  if (pk === "acoustic") return { stars: 0, score: 0, why: "Acoustic: it won't suit this electric patch." };
+  const exact = modelMatch(g, gi.originals);
+  if (exact) {   // the same model as on the record always ranks first; the same brand edges out lookalikes
+    const mine = (g.brand + " " + g.name).toLowerCase(), sameBrand = (gi.originals || []).some(o => g.brand && (o.guitar || "").toLowerCase().includes(g.brand.toLowerCase()));
+    return { stars: 3, score: 4 + (sameBrand ? .3 : 0) + (pk === need ? .1 : 0), exact: true, why: "The same model as on the record." };
+  }
+  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, score: pk === "hss" || pk === "hsh" ? 2.6 : 2, why: "Pickup type isn't critical for this song." };
+  if (pk === need) return { stars: 3, score: 3, why: `${PK[pk]} pickups, like the original.` };
+  if (pk === "hss" || pk === "hsh") return { stars: 3, score: 2.8, why: need === "humbucker" ? "Use a humbucker position (bridge)." : "Use the single-coil positions (middle/neck)." };
+  if (pk === "p90" || need === "p90") return { stars: 2, score: 2, why: "P-90s sit between single-coil and humbucker; a close match." };
   return need === "humbucker"
-    ? { stars: 1, why: "Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble." }
-    : { stars: 1, why: "Hotter and thicker than the record: use the neck pickup, roll volume to ~7, split the coils if you can." };
+    ? { stars: 1, score: 1, why: "Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble." }
+    : { stars: 1, score: 1, why: "Hotter and thicker than the record: use the neck pickup, roll volume to ~7, split the coils if you can." };
 }
 function guitarCard(s) {
   const gi = s.guitar;
@@ -309,8 +313,8 @@ function guitarCard(s) {
   let rec;
   if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">Add the guitars you own and I'll tell you which one to play.</p><button class="p" data-guitars="1">🎸 Add my guitars</button>`;
   else {
-    const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
-    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name, r.g.finish)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
+    const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.score - a.score || b.stars - a.stars || a.g.name.localeCompare(b.g.name));
+    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name, r.g.finish)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}${r.exact ? '<span class="best-tag" style="background:#ffd75e">ORIGINAL MODEL</span>' : ""}</div>
       <div class="d">${esc(r.why)}</div></div><div class="stars">${"★".repeat(r.stars)}<i>${"★".repeat(3 - r.stars)}</i></div></div>`).join("");
   }
   return `<div class="band"><h4>Guitar${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(gi.confidence.toUpperCase())}</span>` : ""}</h4>
@@ -353,7 +357,7 @@ function whammyLabel(w) {
 }
 function bestGuitar(s) {
   const gi = s.guitar; if (!gi || !GUITARS.length) return null;
-  const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
+  const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.score - a.score || b.stars - a.stars || a.g.name.localeCompare(b.g.name));
   return list[0].stars > 0 ? list[0] : null;
 }
 function summaryTiles(s) {
