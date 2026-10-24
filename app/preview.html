@@ -17,6 +17,10 @@ window.pywebview={api:{
     {inLibrary:false,artist:"AC/DC",title:"You Shook Me All Night Long",album:"Back in Black",art:""},
     {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
   delete_song: async()=>({ok:true}),
+  guitar_image: async(k)=>{const m={"Explorer / Flying V":"explorer","ES-335 / semi-hollow":"es-335","Jazzmaster / Jaguar":"jazzmaster","PRS / Superstrat":"prs","P-90 guitar (Junior, Special…)":"p90","Flying V":"flying-v"};
+    const slug=m[k]||k.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+    for(const ext of ["jpg","png"]){const r=await fetch("../data/guitars/"+slug+"."+ext,{cache:"no-store"});if(r.ok){const b=await r.blob();return await new Promise(res=>{const f=new FileReader();f.onload=()=>res({image:f.result});f.readAsDataURL(b);});}}
+    return {image:""};},
   generate_band: async()=>({ok:true}), generate_guitar: async()=>({ok:true}),
   guitars: async()=>JSON.parse(localStorage.getItem("g")||"[]"),
   save_guitar: async(g)=>{const l=JSON.parse(localStorage.getItem("g")||"[]");g.id=g.id||g.name.toLowerCase().replace(/[^a-z0-9]+/g,"-");const i=l.findIndex(x=>x.id===g.id);if(i>=0)l[i]=g;else l.push(g);localStorage.setItem("g",JSON.stringify(l));return{ok:true,guitars:l};},

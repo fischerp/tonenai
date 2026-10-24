@@ -28,6 +28,20 @@ def _cover_url(sid):
     return "data:image/jpeg;base64," + base64.b64encode(open(path, "rb").read()).decode()
 
 
+PHOTOS = {   # kind -> (Wikimedia Commons file, license); photos are downloaded on first use, never stored in git
+    'Stratocaster': ('1958 Fender Stratocaster.jpg', 'CC BY-SA 4.0'),
+    'Telecaster': ('Fender Telecaster American Vintage 1952 transparent.png', 'CC BY-SA 3.0'),
+    'Les Paul': ('Full front R9 Les Paul.jpg', 'CC BY-SA 4.0'),
+    'SG': ('Iommi sg guitar.jpg', 'CC BY-SA 2.0'),
+    'ES-335': ('1960 Gibson ES-335TD.jpg', 'CC BY-SA 4.0'),
+    'Jazzmaster': ('Fender Jazzmaster rot (cropped).jpg', 'CC BY-SA 4.0'),
+    'Explorer': ('Gibson Explorer.jpg', 'Public domain'),
+    'PRS': ('2010 PRS McCarty Model.jpg', 'CC BY-SA 2.0'),
+    'P90': ('Gibson Les Paul Junior (1958).png', 'CC BY-SA 2.0'),
+    'Acoustic': ('12 string Yamaha acoustic guitar.jpg', 'CC BY-SA 4.0'),
+    'Flying V': ('Flying V crop.jpg', 'CC BY-SA 3.0'),
+}
+GUITAR_IMG = os.path.join(ROOT, "data", "guitars")
 DATA = os.path.join(ROOT, "data")
 GUITARS = os.path.join(DATA, "guitars.json")
 
@@ -380,3 +394,37 @@ class Service:
         os.makedirs(DATA, exist_ok=True)
         json.dump(items, open(GUITARS, "w"), indent=1)
         return {"ok": True, "guitars": items}
+
+    # -------------------------------------------------------------- guitar photos (Wikimedia Commons, cached)
+    def guitar_image(self, kind):
+        """Photo for a guitar type as a data URL ('' if offline/unknown). Kinds: the form's Type names, or 'Flying V'."""
+        key = {"Explorer / Flying V": "Explorer", "ES-335 / semi-hollow": "ES-335", "Jazzmaster / Jaguar": "Jazzmaster",
+               "PRS / Superstrat": "PRS", "P-90 guitar (Junior, Special…)": "P90"}.get(kind, kind)
+        if key not in PHOTOS:
+            return {"image": ""}
+        fname, lic = PHOTOS[key]
+        ext = os.path.splitext(fname)[1].lower()
+        path = os.path.join(GUITAR_IMG, re.sub(r"[^a-z0-9]+", "-", key.lower()).strip("-") + ext)
+        try:
+            if not os.path.exists(path):
+                os.makedirs(GUITAR_IMG, exist_ok=True)
+                url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(fname) + "?width=420"
+                req = urllib.request.Request(url, headers={"User-Agent": "tonai-app/0.1 (personal project)"})
+                raw = urllib.request.urlopen(req, timeout=20).read()
+                open(path, "wb").write(raw)
+                try:                                  # keep cached PNGs small
+                    from PIL import Image
+                    im = Image.open(path)
+                    if ext == ".png" and len(raw) > 150_000:
+                        im.thumbnail((300, 640)); im.save(path, optimize=True)
+                except Exception:
+                    pass
+                credits = os.path.join(GUITAR_IMG, "credits.json")
+                data = json.load(open(credits)) if os.path.exists(credits) else {}
+                data[key] = {"file": "https://commons.wikimedia.org/wiki/File:" + urllib.parse.quote(fname.replace(" ", "_")), "license": lic}
+                json.dump(data, open(credits, "w"), indent=1)
+            import base64
+            mime = "image/png" if ext == ".png" else "image/jpeg"
+            return {"image": f"data:{mime};base64," + base64.b64encode(open(path, "rb").read()).decode()}
+        except Exception:
+            return {"image": ""}

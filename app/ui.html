@@ -98,7 +98,10 @@
   .gform .gfields { display: grid; gap: 10px; } .gform .gshape { position: sticky; top: 8px; text-align: center; } .gform .gshape svg { width: 140px; height: auto; }
   .gform .gsave { grid-column: 1 / -1; } .gform .gshape .cap { color: var(--muted); font-size: 12px; margin-top: 4px; }
   @media (max-width: 560px) { .gform { grid-template-columns: 1fr; } }
-  .gthumb { flex: none; width: 26px; display: flex; justify-content: center; } .gthumb svg { height: 48px; width: auto; } .gform label { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .5px; }
+  .gthumb { flex: none; width: 34px; display: flex; justify-content: center; } .gthumb .gpic { height: 56px; }
+  .gpic { display: inline-flex; align-items: center; justify-content: center; background: #dcdce4; border-radius: 8px; overflow: hidden; }
+  .gpic img { height: 100%; width: auto; max-width: 100%; object-fit: contain; mix-blend-mode: multiply; display: block; }
+  .gpic svg { height: 100%; width: auto; padding: 3px; } .gform .gshape .gpic { height: 270px; width: 140px; } .gform .gshape svg { width: auto; } .gform label { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .5px; }
   .gform input, .gform select { width: 100%; margin-top: 4px; padding: 9px 12px; border-radius: 8px; border: 1px solid #2c2c38; background: #14141b; color: var(--text); font-size: 14px; }
   .glist { padding: 6px 30px 14px; } .gempty { color: var(--muted); padding: 6px 0 12px; } .xbtn { background: none; border: 0; color: #ff8a85; cursor: pointer; font-size: 13px; }
   .badge2 { font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 3px 9px; border-radius: 5px; margin-left: 8px; vertical-align: 1px; }
@@ -293,6 +296,20 @@ function guitarSVG(kind, name) {
     <g fill="#14141b" fill-opacity=".72">${g.d}</g></g></svg>`;
 }
 
+const GIMG = {}, GLOAD = {};   // kind -> data URL of a real photo (downloaded once, cached on disk by the backend)
+function guitarPic(kind, name) {
+  const key = kind === "Explorer / Flying V" && /flying|\bv\b/i.test(name || "") ? "Flying V" : kind;
+  return `<span class="gpic" data-gk="${esc(key)}">${GIMG[key] ? `<img src="${GIMG[key]}" alt="${esc(kind)}">` : guitarSVG(kind, name)}</span>`;
+}
+async function hydratePics(root) {
+  const a = api(); if (!a) return;
+  for (const el of (root || document).querySelectorAll(".gpic[data-gk]")) {
+    const k = el.dataset.gk; if (GIMG[k] === "") continue;
+    if (!GIMG[k]) { GLOAD[k] = GLOAD[k] || a.guitar_image(k).then(r => { GIMG[k] = r.image || ""; }); await GLOAD[k]; }
+    if (GIMG[k] && el.isConnected && !el.querySelector("img")) el.innerHTML = `<img src="${GIMG[k]}" alt="">`;
+  }
+}
+
 const KINDS = [["Stratocaster", "single-coil"], ["Telecaster", "single-coil"], ["Les Paul", "humbucker"], ["SG", "humbucker"], ["ES-335 / semi-hollow", "humbucker"],
   ["Jazzmaster / Jaguar", "single-coil"], ["Explorer / Flying V", "humbucker"], ["PRS / Superstrat", "hsh"], ["P-90 guitar (Junior, Special…)", "p90"], ["Acoustic", "acoustic"], ["Other", "humbucker"]];
 const PK = { "single-coil": "Single-coil", humbucker: "Humbucker", p90: "P-90", hss: "HSS (humbucker + 2 single-coils)", hsh: "HSH (2 humbuckers + single)", acoustic: "Acoustic" };
@@ -324,7 +341,7 @@ function guitarCard(s) {
   if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">Add the guitars you own and I'll tell you which one to play.</p><button class="p" data-guitars="1">🎸 Add my guitars</button>`;
   else {
     const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.stars - a.stars || a.g.name.localeCompare(b.g.name));
-    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarSVG(r.g.kind, r.g.name)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
+    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}</div>
       <div class="d">${esc(r.why)}</div></div><div class="stars">${"★".repeat(r.stars)}<i>${"★".repeat(3 - r.stars)}</i></div></div>`).join("");
   }
   return `<div class="band"><h4>Guitar${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(gi.confidence.toUpperCase())}</span>` : ""}</h4>
@@ -339,9 +356,9 @@ function kindWord(k) { return k === "Other" ? "" : k.replace(/\(.*?\)/g, "").spl
 
 function openGuitars(editId) {
   const ed = editId ? GUITARS.find(g => g.id === editId) : null;
-  const rows = GUITARS.map(g => `<div class="gtr"><div class="gthumb">${guitarSVG(g.kind, g.name)}</div><div class="m"><div class="n">${esc(g.name)}</div><div class="d">${esc(g.brand || "")}${g.brand ? " · " : ""}${esc(g.kind)} · ${esc(PK[g.pickups] || g.pickups)}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
+  const rows = GUITARS.map(g => `<div class="gtr"><div class="gthumb">${guitarPic(g.kind, g.name)}</div><div class="m"><div class="n">${esc(g.name)}</div><div class="d">${esc(g.brand || "")}${g.brand ? " · " : ""}${esc(g.kind)} · ${esc(PK[g.pickups] || g.pickups)}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
     <button class="xbtn" style="color:#9a9aa8" data-gedit="${esc(g.id)}">Edit</button><button class="xbtn" data-gdel="${esc(g.id)}">Remove</button></div>`).join("");
-  $("#gsheet").innerHTML = `<div class="top" style="background:linear-gradient(155deg,#6b2f1d,#1a0f0b)"><h3>My guitars</h3><div class="by">Tonai recommends the best one for each song</div></div>
+  $("#gsheet").innerHTML = `<div class="top" style="background:linear-gradient(155deg,#6b2f1d,#1a0f0b)"><h3>My guitars</h3><div class="by">Tonai recommends the best one for each song · Photos: Wikimedia Commons (CC BY-SA / public domain)</div></div>
     <div class="glist">${rows || '<div class="gempty">No guitars yet. Add the ones you have available.</div>'}</div>
     <div class="gform"><input type="hidden" id="g-id" value="${ed ? esc(ed.id) : ""}">
       <div class="gfields">
@@ -354,7 +371,7 @@ function openGuitars(editId) {
       <div class="gshape"><div id="g-shape"></div><div class="cap" id="g-cap"></div></div>
       <button class="p main gsave" id="g-save">${ed ? "Save changes" : "Add guitar"}</button></div>`;
   let touched = !!ed;                                   // stop auto-suggesting once the user edits the name
-  const shape = () => { $("#g-shape").innerHTML = guitarSVG($("#g-kind").value, $("#g-name").value); $("#g-cap").textContent = kindWord($("#g-kind").value); };
+  const shape = () => { $("#g-shape").innerHTML = guitarPic($("#g-kind").value, $("#g-name").value); hydratePics($("#g-shape")); $("#g-cap").textContent = kindWord($("#g-kind").value); };
   const suggest = () => { if (!touched) $("#g-name").value = [$("#g-brand").value.trim(), kindWord($("#g-kind").value)].filter(Boolean).join(" "); shape(); };
   $("#g-name").addEventListener("input", () => { touched = $("#g-name").value !== ""; shape(); });
   $("#g-brand").addEventListener("input", suggest);
@@ -362,7 +379,7 @@ function openGuitars(editId) {
   if (ed) { $("#g-brand").value = ed.brand || ""; $("#g-kind").value = ed.kind; $("#g-pk").value = ed.pickups; $("#g-name").value = ed.name; $("#g-notes").value = ed.notes || ""; }
   else { $("#g-pk").value = KINDS[0][1]; suggest(); }
   shape();
-  $("#gmodal").classList.add("open");
+  $("#gmodal").classList.add("open"); hydratePics($("#gsheet"));
 }
 
 const WH_EFFECTS = ["2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN", "5TH DOWN", "OCT DOWN", "2 OCT DOWN", "DIVE BOMB"];
@@ -394,7 +411,7 @@ function openSong(id) {
       <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp · ${esc(p.note)}</div></div><div class="go">▶ Play</div></div>`).join("")}</div>
     ${guitarCard(s)}${bandCard(s)}${whammyCard(s)}<div class="foot"><button class="link" data-reveal="${esc(s.id)}">Show .tsl file (for BOSS Tone Studio)</button>
       <span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
-  $("#modal").classList.add("open");
+  $("#modal").classList.add("open"); hydratePics($("#sheet"));
 }
 
 async function play(id, i) {
