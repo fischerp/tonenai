@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tonai</title>
+<title>TonenAI</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="guitar-manager.css">
 <link rel="stylesheet" href="livesets.css">
 <style>
@@ -17,7 +18,17 @@
   body { overflow-y: auto; overflow-x: hidden; }
   header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 20px;
     padding: 14px 4vw; background: linear-gradient(#0b0b0fee, #0b0b0f99 70%, transparent); backdrop-filter: blur(6px); }
-  .logo { font-weight: 800; letter-spacing: .5px; color: var(--accent); font-size: 22px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.3px; color: var(--text); font-size: 24px; }
+  .langbox { position: relative; }
+  #lang { display: inline-flex; align-items: center; gap: 8px; } #lang i { font-style: normal; font-size: 10px; opacity: .7; }
+  .fl { font-size: 18px; line-height: 1; }
+  .langmenu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 230px; white-space: nowrap; background: #1c1c26; border: 1px solid #33334a; border-radius: 10px;
+    padding: 6px; box-shadow: 0 12px 32px #000b; z-index: 60; }
+  .langmenu[hidden] { display: none; }
+  .lopt { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .lopt:hover, .lopt:focus { background: #ffffff1a; outline: none; } .lopt.on { font-weight: 700; } .lopt b { margin-left: auto; color: #3ddc84; }
+  .logo img { height: 30px; width: auto; display: block; }
+  .logo b { color: var(--accent); font-weight: 800; }
   .search { flex: 1; max-width: 360px; }
   .search input { width: 100%; padding: 8px 14px; border-radius: 20px; border: 1px solid #2c2c38;
     background: #14141b; color: var(--text); font-size: 14px; outline: none; }
@@ -66,6 +77,15 @@
   .card:hover .fav, .fav.on { opacity: 1; } .fav:hover { transform: scale(1.12); background: #000d; } .fav.on, .sg-x button.favon { color: #ff4d6d; }
   .card .badge { position: absolute; top: 12px; left: 12px; z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: 1px;
     padding: 3px 8px; border-radius: 4px; background: #000a; }
+  .card .sbadge { position: absolute; top: 40px; left: 12px; z-index: 1; font-size: 10px; font-weight: 800; letter-spacing: 1px; padding: 3px 7px; border-radius: 4px; background: #f5a623; color: #000; }
+  .card .sbadge.played { background: #3ddc84; }
+  .prac { padding: 0 30px 16px; display: grid; gap: 10px; }
+  .seg2 { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg2 button { border: 0; border-radius: 16px; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; background: #ffffff14; color: var(--text); cursor: pointer; }
+  .seg2 button:hover { background: #ffffff26; } .seg2 button[aria-checked="true"] { background: var(--text); color: #000; }
+  .seg2 button[aria-checked="true"][data-status="learning"] { background: #f5a623; } .seg2 button[aria-checked="true"][data-status="played"] { background: #3ddc84; }
+  #pnotes { width: 100%; box-sizing: border-box; background: #14141b; border: 1px solid #2c2c38; border-radius: 8px; color: var(--text); font: inherit; font-size: 14px; padding: 10px 12px; resize: vertical; min-height: 64px; }
+  #pnotes:focus { outline: none; border-color: #55556a; } .psaved { color: var(--muted); font-size: 12px; min-height: 15px; margin-top: -4px; }
   .card.live .badge { background: var(--accent); }
 
   .results { margin: 4px 4vw 40px; max-width: 760px; }
@@ -149,15 +169,47 @@
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #222230; padding: 10px 18px;
     border-radius: 8px; transition: transform .25s; z-index: 99; } .toast.show { transform: translateX(-50%); }
   .toast.err { background: #5a1f22; }
+  /* ---- opening splash: timed to the sting (bass 0.00s, TO 0.70s, NEN 0.96s, AI 1.24s, fades out from 3.75s; sound is 4.5s) */
+  #splash { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; cursor: pointer;
+    background: radial-gradient(ellipse at 50% 45%, #17171f 0%, #0b0b0f 55%, #050507 100%); }
+  #splash::before { content: ""; position: absolute; width: 70vmin; height: 70vmin; border-radius: 50%; background: radial-gradient(circle, #e5091455 0%, #e5091418 40%, transparent 70%);
+    animation: sp-bass 1.6s cubic-bezier(.1,.8,.2,1) 0s both; animation-play-state: paused; }
+  #splash.go::before { animation-play-state: running; }
+  @keyframes sp-bass { 0% { transform: scale(.4); opacity: 0; } 12% { opacity: 1; } 100% { transform: scale(1.25); opacity: .35; } }
+  #splash .sp-in { width: min(72vw, 820px); display: grid; justify-items: center; gap: 18px; }
+  #splash svg { width: 100%; height: auto; overflow: visible; }
+  #splash .sp-tag { color: #9a9aa8; letter-spacing: .5em; font-size: clamp(11px, 1.3vw, 15px); font-weight: 600; text-transform: uppercase; padding-left: .5em; }
+  #splash .sp-in { animation: sp-zoom 4.5s cubic-bezier(.2,.6,.3,1) both; }
+  #sp-ring { stroke-dasharray: 1; animation: sp-draw .5s cubic-bezier(.3,.7,.2,1) .7s both; }
+  #sp-wave { stroke-dasharray: 1; animation: sp-draw .34s ease-out .96s both; }
+  #sp-stem { stroke-dasharray: 1; animation: sp-draw .26s ease-out 1.04s both; }
+  #splash .sp-w1 { animation: sp-word .7s cubic-bezier(.2,.7,.2,1) 1.24s both; }
+  #splash .sp-w2 { animation: sp-word .7s cubic-bezier(.2,.7,.2,1) 1.32s both, sp-glow 1.6s ease-in-out 1.6s; }
+  #splash .sp-shine { animation: sp-shine 1.1s ease-in-out 1.75s both; }
+  #splash .sp-tag { animation: sp-fadein .8s ease-out 1.9s both; }
+  #splash.go { animation: sp-out .7s ease-in 3.75s forwards; }
+  #splash.skip { animation: sp-out .25s ease-in forwards !important; }
+  @keyframes sp-zoom { from { transform: scale(.94); } to { transform: scale(1.05); } }
+  @keyframes sp-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @keyframes sp-word { from { opacity: 0; transform: translateX(-24px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes sp-glow { 0%, 100% { filter: none; } 35% { filter: drop-shadow(0 0 18px #e50914) drop-shadow(0 0 40px #e5091488); } }
+  @keyframes sp-shine { from { transform: translateX(0); } to { transform: translateX(1150px); } }
+  @keyframes sp-fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sp-out { to { opacity: 0; transform: scale(1.02); visibility: hidden; } }
+  #splash .sp-w1, #splash .sp-w2 { transform-box: fill-box; }
+  #splash:not(.go) .sp-in, #splash:not(.go) .sp-in * { animation-play-state: paused !important; }
+  @media (prefers-reduced-motion: reduce) { #splash * { animation-duration: .01s !important; animation-delay: 0s !important; } #splash.go { animation: sp-out .4s ease-in 1.6s forwards; } }
 </style>
 </head>
 <body>
+<div id="splash" role="img" aria-label="TonenAI"><div class="sp-in"><svg viewBox="0 100 1271 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="sp-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3b47"/><stop offset="1" stop-color="#b20710"/></linearGradient><linearGradient id="sp-shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="sp-clip"><path d="M426.123046875 258.486328125H467.9638671875V370.0H500.6201171875V258.486328125H542.4609375V231.767578125H426.123046875ZM604.40234375 371.9482421875C636.7802734375 371.9482421875 656.4482421875 350.4248046875 656.4482421875 318.5107421875C656.4482421875 286.50390625 636.7802734375 264.98046875 604.40234375 264.98046875C571.931640625 264.98046875 552.263671875 286.50390625 552.263671875 318.5107421875C552.263671875 350.4248046875 571.931640625 371.9482421875 604.40234375 371.9482421875ZM604.40234375 347.177734375C591.970703125 347.177734375 585.291015625 335.5810546875 585.291015625 318.3251953125C585.291015625 300.9765625 591.970703125 289.7509765625 604.40234375 289.7509765625C616.833984375 289.7509765625 623.513671875 300.9765625 623.513671875 318.3251953125C623.513671875 335.5810546875 616.833984375 347.177734375 604.40234375 347.177734375ZM703.267578125 310.810546875C703.267578125 298.75 710.4111328125 291.6064453125 720.9873046875 291.6064453125C731.5634765625 291.6064453125 737.8720703125 298.564453125 737.8720703125 310.25390625V370.0H770.25V303.9453125C770.25 280.4736328125 756.0556640625 264.98046875 734.3466796875 264.98046875C717.5546875 264.98046875 707.349609375 274.2578125 701.8759765625 288.6376953125L701.3193359375 266.279296875H670.8896484375V370.0H703.267578125ZM836.9228515625 371.9482421875C862.064453125 371.9482421875 879.0419921875 360.537109375 884.2373046875 342.5390625L855.384765625 337.8076171875C852.787109375 344.765625 846.2001953125 348.4765625 837.4794921875 348.4765625C825.2333984375 348.4765625 816.9765625 341.0546875 816.419921875 326.025390625H885.7216796875V317.861328125C885.7216796875 283.6279296875 864.84765625 264.98046875 835.716796875 264.98046875C804.544921875 264.98046875 784.5986328125 286.50390625 784.5986328125 318.5107421875C784.5986328125 351.7236328125 804.359375 371.9482421875 836.9228515625 371.9482421875ZM816.60546875 307.1923828125C817.8115234375 295.78125 824.583984375 288.4521484375 835.9951171875 288.4521484375C847.3134765625 288.4521484375 853.71484375 295.41015625 855.013671875 307.1923828125ZM932.0771484375 310.810546875C932.0771484375 298.75 939.220703125 291.6064453125 949.796875 291.6064453125C960.373046875 291.6064453125 966.681640625 298.564453125 966.681640625 310.25390625V370.0H999.0595703125V303.9453125C999.0595703125 280.4736328125 984.865234375 264.98046875 963.15625 264.98046875C946.3642578125 264.98046875 936.1591796875 274.2578125 930.685546875 288.6376953125L930.12890625 266.279296875H899.69921875V370.0H932.0771484375Z"/><path d="M1015.0888671875 370.0H1051.4560546875L1060.455078125 340.5908203125H1106.470703125L1115.8408203125 370.0H1152.5791015625L1105.0791015625 231.767578125H1061.197265625ZM1068.1552734375 315.5419921875 1070.0107421875 309.6044921875C1074.556640625 293.92578125 1078.638671875 276.484375 1082.8134765625 257.8369140625C1087.2666015625 276.3916015625 1091.8125 293.8330078125 1096.63671875 309.6044921875L1098.4921875 315.5419921875ZM1197.4501953125 231.767578125H1164.701171875V370.0H1197.4501953125Z"/></clipPath></defs><g class="sp-mark" transform="translate(-51,60) scale(0.5)"><path id="sp-ring" pathLength="1" d="M322.7 782.3A330.0 330.0 0 1 1 701.3 782.3" fill="none" stroke="url(#sp-red)" stroke-width="64.0" stroke-linecap="round"/><path id="sp-wave" pathLength="1" d="M307.0 368.0C344.3 368.0 372.2 436.0 409.5 436.0C446.8 436.0 474.7 368.0 512.0 368.0C549.3 368.0 577.2 436.0 614.5 436.0C651.8 436.0 679.7 368.0 717.0 368.0" fill="none" stroke="#f4f4f6" stroke-width="54.0" stroke-linecap="round" stroke-linejoin="round"/><path id="sp-stem" pathLength="1" d="M512 368.0V702.0" stroke="#f4f4f6" stroke-width="58.0" stroke-linecap="round"/></g><path class="sp-w1" d="M426.123046875 258.486328125H467.9638671875V370.0H500.6201171875V258.486328125H542.4609375V231.767578125H426.123046875ZM604.40234375 371.9482421875C636.7802734375 371.9482421875 656.4482421875 350.4248046875 656.4482421875 318.5107421875C656.4482421875 286.50390625 636.7802734375 264.98046875 604.40234375 264.98046875C571.931640625 264.98046875 552.263671875 286.50390625 552.263671875 318.5107421875C552.263671875 350.4248046875 571.931640625 371.9482421875 604.40234375 371.9482421875ZM604.40234375 347.177734375C591.970703125 347.177734375 585.291015625 335.5810546875 585.291015625 318.3251953125C585.291015625 300.9765625 591.970703125 289.7509765625 604.40234375 289.7509765625C616.833984375 289.7509765625 623.513671875 300.9765625 623.513671875 318.3251953125C623.513671875 335.5810546875 616.833984375 347.177734375 604.40234375 347.177734375ZM703.267578125 310.810546875C703.267578125 298.75 710.4111328125 291.6064453125 720.9873046875 291.6064453125C731.5634765625 291.6064453125 737.8720703125 298.564453125 737.8720703125 310.25390625V370.0H770.25V303.9453125C770.25 280.4736328125 756.0556640625 264.98046875 734.3466796875 264.98046875C717.5546875 264.98046875 707.349609375 274.2578125 701.8759765625 288.6376953125L701.3193359375 266.279296875H670.8896484375V370.0H703.267578125ZM836.9228515625 371.9482421875C862.064453125 371.9482421875 879.0419921875 360.537109375 884.2373046875 342.5390625L855.384765625 337.8076171875C852.787109375 344.765625 846.2001953125 348.4765625 837.4794921875 348.4765625C825.2333984375 348.4765625 816.9765625 341.0546875 816.419921875 326.025390625H885.7216796875V317.861328125C885.7216796875 283.6279296875 864.84765625 264.98046875 835.716796875 264.98046875C804.544921875 264.98046875 784.5986328125 286.50390625 784.5986328125 318.5107421875C784.5986328125 351.7236328125 804.359375 371.9482421875 836.9228515625 371.9482421875ZM816.60546875 307.1923828125C817.8115234375 295.78125 824.583984375 288.4521484375 835.9951171875 288.4521484375C847.3134765625 288.4521484375 853.71484375 295.41015625 855.013671875 307.1923828125ZM932.0771484375 310.810546875C932.0771484375 298.75 939.220703125 291.6064453125 949.796875 291.6064453125C960.373046875 291.6064453125 966.681640625 298.564453125 966.681640625 310.25390625V370.0H999.0595703125V303.9453125C999.0595703125 280.4736328125 984.865234375 264.98046875 963.15625 264.98046875C946.3642578125 264.98046875 936.1591796875 274.2578125 930.685546875 288.6376953125L930.12890625 266.279296875H899.69921875V370.0H932.0771484375Z" fill="#f4f4f6"/><path class="sp-w2" d="M1015.0888671875 370.0H1051.4560546875L1060.455078125 340.5908203125H1106.470703125L1115.8408203125 370.0H1152.5791015625L1105.0791015625 231.767578125H1061.197265625ZM1068.1552734375 315.5419921875 1070.0107421875 309.6044921875C1074.556640625 293.92578125 1078.638671875 276.484375 1082.8134765625 257.8369140625C1087.2666015625 276.3916015625 1091.8125 293.8330078125 1096.63671875 309.6044921875L1098.4921875 315.5419921875ZM1197.4501953125 231.767578125H1164.701171875V370.0H1197.4501953125Z" fill="#e50914"/><g clip-path="url(#sp-clip)"><rect class="sp-shine" x="120" y="100" width="260" height="400" fill="url(#sp-shine)"/></g></svg><div class="sp-tag" id="sp-tag">Tone for every song</div></div></div>
 <header>
-  <div class="logo">TONAI</div>
+  <div class="logo"><img src="tonenai-mark.svg" alt=""><span>Tonen<b>AI</b></span></div>
   <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
   <button class="p" id="lbtn" title="Plan what goes into the amp's banks">📻 Livesets</button>
   <button class="p" id="gbtn" title="Register the guitars you own">🎸 My guitars</button>
   <button class="p" id="imp" title="Load a Tone Studio .tsl file">＋ Import .tsl</button>
+  <div class="langbox"><button class="p" id="lang" title="Language / Idioma" aria-haspopup="listbox" aria-expanded="false"></button><div class="langmenu" id="langmenu" role="listbox" tabindex="-1" hidden></div></div>
   <div class="status"><span class="dot" id="dot"></span><span id="stxt">connecting…</span></div>
 </header>
 <div id="hero"></div>
@@ -167,6 +219,7 @@
 <div class="modal" id="lmodal"><div class="sheet xl" id="lsheet"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="i18n.js"></script>
 <script src="guitar-shapes.js"></script>
 <script src="guitars.js"></script>
 <script src="guitar-manager.js"></script>
@@ -183,8 +236,10 @@ function hue(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0
 function bg(s) { return s.cover ? `linear-gradient(0deg, #0006, #0002), url('${s.cover}') center/cover` : grad(s); }
 function grad(s) { const h = hue(s.artist || s.title); return `linear-gradient(155deg, hsl(${h} 65% 38%), hsl(${(h + 50) % 360} 70% 18%))`; }
 function store(get, set) { try { return get ? JSON.parse(localStorage.getItem(get) || "null") : localStorage.setItem(...set); } catch (e) { return null; } }
-function recents() { return store("recent") || []; }
-function pushRecent(id) { const r = [id, ...recents().filter(x => x !== id)].slice(0, 12); store(null, ["recent", JSON.stringify(r)]); }
+let META = {};      // your practice status + notes per song: { id: { status: "learning" | "played", notes } } (data/song_meta.json)
+let RECENT = null;   // songs last sent to the amp, newest first; kept on disk by the app (data/recent.json)
+function recents() { return RECENT || store("recent") || []; }
+function pushRecent(id) { RECENT = [id, ...recents().filter(x => x !== id)].slice(0, 12); store(null, ["recent", JSON.stringify(RECENT)]); }
 
 function toast(msg, err) { const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
   clearTimeout(toast.t); toast.t = setTimeout(() => t.className = "toast", 2600); }
@@ -194,20 +249,21 @@ function match(s) { const t = (s.title + " " + s.artist + " " + s.patches.map(p 
 function card(s) {
   const live = LIVE && LIVE.id === s.id;
   return `<div class="card${live ? " live" : ""}" data-id="${esc(s.id)}" style="background:${bg(s)}">
-    <button class="fav${FAVS.includes(s.id) ? " on" : ""}" data-fav="${esc(s.id)}" aria-label="${FAVS.includes(s.id) ? "Remove from favourites" : "Add to favourites"}" title="Favorita">${FAVS.includes(s.id) ? "♥" : "♡"}</button>
-    <span class="badge">${live ? "PLAYING" : s.patches.length + (s.patches.length > 1 ? " PATCHES" : " PATCH")}</span>
+    <button class="fav${FAVS.includes(s.id) ? " on" : ""}" data-fav="${esc(s.id)}" aria-label="${FAVS.includes(s.id) ? tx("Remove from favourites") : tx("Add to favourites")}" title="${tx("Favourite")}">${FAVS.includes(s.id) ? "♥" : "♡"}</button>
+    ${(META[s.id] || {}).status ? `<span class="sbadge ${META[s.id].status}">${tx(META[s.id].status === "learning" ? "LEARNING" : "PLAYED")}</span>` : ""}
+    <span class="badge">${live ? tx("PLAYING") : s.patches.length + " " + (s.patches.length > 1 ? tx("PATCHES") : tx("PATCH"))}</span>
     <div class="t">${esc(s.title)}</div><div class="a">${esc(s.artist)}</div></div>`;
 }
 function row(title, list) { return list.length ? `<section class="row"><h2>${esc(title)}</h2><div class="track">${list.map(card).join("")}</div></section>` : ""; }
 
 function resultsView() {
-  if (RES.loading) return `<div class="results"><h2><span class="spin"></span>Searching “${esc(RES.q)}”…</h2></div>`;
-  if (RES.error) return `<div class="empty"><h2>Search failed</h2><p>${esc(RES.error)}</p></div>`;
+  if (RES.loading) return `<div class="results"><h2><span class="spin"></span>${tx("Searching “{0}”…", esc(RES.q))}</h2></div>`;
+  if (RES.error) return `<div class="empty"><h2>${tx("Search failed")}</h2><p>${esc(RES.error)}</p></div>`;
   if (!RES.items.length) return createCta();
-  return `<div class="results"><h2>Top ${RES.items.length} for “${esc(RES.q)}”<span class="hint">Esc to go back</span></h2>${RES.items.map((r, i) => `
+  return `<div class="results"><h2>${tx("Top {0} for “{1}”", RES.items.length, esc(RES.q))}<span class="hint">${tx("Esc to go back")}</span></h2>${RES.items.map((r, i) => `
     <div class="res"><div class="art" style="background-image:url('${esc(r.art || (SONGS.find(s => s.id === r.id) || {}).cover || "")}')"></div>
-      <div class="m"><div class="n">${esc(r.title)}</div><div class="d">${r.inLibrary ? '<span class="tag">IN YOUR LIBRARY</span>' : ""}${esc(r.artist)}${r.album ? " · " + esc(r.album) : ""}</div></div>
-      ${r.inLibrary ? `<button class="p main" data-open="${esc(r.id)}">Open</button>` : `<button class="p main" data-make="${i}">✦ Create</button>`}</div>`).join("")}</div>`;
+      <div class="m"><div class="n">${esc(r.title)}</div><div class="d">${r.inLibrary ? '<span class="tag">' + tx("IN YOUR LIBRARY") + '</span>' : ""}${esc(r.artist)}${r.album ? " · " + esc(r.album) : ""}</div></div>
+      ${r.inLibrary ? `<button class="p main" data-open="${esc(r.id)}">${tx("Open")}</button>` : `<button class="p main" data-make="${i}">${tx("✦ Create")}</button>`}</div>`).join("")}</div>`;
 }
 
 function render() {
@@ -218,23 +274,24 @@ function render() {
   if (!q) {
     const rec = recents().map(id => SONGS.find(s => s.id === id)).filter(Boolean);
     const fav = FAVS.map(id => SONGS.find(s => s.id === id)).filter(Boolean);
-    html += row("♥ Favoritas", fav);
-    html += row("Continue playing", rec);
-    html += row("All songs", list);
+    html += row(tx("♥ Favourites"), fav);
+    html += row(tx("🎯 Learning"), SONGS.filter(s => (META[s.id] || {}).status === "learning"));
+    html += row(tx("Continue playing"), rec);
+    html += row(tx("All songs"), list);
     const by = {};
-    list.forEach(s => (by[s.artist || "Other"] = by[s.artist || "Other"] || []).push(s));
+    list.forEach(s => (by[s.artist || tx("Other")] = by[s.artist || tx("Other")] || []).push(s));
     Object.keys(by).sort().forEach(a => { if (by[a].length > 1) html += row(a, by[a]); });
-  } else html += row(`Results for “${q}”`, list);
+  } else html += row(tx("Results for “{0}”", q), list);
   $("#rows").innerHTML = html || createCta();
 }
 
 function createCta() {
   const term = RES ? RES.q : q;
-  if (JOB && JOB.state === "running") return `<div class="empty"><h2>Creating “${esc(JOB.query || term)}”</h2><p><span class="spin"></span>${esc(JOB.note || "Working…")}</p></div>`;
+  if (JOB && JOB.state === "running") return `<div class="empty"><h2>${tx("Creating “{0}”", esc(JOB.query || term))}</h2><p><span class="spin"></span>${esc(tx(JOB.note || "Working…"))}</p></div>`;
   const msg = JOB && JOB.state === "error" ? `<p style="color:#ff8a85">${esc(JOB.error)}</p>` : "";
-  return term ? `<div class="empty"><h2>No match for “${esc(term)}”</h2><p>Claude can research the tone and build a patch set for this song. It takes about a minute.</p>${msg}
-    <button class="p main" data-create="1">✦ Create with Claude</button></div>`
-    : `<div class="empty"><h2>No songs yet</h2><p>Search for a song to have Claude create one.</p></div>`;
+  return term ? `<div class="empty"><h2>${tx("No match for “{0}”", esc(term))}</h2><p>${tx("Claude can research the tone and build a patch set for this song. It takes about a minute.")}</p>${msg}
+    <button class="p main" data-create="1">${tx("✦ Create with Claude")}</button></div>`
+    : `<div class="empty"><h2>${tx("No songs yet")}</h2><p>${tx("Search for a song to have Claude create one.")}</p></div>`;
 }
 
 const TRIO_GENRES = ["Blues", "R&B", "Rock", "Alt Rock", "Metal", "Pop", "E-Pop", "Hip-Hop", "Country", "Folk", "Latin", "Jazz"];
@@ -263,30 +320,30 @@ function toggleClick(bpm) {
     g.gain.setValueAtTime(.4, c.currentTime); g.gain.exponentialRampToValueAtTime(.001, c.currentTime + .06); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + .07); };
   beep(); CLICK = { c, t: setInterval(beep, 60000 / bpm) }; refreshClickBtn();
 }
-function refreshClickBtn() { document.querySelectorAll("[data-click]").forEach(b => { b.textContent = CLICK ? "■ Stop" : (b.classList.contains("mini") ? "▶ Click " + b.dataset.click : "▶ Click track"); }); }
+function refreshClickBtn() { document.querySelectorAll("[data-click]").forEach(b => { b.textContent = CLICK ? tx("■ Stop") : (b.classList.contains("mini") ? tx("▶ Click {0}", b.dataset.click) : tx("▶ Click track")); }); }
 
 function bandCard(s) {
   const b = s.band;
-  if (!b) return `<div class="band"><h4>Set up your Trio+</h4><p class="tip" style="margin:0 0 10px">No setup yet. Claude can look up the tempo, key and structure and work out the best genre and style.</p>
-    <button class="p" data-band="${esc(s.id)}">✦ Generate Trio+ setup</button></div>`;
+  if (!b) return `<div class="band"><h4>${tx("Set up your Trio+")}</h4><p class="tip" style="margin:0 0 10px">${tx("No setup yet. Claude can look up the tempo, key and structure and work out the best genre and style.")}</p>
+    <button class="p" data-band="${esc(s.id)}">${tx("✦ Generate Trio+ setup")}</button></div>`;
   const chip = (k, v) => v ? `<span class="chip"><b>${k}</b>${esc(v)}</span>` : "";
   const gi = genreIndex(b.genre), three = (b.time_signature || "").startsWith("3");
   const styles = Array.from({ length: 12 }, (_, i) => { const n = i + 1, is3 = n >= 10, ok = three === is3;
-    return `<div class="sty${ok ? " ok" : ""}${is3 ? " three" : ""}" title="${is3 ? "3/4 styles" : "4/4 styles"}">${n}</div>`; }).join("");
+    return `<div class="sty${ok ? " ok" : ""}${is3 ? " three" : ""}" title="${is3 ? tx("3/4 styles") : tx("4/4 styles")}">${n}</div>`; }).join("");
   const parts = (b.parts || []).slice(0, 5);
-  return `<div class="band"><h4>Set up your Trio+</h4>
+  return `<div class="band"><h4>${tx("Set up your Trio+")}</h4>
     <div class="bpm"><div class="big">${b.bpm || "?"}<small>BPM</small></div>
-      <div class="chips" style="margin:0">${chip("Genre", b.genre)}${chip("Time", b.time_signature)}${chip("Key", b.key)}</div>
-      ${b.bpm ? `<button class="p" data-click="${b.bpm}">▶ Click track</button>` : ""}</div>
-    <div class="dials">${genreDial(gi)}<div><div class="tip" style="margin-bottom:4px">STYLE knob: green = ${three ? "3/4" : "4/4"} styles</div><div class="stylerow">${styles}</div>
-      <div class="tip" style="margin-top:8px;max-width:300px">Look for: <b style="color:#fff">${esc(b.style_feel || "")}</b></div></div></div>
+      <div class="chips" style="margin:0">${chip(tx("Genre"), b.genre)}${chip(tx("Time"), b.time_signature)}${chip(tx("Key"), b.key)}</div>
+      ${b.bpm ? `<button class="p" data-click="${b.bpm}">${tx("▶ Click track")}</button>` : ""}</div>
+    <div class="dials">${genreDial(gi)}<div><div class="tip" style="margin-bottom:4px">${tx("STYLE knob: green = {0} styles", three ? "3/4" : "4/4")}</div><div class="stylerow">${styles}</div>
+      <div class="tip" style="margin-top:8px;max-width:300px">${tx("Look for:")} <b style="color:#fff">${esc(b.style_feel || "")}</b></div></div></div>
     <ol class="steps">
-      <li><b>Pick an empty part.</b> Press a PART button that isn't lit; the BAND light should blink red slowly. Set the BASS and DRUMS knobs to about 10 o'clock.</li>
-      <li><b>Genre knob → ${esc(b.genre || "?")}.</b></li>
-      <li><b>Teach it at ${b.bpm || "the song's"} BPM.</b> Start the click track, press BAND as you begin, strum clean, steady chords${parts.length ? " (see the parts below)" : ""}, then press BAND again on the same downbeat. Keep it under 32 bars. The pedal has no BPM display: it learns the tempo from your playing.</li>
-      <li><b>Choose the style.</b> The STYLE lights show the best matches. Pick one that fits ${three ? "3/4 (positions 10–12)" : "4/4 (positions 1–9)"} and the feel above. If all lights flash red, play the part again, clearer.</li>
-      <li><b>Tempo knob at 12 o'clock</b> = exactly what you taught (the AUDIOLASTIC light is off). If it feels like half or double speed, press ALT TIME.</li>
-      ${parts.length > 1 ? `<li><b>Repeat for the other parts</b> (each on its own PART button, up to 5), then tap through them with BAND:<ul>${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul></li>` : ""}
+      <li>${tx("<b>Pick an empty part.</b> Press a PART button that isn't lit; the BAND light should blink red slowly. Set the BASS and DRUMS knobs to about 10 o'clock.")}</li>
+      <li>${tx("<b>Genre knob → {0}.</b>", esc(b.genre || "?"))}</li>
+      <li>${tx("<b>Teach it at {0} BPM.</b> Start the click track, press BAND as you begin, strum clean, steady chords{1}, then press BAND again on the same downbeat. Keep it under 32 bars. The pedal has no BPM display: it learns the tempo from your playing.", b.bpm || tx("the song's"), parts.length ? tx(" (see the parts below)") : "")}</li>
+      <li>${tx("<b>Choose the style.</b> The STYLE lights show the best matches. Pick one that fits {0} and the feel above. If all lights flash red, play the part again, clearer.", three ? tx("3/4 (positions 10–12)") : tx("4/4 (positions 1–9)"))}</li>
+      <li>${tx("<b>Tempo knob at 12 o'clock</b> = exactly what you taught (the AUDIOLASTIC light is off). If it feels like half or double speed, press ALT TIME.")}</li>
+      ${parts.length > 1 ? `<li>${tx("<b>Repeat for the other parts</b> (each on its own PART button, up to 5), then tap through them with BAND:")}<ul>${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul></li>` : ""}
     </ol>
     ${b.tips ? `<div class="tip">${esc(b.tips)}</div>` : ""}</div>`;
 }
@@ -301,49 +358,49 @@ function modelMatch(g, originals) {
 }
 function rate(g, gi) {   // -> {stars 0-3, score (for sorting), why, exact}
   const need = gi.pickups_needed || "any", pk = g.pickups;
-  if (pk === "acoustic") return { stars: 0, score: 0, why: "Acoustic: it won't suit this electric patch." };
+  if (pk === "acoustic") return { stars: 0, score: 0, why: tx("Acoustic: it won't suit this electric patch.") };
   const exact = modelMatch(g, gi.originals);
   if (exact) {   // the same model as on the record always ranks first; the same brand edges out lookalikes
     const mine = (g.brand + " " + g.name).toLowerCase(), sameBrand = (gi.originals || []).some(o => g.brand && (o.guitar || "").toLowerCase().includes(g.brand.toLowerCase()));
-    return { stars: 3, score: 4 + (sameBrand ? .3 : 0) + (pk === need ? .1 : 0), exact: true, why: "The same model as on the record." };
+    return { stars: 3, score: 4 + (sameBrand ? .3 : 0) + (pk === need ? .1 : 0), exact: true, why: tx("The same model as on the record.") };
   }
-  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, score: pk === "hss" || pk === "hsh" ? 2.6 : 2, why: "Pickup type isn't critical for this song." };
-  if (pk === need) return { stars: 3, score: 3, why: `${PK[pk]} pickups, like the original.` };
-  if (pk === "hss" || pk === "hsh") return { stars: 3, score: 2.8, why: need === "humbucker" ? "Use a humbucker position (bridge)." : "Use the single-coil positions (middle/neck)." };
-  if (pk === "p90" || need === "p90") return { stars: 2, score: 2, why: "P-90s sit between single-coil and humbucker; a close match." };
+  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, score: pk === "hss" || pk === "hsh" ? 2.6 : 2, why: tx("Pickup type isn't critical for this song.") };
+  if (pk === need) return { stars: 3, score: 3, why: tx("{0} pickups, like the original.", PK[pk]) };
+  if (pk === "hss" || pk === "hsh") return { stars: 3, score: 2.8, why: need === "humbucker" ? tx("Use a humbucker position (bridge).") : tx("Use the single-coil positions (middle/neck).") };
+  if (pk === "p90" || need === "p90") return { stars: 2, score: 2, why: tx("P-90s sit between single-coil and humbucker; a close match.") };
   return need === "humbucker"
-    ? { stars: 1, score: 1, why: "Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble." }
-    : { stars: 1, score: 1, why: "Hotter and thicker than the record: use the neck pickup, roll volume to ~7, split the coils if you can." };
+    ? { stars: 1, score: 1, why: tx("Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble.") }
+    : { stars: 1, score: 1, why: tx("Hotter and thicker than the record: use the neck pickup, roll volume to ~7, split the coils if you can.") };
 }
 function guitarCard(s) {
   const gi = s.guitar;
-  if (!gi) return `<div class="band"><h4>Guitar</h4><p class="tip" style="margin:0 0 10px">No guitar info yet. Claude can find which guitars were used on the recording.</p>
-    <button class="p" data-genguitar="${esc(s.id)}">✦ Find the original guitars</button></div>`;
-  const chips = (gi.originals || []).map(o => `<span class="chip"><b>${esc(o.player || "Played on")}</b>${esc(o.guitar)}</span>`).join("");
+  if (!gi) return `<div class="band"><h4>${tx("Guitar")}</h4><p class="tip" style="margin:0 0 10px">${tx("No guitar info yet. Claude can find which guitars were used on the recording.")}</p>
+    <button class="p" data-genguitar="${esc(s.id)}">${tx("✦ Find the original guitars")}</button></div>`;
+  const chips = (gi.originals || []).map(o => `<span class="chip"><b>${esc(o.player || tx("Played on"))}</b>${esc(o.guitar)}</span>`).join("");
   let rec;
-  if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">Add the guitars you own and I'll tell you which one to play.</p><button class="p" data-guitars="1">🎸 Add my guitars</button>`;
+  if (!GUITARS.length) rec = `<p class="tip" style="margin:6px 0 10px">${tx("Add the guitars you own and I'll tell you which one to play.")}</p><button class="p" data-guitars="1">${tx("🎸 Add my guitars")}</button>`;
   else {
     const list = GUITARS.map(g => ({ g, ...rate(g, gi) })).sort((a, b) => b.score - a.score || b.stars - a.stars || a.g.name.localeCompare(b.g.name));
-    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name, r.g.finish)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">BEST CHOICE</span>' : ""}${r.exact ? '<span class="best-tag" style="background:#ffd75e">ORIGINAL MODEL</span>' : ""}</div>
+    rec = list.map((r, i) => `<div class="gtr${i === 0 && r.stars > 0 ? " best" : ""}"><div class="gthumb">${guitarPic(r.g.kind, r.g.name, r.g.finish)}</div><div class="m"><div class="n">${esc(r.g.name)}${i === 0 && r.stars > 0 ? '<span class="best-tag">${tx("BEST CHOICE")}</span>' : ""}${r.exact ? '<span class="best-tag" style="background:#ffd75e">${tx("ORIGINAL MODEL")}</span>' : ""}</div>
       <div class="d">${esc(r.why)}</div></div><div class="stars">${"★".repeat(r.stars)}<i>${"★".repeat(3 - r.stars)}</i></div></div>`).join("");
   }
-  return `<div class="band"><h4>Guitar${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(gi.confidence.toUpperCase())}</span>` : ""}</h4>
-    <div class="chips">${chips}${gi.pickups_needed && gi.pickups_needed !== "any" ? `<span class="chip"><b>Pickups</b>${esc(gi.pickups_needed)}</span>` : ""}</div>
-    ${gi.position ? `<p style="margin:0 0 10px">Set up: <b>${esc(gi.position)}</b></p>` : ""}${rec}
+  return `<div class="band"><h4>${tx("Guitar")}${gi.confidence ? ` <span class="badge2 ${gi.confidence === "confirmed" ? "yes" : gi.confidence === "likely" ? "optional" : "no"}">${esc(tx(gi.confidence.toUpperCase()))}</span>` : ""}</h4>
+    <div class="chips">${chips}${gi.pickups_needed && gi.pickups_needed !== "any" ? `<span class="chip"><b>${tx("Pickups")}</b>${esc(gi.pickups_needed)}</span>` : ""}</div>
+    ${gi.position ? `<p style="margin:0 0 10px">${tx("Set up:")} <b>${esc(gi.position)}</b></p>` : ""}${rec}
     ${gi.tone_notes ? `<div class="tip" style="margin-top:8px">${esc(gi.tone_notes)}</div>` : ""}</div>`;
 }
 
 const WH_EFFECTS = ["2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN", "5TH DOWN", "OCT DOWN", "2 OCT DOWN", "DIVE BOMB"];
 function whammyCard(s) {
   const w = s.whammy;
-  if (!w) return `<div class="band"><h4>Whammy DT</h4><p class="tip" style="margin:0 0 10px">No suggestion yet. Claude can check the song's real tuning and where a pitch effect is used.</p>
-    <button class="p" data-whammy="${esc(s.id)}">✦ Generate Whammy setup</button></div>`;
+  if (!w) return `<div class="band"><h4>Whammy DT</h4><p class="tip" style="margin:0 0 10px">${tx("No suggestion yet. Claude can check the song's real tuning and where a pitch effect is used.")}</p>
+    <button class="p" data-whammy="${esc(s.id)}">${tx("✦ Generate Whammy setup")}</button></div>`;
   const st = w.settings || {}, eff = (st.effect || "").toUpperCase();
   const nums = (dir, val) => ["1", "2", "3", "4", "5", "6", "7", "OCT", "OCT DRY"].map(n => `<span class="pill${val != null && String(val).toUpperCase() === n ? " on" : ""}">${n}</span>`).join("");
   const showPedal = w.use !== "no" && (eff || st.transpose_down != null || st.transpose_up != null || st.detune || st.harmony);
-  const label = { yes: "USE IT", optional: "OPTIONAL", no: "NOT NEEDED" }[w.use] || "";
+  const label = { yes: tx("USE IT"), optional: tx("OPTIONAL"), no: tx("NOT NEEDED") }[w.use] || "";
   return `<div class="band"><h4>Whammy DT <span class="badge2 ${esc(w.use || "no")}">${label}</span></h4>
-    <div class="chips">${w.tuning ? `<span class="chip"><b>Tuning</b>${esc(w.tuning)}</span>` : ""}${w.when ? `<span class="chip"><b>When</b>${esc(w.when)}</span>` : ""}</div>
+    <div class="chips">${w.tuning ? `<span class="chip"><b>${tx("Tuning")}</b>${esc(w.tuning)}</span>` : ""}${w.when ? `<span class="chip"><b>${tx("When")}</b>${esc(w.when)}</span>` : ""}</div>
     ${showPedal ? `<div class="wh">
       ${eff ? `<div class="col"><div class="lbl">WHAMMY</div>${WH_EFFECTS.map(e => `<span class="pill${e === eff ? " on" : ""}">${e}</span>`).join("")}</div>` : ""}
       ${st.harmony ? `<div class="col"><div class="lbl">HARMONY</div><span class="pill on">${esc(st.harmony)}</span></div>` : ""}
@@ -354,13 +411,14 @@ function whammyCard(s) {
     ${w.tips ? `<div class="tip">${esc(w.tips)}</div>` : ""}</div>`;
 }
 
-// ---- hero carousel: what is on the amp now, what you played last, what was added last
+// ---- hero carousel: what is on the amp now, then the songs you last sent to it
 let CAR = { i: 0, sig: "", timer: null, paused: false };
 function carouselSlides() {
   const out = [], seen = new Set(), add = (s, label, cls) => { if (s && !seen.has(s.id)) { seen.add(s.id); out.push({ s, label, cls }); } };
-  if (LIVE) add(SONGS.find(x => x.id === LIVE.id), "Now playing on your Katana", "live");
-  recents().map(id => SONGS.find(x => x.id === id)).filter(Boolean).slice(0, 3).forEach(x => add(x, "Last played"));
-  SONGS.slice(0, 4).forEach(x => add(x, "Latest added"));       // SONGS is newest first
+  if (LIVE) add(SONGS.find(x => x.id === LIVE.id), tx("Now playing on your Katana"), "live");
+  const played = recents().map(id => SONGS.find(x => x.id === id)).filter(Boolean);
+  played.slice(0, 6).forEach(x => add(x, tx("Last sent to your amp")));
+  if (!played.length) SONGS.slice(0, 4).forEach(x => add(x, tx("Latest added")));   // fresh install: nothing played yet (SONGS is newest first)
   return out.slice(0, 8);
 }
 function renderCarousel() {
@@ -369,12 +427,12 @@ function renderCarousel() {
   const sig = slides.map(x => x.s.id + "|" + x.label + "|" + (x.s.cover ? 1 : 0) + "|" + (LIVE && LIVE.id === x.s.id ? LIVE.index : "")).join(";");
   if (sig !== CAR.sig) {
     CAR.sig = sig; if (CAR.i >= slides.length) CAR.i = 0;
-    host.innerHTML = `<div class="car" role="region" aria-roledescription="carousel" aria-label="Recent songs">
+    host.innerHTML = `<div class="car" role="region" aria-roledescription="carousel" aria-label="${tx("Recent songs")}">
       ${slides.map((x, i) => `<div class="slide${i === CAR.i ? " on" : ""}${x.cls ? " " + x.cls : ""}" style="background:${bg(x.s)}" aria-hidden="${i !== CAR.i}">
         <div class="eyebrow">${esc(x.label)}</div><h1 data-open="${esc(x.s.id)}" tabindex="0" role="link">${esc(x.s.title)}</h1><div class="by">${esc(x.s.artist)}</div>
-        <div class="btns">${x.s.patches.map(p => `<button class="p ${LIVE && LIVE.id === x.s.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(x.s.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}<button class="p" data-open="${esc(x.s.id)}">Details</button></div></div>`).join("")}
-      ${slides.length > 1 ? `<button class="car-arrow prev" data-car="-1" aria-label="Previous">‹</button><button class="car-arrow next" data-car="1" aria-label="Next">›</button>
-        <div class="car-dots">${slides.map((x, i) => `<button class="car-dot${i === CAR.i ? " on" : ""}" data-cardot="${i}" aria-label="Slide ${i + 1}: ${esc(x.s.title)}"></button>`).join("")}</div>` : ""}</div>`;
+        <div class="btns">${x.s.patches.map(p => `<button class="p ${LIVE && LIVE.id === x.s.id && LIVE.index === p.index ? "main live" : "main"}" data-play="${esc(x.s.id)}" data-i="${p.index}">▶ ${esc(p.name)}</button>`).join("")}<button class="p" data-open="${esc(x.s.id)}">${tx("Details")}</button></div></div>`).join("")}
+      ${slides.length > 1 ? `<button class="car-arrow prev" data-car="-1" aria-label="${tx("Previous")}">‹</button><button class="car-arrow next" data-car="1" aria-label="${tx("Next")}">›</button>
+        <div class="car-dots">${slides.map((x, i) => `<button class="car-dot${i === CAR.i ? " on" : ""}" data-cardot="${i}" aria-label="${tx("Slide {0}: {1}", i + 1, esc(x.s.title))}"></button>`).join("")}</div>` : ""}</div>`;
     const car = host.querySelector(".car"); car.addEventListener("mouseenter", () => CAR.paused = true); car.addEventListener("mouseleave", () => CAR.paused = false);
     car.addEventListener("focusin", () => CAR.paused = true); car.addEventListener("focusout", () => CAR.paused = false);
   }
@@ -396,10 +454,10 @@ const tuningShort = t => (t || "").replace(/\s*\(.*?\)/g, "").split(/[;,]| per |
 function whammyLabel(w) {
   if (!w) return null;
   const st = w.settings || {};
-  const act = st.transpose_down != null ? `Transpose ↓${st.transpose_down}` : st.transpose_up != null ? `Transpose ↑${st.transpose_up}` : st.effect ? st.effect.replace(/\b\w/g, c => c) : st.harmony ? "Harmony" : st.detune ? "Detune " + st.detune.toLowerCase() : "";
-  if (w.use === "yes") return { v: act || "Use it", cls: "ok", sub: "Use it · " + (w.when || "") };
-  if (w.use === "optional") return { v: "Optional", cls: "warn", sub: act ? "Try: " + act : tuningShort(w.tuning) || "Not verified" };
-  return { v: "Not needed", cls: "", sub: tuningShort(w.tuning) };
+  const act = st.transpose_down != null ? tx("Transpose ↓{0}", st.transpose_down) : st.transpose_up != null ? tx("Transpose ↑{0}", st.transpose_up) : st.effect ? st.effect.replace(/\b\w/g, c => c) : st.harmony ? tx("Harmony") : st.detune ? tx("Detune {0}", st.detune.toLowerCase()) : "";
+  if (w.use === "yes") return { v: act || tx("Use it"), cls: "ok", sub: tx("Use it · ") + (w.when || "") };
+  if (w.use === "optional") return { v: tx("Optional"), cls: "warn", sub: act ? tx("Try: {0}", act) : tuningShort(w.tuning) || tx("Not verified") };
+  return { v: tx("Not needed"), cls: "", sub: tuningShort(w.tuning) };
 }
 function bestGuitar(s) {
   const gi = s.guitar; if (!gi || !GUITARS.length) return null;
@@ -411,13 +469,13 @@ function summaryTiles(s) {
   const open = t => TAB === t ? "true" : "false";
   const tile = (key, label, val, sub, extra = "") => `<div class="stile" role="button" tabindex="0" data-tab="${key}" aria-expanded="${open(key)}"><div class="l">${label}<i>${TAB === key ? "▴" : "▾"}</i></div>${val}<div class="sub">${sub}</div>${extra}</div>`;
   const guitar = best
-    ? tile("guitar", "🎸 PLAY THIS", `<div class="v">${esc(best.g.name)}</div>`, `<span class="star">${"★".repeat(best.stars)}</span> ${esc(gi.position || best.why)}`)
-    : gi ? tile("guitar", "🎸 GUITAR", `<div class="v">${esc(((gi.originals || [])[0] || {}).guitar || "Unknown")}</div>`, GUITARS.length ? esc(gi.position || "") : "Add your guitars to get a pick")
-         : tile("guitar", "🎸 GUITAR", '<div class="v">Not set up</div>', "Tap to find the originals");
-  const trio = b ? tile("trio", "🥁 TRIO+", `<div class="v">${esc(b.genre || "—")}</div>`, `${esc(b.time_signature || "4/4")} · style ${(b.time_signature || "").startsWith("3") ? "10–12" : "1–9"}`,
-        b.bpm ? `<button type="button" class="p mini" data-click="${b.bpm}">▶ Click ${b.bpm}</button>` : "")
-    : tile("trio", "🥁 TRIO+", '<div class="v">Not set up</div>', "Tap to generate");
-  const wh = w ? tile("whammy", "〰 WHAMMY DT", `<div class="v ${w.cls}">${esc(w.v)}</div>`, esc(w.sub)) : tile("whammy", "〰 WHAMMY DT", '<div class="v">Not set up</div>', "Tap to generate");
+    ? tile("guitar", tx("🎸 PLAY THIS"), `<div class="v">${esc(best.g.name)}</div>`, `<span class="star">${"★".repeat(best.stars)}</span> ${esc(gi.position || best.why)}`)
+    : gi ? tile("guitar", tx("🎸 GUITAR"), `<div class="v">${esc(((gi.originals || [])[0] || {}).guitar || tx("Unknown"))}</div>`, GUITARS.length ? esc(gi.position || "") : tx("Add your guitars to get a pick"))
+         : tile("guitar", tx("🎸 GUITAR"), '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to find the originals"));
+  const trio = b ? tile("trio", tx("🥁 TRIO+"), `<div class="v">${esc(b.genre || "—")}</div>`, `${esc(b.time_signature || "4/4")} · ${tx("style {0}", (b.time_signature || "").startsWith("3") ? "10–12" : "1–9")}`,
+        b.bpm ? `<button type="button" class="p mini" data-click="${b.bpm}">${tx("▶ Click {0}", b.bpm)}</button>` : "")
+    : tile("trio", tx("🥁 TRIO+"), '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
+  const wh = w ? tile("whammy", "〰 WHAMMY DT", `<div class="v ${w.cls}">${esc(w.v)}</div>`, esc(w.sub)) : tile("whammy", "〰 WHAMMY DT", '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
   return guitar + trio + wh;
 }
 function openSong(id) {
@@ -429,28 +487,32 @@ function openSong(id) {
   const detail = TAB === "guitar" ? guitarCard(s) : TAB === "trio" ? bandCard(s) : TAB === "whammy" ? whammyCard(s) : "";
   $("#sheet").classList.add("wide");
   $("#sheet").innerHTML = `<div class="sg-top" style="background:${bg(s)}">
-      <div class="sg-x"><button data-fav="${esc(s.id)}" class="${FAVS.includes(s.id) ? "favon" : ""}" title="Favorita" aria-label="Favourite">${FAVS.includes(s.id) ? "♥" : "♡"}</button><button data-tabs-set="${esc(s.id)}" title="Choose your tab site or paste an exact link" aria-label="Tab settings">⚙</button><button data-reveal="${esc(s.id)}" title="Show the .tsl file (for BOSS Tone Studio)" aria-label="Show .tsl file">⤓</button><button data-gm-close-song="1" aria-label="Close">×</button></div>
+      <div class="sg-x"><button data-fav="${esc(s.id)}" class="${FAVS.includes(s.id) ? "favon" : ""}" title="${tx("Favourite")}" aria-label="${tx("Favourite")}">${FAVS.includes(s.id) ? "♥" : "♡"}</button><button data-tabs-set="${esc(s.id)}" title="${tx("Choose your tab site or paste an exact link")}" aria-label="${tx("Tab settings")}">⚙</button><button data-reveal="${esc(s.id)}" title="${tx("Show the .tsl file (for BOSS Tone Studio)")}" aria-label="${tx("Show .tsl file")}">⤓</button><button data-gm-close-song="1" aria-label="${tx("Close")}">×</button></div>
       <h3>${esc(s.title)}</h3><div class="by">${esc(s.artist)}</div>
-      <button class="p tabbtn" data-tabs-open="${esc(s.id)}" title="Open the tabs for this song">🎼 Tabs ↗</button>
-      <div class="facts">${fact(b.bpm, "BPM", "TEMPO")}${fact(keyShort(b.key), "", "KEY")}${fact(tun || null, "", "TUNING")}${fact(b.time_signature, "", "TIME")}</div></div>
-    <div class="sg-h">Amp patches</div>
+      <button class="p tabbtn" data-tabs-open="${esc(s.id)}" title="${tx("Open the tabs for this song")}">${tx("🎼 Tabs ↗")}</button>
+      <div class="facts">${fact(b.bpm, "BPM", tx("TEMPO"))}${fact(keyShort(b.key), "", tx("KEY"))}${fact(tun || null, "", tx("TUNING"))}${fact(b.time_signature, "", tx("TIME"))}</div></div>
+    <div class="sg-h">${tx("Amp patches")}</div>
     <div class="patches">${s.patches.map(p => { const live = LIVE && LIVE.id === s.id && LIVE.index === p.index;
       return `<div class="patch${live ? " live" : ""}" data-play="${esc(s.id)}" data-i="${p.index}"><div class="pi">${live ? "✓" : "▶"}</div>
-        <div><div class="n">${esc(p.name)}</div><div class="d">${esc(p.amp)} amp${p.note ? " · " + esc(p.note.split(/[.;]/)[0].slice(0, 56)) : ""}</div></div>${live ? '<div class="tag">ON AMP</div>' : ""}</div>`; }).join("")}</div>
-    <div class="sg-h">Before you play</div>
+        <div><div class="n">${esc(p.name)}</div><div class="d">${esc(tx("{0} amp", p.amp))}${p.note ? " · " + esc(p.note.split(/[.;]/)[0].slice(0, 56)) : ""}</div></div>${live ? '<div class="tag">' + tx("ON AMP") + '</div>' : ""}</div>`; }).join("")}</div>
+    <div class="sg-h">${tx("Before you play")}</div>
     <div class="tiles3">${summaryTiles(s)}</div>
     ${detail ? `<div class="panel" id="panel">${detail}</div>` : ""}
-    <div class="foot"><span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">Delete song</button></span></div>`;
+    <div class="sg-h">${tx("My practice")}</div>
+    <div class="prac"><div class="seg2" role="radiogroup" aria-label="${tx("Practice status")}">${[["", tx("Not started")], ["learning", "🎯 " + tx("Learning")], ["played", "✓ " + tx("Played")]].map(([k, l]) =>
+      `<button type="button" role="radio" aria-checked="${((META[s.id] || {}).status || "") === k}" data-status="${k}" data-sid="${esc(s.id)}">${l}</button>`).join("")}</div>
+      <textarea id="pnotes" data-sid="${esc(s.id)}" rows="3" maxlength="2000" placeholder="${tx("Notes for yourself: tricky parts, capo, what to practise next…")}">${esc((META[s.id] || {}).notes || "")}</textarea><div class="psaved" id="psaved" aria-live="polite"></div></div>
+    <div class="foot"><span class="sp"></span><span id="del"><button class="link danger" data-del="${esc(s.id)}">${tx("Delete song")}</button></span></div>`;
   $("#modal").classList.add("open");
 }
 
 async function play(id, i) {
-  const a = api(); if (!a) return toast("Not running inside the desktop app", true);
-  toast("Sending to amp…");
+  const a = api(); if (!a) return toast(tx("Not running inside the desktop app"), true);
+  toast(tx("Sending to amp…"));
   const r = await a.play(id, i);
-  if (r.ok) { LIVE = { id, index: Number(i) }; pushRecent(id); toast("Loaded “" + r.patch + "”"); render(); refreshStatus();
+  if (r.ok) { LIVE = { id, index: Number(i) }; pushRecent(id); toast(tx("Loaded “{0}”", r.patch)); render(); refreshStatus();
     if ($("#modal").classList.contains("open") && SHEET) { const st = $("#sheet").scrollTop; openSong(SHEET); $("#sheet").scrollTop = st; } }   // keep the setup info on screen while you play
-  else { toast("Could not reach the amp: " + r.error, true); refreshStatus(); }
+  else { toast(tx("Could not reach the amp: {0}", r.error), true); refreshStatus(); }
 }
 
 async function startCreate(text) {
@@ -464,7 +526,7 @@ async function startCreate(text) {
     if (JOB.state === "running") return render();
     clearInterval(t);
     if (JOB.state === "done") {
-      SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast("Song created and added to your library"); loadCovers();
+      SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; const id = JOB.id; JOB = null; render(); openSong(id); toast(tx("Song created and added to your library")); loadCovers();
     } else render();
   }, 1200);
 }
@@ -473,14 +535,14 @@ async function startExtra(id, kind) {
   const a = api(); if (!a) return;
   const r = await (kind === "whammy" ? a.generate_whammy(id) : a.generate_band(id));
   if (!r.ok) return toast(r.error, true);
-  const sel = kind === "whammy" ? "[data-whammy]" : "[data-band]", again = kind === "whammy" ? "✦ Generate Whammy setup" : "✦ Generate Trio+ setup";
-  const btn = document.querySelector(sel); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Researching…'; }
+  const sel = kind === "whammy" ? "[data-whammy]" : "[data-band]", again = kind === "whammy" ? tx("✦ Generate Whammy setup") : tx("✦ Generate Trio+ setup");
+  const btn = document.querySelector(sel); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + tx("Researching…"); }
   const t = setInterval(async () => {
     const j = await a.job_status();
-    if (j.state === "running") { if (btn) btn.innerHTML = '<span class="spin"></span>' + esc(j.note || "Working…"); return; }
+    if (j.state === "running") { if (btn) btn.innerHTML = '<span class="spin"></span>' + esc(tx(j.note || "Working…")); return; }
     clearInterval(t);
-    if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast("Setup added"); }
-    else { toast(j.error || "Could not build the setup", true); if (btn) { btn.disabled = false; btn.textContent = again; } }
+    if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast(tx("Setup added")); }
+    else { toast(j.error || tx("Could not build the setup"), true); if (btn) { btn.disabled = false; btn.textContent = again; } }
   }, 1500);
 }
 
@@ -494,17 +556,21 @@ async function refreshStatus() {
   const s = await a.status();
   if (s.connected) { const before = JSON.stringify(LIVE); syncLive(s.patch); if (before !== JSON.stringify(LIVE)) render(); }
   $("#dot").className = "dot " + (s.connected ? "on" : "off");
-  $("#stxt").textContent = s.connected ? "Katana · " + s.patch : "Katana not found";
+  $("#stxt").textContent = s.connected ? tx("Katana · {0}", s.patch) : tx("Katana not found");
 }
 
 document.addEventListener("click", async e => {
   if (e.target.closest("[data-create]")) return startCreate();
   const ca = e.target.closest("[data-car]"); if (ca) { carGo(Number(ca.dataset.car)); return; }
   const cd = e.target.closest("[data-cardot]"); if (cd) { carShow(Number(cd.dataset.cardot)); return; }
-  if (e.target.closest("[data-scroll]")) { const h = [...document.querySelectorAll("section.row h2")].find(x => x.textContent.startsWith("All")) || document.querySelector("section.row h2"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  if (e.target.closest("[data-scroll]")) { const h = [...document.querySelectorAll("section.row h2")].find(x => x.textContent.startsWith(tx("All songs"))) || document.querySelector("section.row h2"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  const stb = e.target.closest("[data-status]");
+  if (stb) { const id = stb.dataset.sid, r = await api().set_song_meta(id, { status: stb.dataset.status });
+    if (!r.ok) return toast(r.error, true);
+    META = r.meta; const st = $("#sheet").scrollTop; render(); openSong(id); $("#sheet").scrollTop = st; return; }
   const fv = e.target.closest("[data-fav]");
   if (fv) { e.stopPropagation(); const id = fv.dataset.fav, on = !FAVS.includes(id); const r = await api().set_favorite(id, on);
-    if (r.ok) { FAVS = r.favorites; const st = $("#sheet").scrollTop, open = $("#modal").classList.contains("open"); render(); if (open && SHEET === id) { openSong(SHEET); $("#sheet").scrollTop = st; } toast(on ? "Adicionada às favoritas" : "Removida das favoritas"); } return; }
+    if (r.ok) { FAVS = r.favorites; const st = $("#sheet").scrollTop, open = $("#modal").classList.contains("open"); render(); if (open && SHEET === id) { openSong(SHEET); $("#sheet").scrollTop = st; } toast(on ? tx("Added to favourites") : tx("Removed from favourites")); } return; }
   const ck = e.target.closest("[data-click]"); if (ck) return toggleClick(Number(ck.dataset.click));
   if (e.target.closest("[data-gm-close-song]")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); return; }
   const tb = e.target.closest("[data-tab]");
@@ -520,13 +586,13 @@ document.addEventListener("click", async e => {
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
   const dl = e.target.closest("[data-del]");
   if (dl) { const sn = SONGS.find(x => x.id === dl.dataset.del);
-    $("#del").innerHTML = `<span class="confirm">Delete “${esc(sn ? sn.title : "song")}”? It goes to the Trash.<button class="p red" data-delyes="${esc(dl.dataset.del)}">Delete</button><button class="p" data-delno="1">Cancel</button></span>`; return; }
+    $("#del").innerHTML = `<span class="confirm">${tx("Delete “{0}”? It goes to the Trash.", esc(sn ? sn.title : tx("song")))}<button class="p red" data-delyes="${esc(dl.dataset.del)}">${tx("Delete")}</button><button class="p" data-delno="1">${tx("Cancel")}</button></span>`; return; }
   if (e.target.closest("[data-delno]")) return openSong(SHEET);
   const dy = e.target.closest("[data-delyes]");
   if (dy) { const r = await api().delete_song(dy.dataset.delyes);
     if (!r.ok) return toast(r.error, true);
     SONGS = await api().songs(); if (LIVE && LIVE.id === dy.dataset.delyes) LIVE = null;
-    $("#modal").classList.remove("open"); render(); return toast("Moved to the Trash"); }
+    $("#modal").classList.remove("open"); render(); return toast(tx("Moved to the Trash")); }
   const rv = e.target.closest("[data-reveal]"); if (rv) return api().reveal(rv.dataset.reveal);
   const pl = e.target.closest("[data-play]"); if (pl) return play(pl.dataset.play, pl.dataset.i);
   const c = e.target.closest(".card"); if (c) return openSong(c.dataset.id);
@@ -536,7 +602,7 @@ document.addEventListener("keydown", e => {
   if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && e.target.closest && e.target.closest("#hero .car")) { carGo(e.key === "ArrowRight" ? 1 : -1); return; }
   if (e.key === "Enter" && e.target.matches && e.target.matches("#hero h1[data-open]")) { openSong(e.target.dataset.open); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
-  if (e.key !== "Escape") return;
+  if (e.key !== "Escape" || langOpen()) return;
   if ($("#lmodal").classList.contains("open")) { const o = $("#lconfirm") || $("#lpick"); if (o) { o.remove(); } else lsClose(); return; }
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
   else if ($("#gmodal").classList.contains("open")) gmClose();
@@ -549,8 +615,23 @@ $("#imp").addEventListener("click", async () => {
   const r = await a.import_tsl();
   if (r.cancelled) return;
   if (!r.ok) return toast(r.error, true);
-  SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; render(); openSong(r.id); toast("Imported into your library"); loadCovers();
+  SONGS = await a.songs(); q = ""; RES = null; $("#q").value = ""; render(); openSong(r.id); toast(tx("Imported into your library")); loadCovers();
 });
+let NOTE_T = null;
+async function saveNotes(el) {
+  clearTimeout(NOTE_T); NOTE_T = null;
+  const a = api(); if (!a) return;
+  const id = el.dataset.sid, r = await a.set_song_meta(id, { notes: el.value });
+  const msg = document.getElementById("psaved"); if (msg) msg.textContent = r.ok ? tx("Saved") : tx("Could not save");
+  if (r.ok) META = r.meta;
+}
+document.addEventListener("input", e => {
+  if (e.target.id !== "pnotes") return;
+  const el = e.target, id = el.dataset.sid; META[id] = { ...(META[id] || {}), notes: el.value };   // keep it if the sheet re-renders
+  const msg = document.getElementById("psaved"); if (msg) msg.textContent = "";
+  clearTimeout(NOTE_T); NOTE_T = setTimeout(() => saveNotes(el), 600);
+});
+document.addEventListener("focusout", e => { if (e.target.id === "pnotes" && NOTE_T) saveNotes(e.target); });
 $("#q").addEventListener("input", e => { q = e.target.value.trim(); RES = null; render(); });
 $("#q").addEventListener("keydown", async e => {
   if (e.key !== "Enter" || !q) return;
@@ -569,15 +650,92 @@ async function loadCovers() {   // fetch missing album art one by one, refreshin
   }
 }
 
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  $("#q").placeholder = tx("Search songs or artists");
+  $("#lbtn").textContent = "📻 " + tx("Livesets"); $("#lbtn").title = tx("Plan what goes into the amp's banks");
+  $("#gbtn").textContent = "🎸 " + tx("My guitars"); $("#gbtn").title = tx("Register the guitars you own");
+  $("#imp").textContent = "＋ " + tx("Import .tsl"); $("#imp").title = tx("Load a Tone Studio .tsl file");
+  renderLang();
+  if (!api()) $("#stxt").textContent = tx("connecting…");
+}
+function rerenderAll() {
+  applyStatic(); CAR.sig = ""; render(); refreshStatus();
+  if ($("#modal").classList.contains("open") && SHEET) openSong(SHEET);
+  if ($("#gmodal").classList.contains("open") && GM) gmRender();
+  if ($("#lmodal").classList.contains("open")) lsRender();
+}
+// language picklist: a button showing the current language + a list with flags (no native <select>: it cannot show icons)
+function renderLang() {
+  const cur = LANGS.find(l => l.code === LANG) || LANGS[0];
+  $("#lang").innerHTML = `<span class="fl" aria-hidden="true">${cur.flag}</span><span>${cur.name.replace(/ \(.*\)/, "")}</span><i aria-hidden="true">▾</i>`;
+  $("#lang").setAttribute("aria-label", tx("Language") + ": " + cur.name);
+  $("#langmenu").setAttribute("aria-label", tx("Language"));
+  $("#langmenu").innerHTML = LANGS.map(l => `<div class="lopt${l.code === LANG ? " on" : ""}" role="option" tabindex="-1" data-lang="${l.code}" aria-selected="${l.code === LANG}"><span class="fl" aria-hidden="true">${l.flag}</span><span>${l.name}</span><b aria-hidden="true">${l.code === LANG ? "✓" : ""}</b></div>`).join("");
+}
+const langOpen = () => !$("#langmenu").hidden;
+function langToggle(open, focus) {
+  $("#langmenu").hidden = !open; $("#lang").setAttribute("aria-expanded", String(open));
+  if (open && focus !== false) { const o = $("#langmenu .lopt.on") || $("#langmenu .lopt"); if (o) o.focus(); }
+}
+function setLang(code) {
+  langToggle(false); $("#lang").focus();
+  if (code === LANG) return;
+  LANG = code; store(null, ["lang", JSON.stringify(LANG)]);
+  const a = api(); if (a && a.set_lang) a.set_lang(LANG);
+  rerenderAll();
+}
+$("#lang").addEventListener("click", () => langToggle(!langOpen()));
+$("#lang").addEventListener("keydown", e => { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); langToggle(true); } });
+$("#langmenu").addEventListener("click", e => { const o = e.target.closest("[data-lang]"); if (o) setLang(o.dataset.lang); });
+$("#langmenu").addEventListener("keydown", e => {
+  const items = [...$("#langmenu").querySelectorAll(".lopt")], i = items.indexOf(document.activeElement);
+  if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (i >= 0) setLang(items[i].dataset.lang); }
+  else if (e.key === "Tab") langToggle(false, false);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && langOpen()) { langToggle(false); $("#lang").focus(); } });
+document.addEventListener("click", e => { if (langOpen() && !e.target.closest(".langbox")) langToggle(false, false); });
+
 async function init() {
   const a = api();
+  try { const sv = a && a.get_lang ? await a.get_lang() : null; if (sv) LANG = sv; } catch (e) {}
+  applyStatic();
   SONGS = a ? await a.songs() : [];
   GUITARS = a ? await a.guitars() : [];
   loadTabCfg();
   FAVS = a ? await a.favorites() : [];
+  if (a) RECENT = await a.recent();
+  if (a) META = await a.song_meta();
   render(); refreshStatus(); setInterval(refreshStatus, 5000);
   loadCovers();
 }
+applyStatic();
+// ---- opening splash + sound: starts together once the app bridge is ready, so the motion lands on TO, NEN and AI
+const SPLASH = { started: false, done: false, audio: null, t: null };
+function splashGo() {
+  const el = document.getElementById("splash"); if (!el || SPLASH.started) return; SPLASH.started = true;
+  const a = api();
+  $("#sp-tag").textContent = tx("Tone for every song");
+  if (a && a.get_lang) Promise.resolve(a.get_lang()).then(l => { if (l && LANGS.some(x => x.code === l)) { LANG = l; $("#sp-tag").textContent = tx("Tone for every song"); } }).catch(() => {});
+  el.classList.add("go");
+  Promise.resolve(a && a.play_intro ? a.play_intro() : { ok: false }).then(r => {
+    if (r && r.ok) return;
+    try { SPLASH.audio = new Audio("../assets/tonenai-intro.wav"); SPLASH.audio.play().catch(() => {}); } catch (e) {}   // outside the Mac app
+  }).catch(() => {});
+  SPLASH.t = setTimeout(() => splashEnd(false), 4550);
+}
+function splashEnd(skip) {
+  const el = document.getElementById("splash"); if (!el || SPLASH.done) return; SPLASH.done = true; clearTimeout(SPLASH.t);
+  if (!skip) return el.remove();
+  const a = api(); if (a && a.stop_intro) a.stop_intro(); if (SPLASH.audio) SPLASH.audio.pause();
+  el.classList.add("skip"); setTimeout(() => el.remove(), 260);
+}
+document.getElementById("splash").addEventListener("click", () => splashEnd(true));
+document.addEventListener("keydown", e => { if (document.getElementById("splash") && !SPLASH.done) { e.preventDefault(); e.stopImmediatePropagation(); splashEnd(true); } }, true);
+window.addEventListener("pywebviewready", splashGo);
+setTimeout(splashGo, 1500);   // the bridge is late or missing (browser preview): run it anyway
 window.addEventListener("pywebviewready", init);
 </script>
 </body>

@@ -1,4 +1,4 @@
-# Tonai
+# TonenAI
 
 Tell Claude a song or band; it builds a BOSS Katana MkII patch and applies it to the amp over USB MIDI,
 or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a Netflix-style desktop app to pick songs.
@@ -32,9 +32,11 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ## Desktop app
 ```
-Double-click Tonai.app (keep it inside the project folder; drag it to the Dock if you like)
+Double-click TonenAI.app (keep it inside the project folder; drag it to the Dock if you like)
 ./run.command            # or from a terminal: .venv/bin/python app/main.py
 ```
+**Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played with macOS `afplay`). Click or press any key to skip.
+
 Netflix-style library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Search the library; if a
 song is not found, **Create with Claude** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
 One-time sign-in for that feature (the app uses the Claude Agent SDK bundled in the venv):
@@ -45,7 +47,11 @@ One-time sign-in for that feature (the app uses the Claude Agent SDK bundled in 
 guitars and pickups used on the record (researched by Claude, with a confidence level) and ranks your guitars for it,
 with the pickup position to use.
 
+**My practice:** mark a song as **Learning** or **Played** and keep your own notes on it (stored locally in `data/song_meta.json`). Songs you are learning get their own row on the home screen.
+
 **Also per song:** Trio+ band setup (genre, BPM, click track, steps) and Whammy DT setup (tuning, when to use it).
+
+**Language:** English, Português (Brasil) and Español. Pick it from the flag list in the header; the first launch follows your system language and the choice is remembered (`data/settings.json`). In Portuguese or Spanish, songs created with Claude get their notes and tips written in that language too. To add a language, add it to `LANGS` and `I18N` in `app/i18n.js` (and to `LANG_NAMES` in `app/service.py`).
 
 UI dev without the amp: `python3 -m http.server 8765` then open `http://localhost:8765/app/preview.html` (mock amp).
 
@@ -71,7 +77,7 @@ file names are listed in the credits above). Needs `pip install opencv-python-he
 - Optional: tag songs (played / learning), notes, export selection as one `.tsl` liveset.
 
 ## Credits and data sources
-- Guitar pictures in My guitars are original vector illustrations drawn for Tonai. The **body outlines** of seven models
+- Guitar pictures in My guitars are original vector illustrations drawn for TonenAI. The **body outlines** of seven models
   (and a few pickguard shapes) were traced from silhouettes of photographs on Wikimedia Commons with `tools/trace_guitars.py`
   (needs OpenCV; only vector paths in `app/guitar-shapes.js` ship, no photo pixels): Fender Stratocaster 004-2 (public domain),
   Fender Telecaster American Vintage 1952 (CC BY-SA 3.0), Full front R9 Les Paul (CC BY-SA 4.0), Iommi SG (CC BY-SA 2.0),

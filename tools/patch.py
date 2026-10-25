@@ -195,7 +195,7 @@ def main():
     elif a.cmd == "export":
         specs = json.load(open(a.spec))
         specs = specs if isinstance(specs, list) else [specs]
-        name = a.out.rsplit("/", 1)[-1].rsplit(".", 1)[0] if a.out else "tonai"
+        name = a.out.rsplit("/", 1)[-1].rsplit(".", 1)[0] if a.out else "tonenai"
         json.dump(to_tsl(specs, name), open(a.out, "w"), indent=1)
         print("wrote", a.out, len(specs), "patches")
     elif a.cmd == "backup":

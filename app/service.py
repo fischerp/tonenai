@@ -1,4 +1,4 @@
-"""Backend for the Tonai desktop app: song library + amp control (exposed to the UI via pywebview)."""
+"""Backend for the TonenAI desktop app: song library + amp control (exposed to the UI via pywebview)."""
 import asyncio, urllib.parse, urllib.request, glob, json, os, re, subprocess, sys, threading, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +39,10 @@ GUITARS = os.path.join(DATA, "guitars.json")
 LIVESETS = os.path.join(DATA, "livesets.json")
 TABS_CFG = os.path.join(DATA, "tabs.json")
 FAVS = os.path.join(DATA, "favorites.json")
+RECENT = os.path.join(DATA, "recent.json")
+SETTINGS = os.path.join(DATA, "settings.json")
+SONG_META = os.path.join(DATA, "song_meta.json")   # your practice status + notes per song
+LANG_NAMES = {"en": "English", "pt-BR": "Brazilian Portuguese (pt-BR)", "es": "Spanish (es)"}   # UI languages; keep in sync with LANGS in i18n.js
 BACKUPS = os.path.join(DATA, "backups")
 EXPORTS = os.path.join(DATA, "exports")
 BANK_KEYS = P.SLOT_KEYS[1:]            # A1..A4, B1..B4: the 8 channels that can be written (the Panel cannot)
@@ -147,7 +151,99 @@ class Service:
             except Exception as e:
                 self._drop()
                 return {"ok": False, "error": str(e)}
+        self._push_recent(song_id)
         return {"ok": True, "patch": label}
+
+    # -------------------------------------------------------------- opening sound (macOS afplay: not subject to web autoplay rules)
+    def play_intro(self):
+        path = os.path.join(ROOT, "assets", "tonenai-intro.wav")
+        if sys.platform != "darwin" or not os.path.exists(path):
+            return {"ok": False}
+        try:
+            self._intro = subprocess.Popen(["afplay", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return {"ok": True}
+        except OSError:
+            return {"ok": False}
+
+    def stop_intro(self):
+        p = getattr(self, "_intro", None)
+        if p and p.poll() is None:
+            p.terminate()
+        return {"ok": True}
+
+    # -------------------------------------------------------------- practice: status (learning / played) + your own notes
+    def song_meta(self):
+        try:
+            m = json.load(open(SONG_META))
+            return m if isinstance(m, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def set_song_meta(self, song_id, patch):
+        if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or "") or not isinstance(patch, dict):
+            return {"ok": False, "error": "Invalid song"}
+        meta = self.song_meta()
+        cur = dict(meta.get(song_id) or {})
+        if "status" in patch:
+            st = patch["status"] or ""
+            if st not in ("", "learning", "played"):
+                return {"ok": False, "error": "Invalid status"}
+            cur["status"] = st
+        if "notes" in patch:
+            cur["notes"] = str(patch["notes"] or "")[:2000]
+        cur = {k: v for k, v in cur.items() if v}            # drop empty fields
+        if cur:
+            meta[song_id] = cur
+        else:
+            meta.pop(song_id, None)
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(meta, open(SONG_META, "w"), indent=1, ensure_ascii=False)
+        return {"ok": True, "meta": meta}
+
+    # -------------------------------------------------------------- language (en / pt-BR)
+    def get_lang(self):
+        try:
+            v = json.load(open(SETTINGS)).get("lang")
+            return v if v in LANG_NAMES else None
+        except (OSError, ValueError, AttributeError):
+            return None
+
+    def set_lang(self, lang):
+        if lang not in LANG_NAMES:
+            return {"ok": False, "error": "Unknown language"}
+        try:
+            cfg = json.load(open(SETTINGS))
+            cfg = cfg if isinstance(cfg, dict) else {}
+        except (OSError, ValueError):
+            cfg = {}
+        cfg["lang"] = lang
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(cfg, open(SETTINGS, "w"), indent=1)
+        return {"ok": True}
+
+    def _lang_note(self):
+        lang = self.get_lang()
+        if lang in (None, "en"):
+            return ""
+        return (f" LANGUAGE: the user reads {LANG_NAMES[lang]}. Write every free-text field you add or replace "
+                "(patch memo after the 'Artist - Title: ' prefix, notes, tips, how, parts, style_feel, when, position, tone_notes) in "
+                "natural, idiomatic prose in that language. Keep JSON keys, fixed values (yes/optional/no, confirmed/likely/unknown, genre names), patch names, "
+                "gear and effect names and the 'Artist - Title: ' prefix exactly as the instructions define them.")
+
+    # -------------------------------------------------------------- songs last sent to the amp
+    def recent(self):
+        try:
+            return [x for x in json.load(open(RECENT)) if isinstance(x, str)]
+        except (OSError, ValueError):
+            return []
+
+    def _push_recent(self, song_id):
+        try:
+            r = [song_id] + [x for x in self.recent() if x != song_id]
+            os.makedirs(DATA, exist_ok=True)
+            json.dump(r[:12], open(RECENT, "w"), indent=1)
+        except OSError:
+            pass                                  # history is a convenience; never fail a play over it
 
     # -------------------------------------------------------------- reveal .tsl
     def reveal(self, song_id):
@@ -192,6 +288,7 @@ class Service:
                          open(os.path.join(SONGS, sid + ".tsl"), "w"), indent=1)
 
     async def _agent(self, prompt):
+        prompt += self._lang_note()
         from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock, TextBlock
         self._last_text = ""
         skill = open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read()

@@ -1,4 +1,4 @@
-/* Tonai guitar illustrations: original vector artwork.
+/* TonenAI guitar illustrations: original vector artwork.
    Body outlines (and some pickguards) come from guitar-shapes.js, vector data traced from public photographs with
    tools/trace_guitars.py, so the silhouettes and proportions follow the real models. Everything else (finish, neck, hardware)
    is drawn here. Canvas: 200 wide; nut at y=70, neck/body join at y=196; height depends on the model. */
