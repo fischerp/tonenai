@@ -501,7 +501,10 @@ class Service:
             f"Add (or replace) the setup for the guitar pedal \"{pedal['name']}\" ({pedal.get('about') or 'guitar pedal'}) on the FIRST patch of songs/{sid}.json, "
             f"as the object gear[\"{pedal['id']}\"]. It has: \"use\" (\"yes\" if the song needs it, \"optional\" for a nice-to-have, \"no\"), "
             "\"headline\" (short value for a summary tile, max 40 characters), \"settings\" (a list of {\"name\", \"value\"} knob or switch "
-            "settings, at most 12), \"steps\" (at most 8 short how-to steps) and \"tips\" (one or two sentences). Use a web search to see how "
+            "settings, at most 12), \"steps\" (at most 8 short how-to steps) and \"tips\" (one or two sentences). "
+            + (("The pedal's real controls (use exactly these names in settings, values within these ranges):\n" + local_llm.profile_text(pedal["profile"]) + "\n"
+                + (f"Watch out: {pedal['profile']['watch']}\n" if pedal["profile"].get("watch") else "")) if (pedal.get("profile") or {}).get("controls") else "")
+            + "Use a web search to see how "
             "the pedal was used on the recording. Edit only that file, "
             f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot verify something, say so in tips and set use to optional. Reply with one short line when done.")
@@ -556,7 +559,17 @@ class Service:
                 self._validate(sid)
                 specs = json.load(open(os.path.join(SONGS, sid + ".json")))
                 specs = specs if isinstance(specs, list) else [specs]
-                if (specs[0].get("gear") or {}).get(kind[5:]) if kind.startswith("gear:") else specs[0].get(kind):
+                if kind.startswith("gear:"):
+                    g = (specs[0].get("gear") or {}).get(kind[5:])
+                    pedal = next((x for x in self._active_pedals() if x["id"] == kind[5:]), {})
+                    problems = local_llm.check_gear(g, pedal.get("profile")) if g else ["the setup was not saved"]
+                    if not problems:
+                        break
+                    self._last_text = "The setup did not match the pedal: " + problems[0]
+                    if g:                                   # do not keep a setup that fails the check
+                        specs[0]["gear"].pop(kind[5:], None)
+                        json.dump(specs, open(os.path.join(SONGS, sid + ".json"), "w", encoding="utf8"), indent=1, ensure_ascii=False)
+                elif specs[0].get(kind):
                     break
             else:
                 raise RuntimeError((self._last_text or f"Claude could not add the {kind} setup for this song")[:300])
@@ -584,8 +597,11 @@ class Service:
             if cid in seen:
                 continue
             seen.add(cid)
-            out.append({"id": cid, "name": name, "short": _short(name), "icon": "🎛", "kind": "generic", "custom": True,
-                        "about": str(c.get("about", "")).strip()[:200]})
+            ped = {"id": cid, "name": name, "short": _short(name), "icon": "🎛", "kind": "generic", "custom": True,
+                   "about": str(c.get("about", "")).strip()[:200]}
+            if isinstance(c.get("profile"), dict) and not local_llm.check_profile(c["profile"]):
+                ped["profile"] = c["profile"]
+            out.append(ped)
         return out
 
     def _rig(self):
@@ -603,17 +619,107 @@ class Service:
 
     def get_gear(self):
         cat, rig = self._catalog(), self._rig()
-        return {"amps": cat["amps"], "pedals": cat["pedals"] + rig["custom"], "rig": {"amp": rig["amp"], "pedals": rig["pedals"]}}
+        j = self._job
+        custom = []
+        for c in rig["custom"]:                         # research = none | running | failed (a saved profile means it is done)
+            r = {"state": "none"}
+            if j.get("kind") == "profile" and j.get("id") == c["id"]:
+                r = {"state": "running", "note": j.get("note", "")} if j.get("state") == "running" else \
+                    {"state": "failed", "error": j.get("error", "")} if j.get("state") == "error" else r
+            custom.append({**c, "research": r})
+        return {"amps": cat["amps"], "pedals": cat["pedals"] + custom, "rig": {"amp": rig["amp"], "pedals": rig["pedals"]}}
 
     def set_gear(self, data):
         """data = {amp, pedals: [ids you own], custom: [{id?, name, about}]}"""
         if not isinstance(data, dict):
             return {"ok": False, "error": "Bad request"}
+        old = {c["id"]: c for c in self._rig()["custom"]}
         rig = {"amp": data.get("amp"), "pedals": data.get("pedals") if isinstance(data.get("pedals"), list) else [],
                "custom": self._custom_pedals(data.get("custom"))}
+        for c in rig["custom"]:                         # profiles belong to the server: the window cannot overwrite them here
+            if old.get(c["id"], {}).get("profile"):
+                c["profile"] = old[c["id"]]["profile"]
+            else:
+                c.pop("profile", None)
         os.makedirs(DATA, exist_ok=True)
         json.dump(rig, open(RIG, "w", encoding="utf8"), indent=1, ensure_ascii=False)
+        for c in rig["custom"]:
+            if c["id"] not in old:                      # a new pedal: look it up right away
+                self._start_profile(c["id"])
+                break
         return {"ok": True, **self.get_gear()}
+
+    def research_pedal(self, pedal_id):
+        """(Re)run the pedal research, e.g. after it failed or when you want a fresh look."""
+        return self._start_profile(pedal_id, force=True)
+
+    def save_pedal_profile(self, pedal_id, profile):
+        """You corrected a pedal's profile (for example removed a control that does not exist)."""
+        if not isinstance(profile, dict):
+            return {"ok": False, "error": "Bad request"}
+        problems = local_llm.check_profile(profile)
+        if problems:
+            return {"ok": False, "error": problems[0]}
+        if not self._store_profile(pedal_id, {**profile, "reviewed": True}):
+            return {"ok": False, "error": "Pedal not found"}
+        return {"ok": True, **self.get_gear()}
+
+    def _store_profile(self, pedal_id, profile):
+        raw = _read_json(RIG, {})
+        raw = raw if isinstance(raw, dict) else {}
+        for c in raw.get("custom", []) if isinstance(raw.get("custom"), list) else []:
+            if isinstance(c, dict) and c.get("id") == pedal_id:
+                c["profile"] = profile
+                json.dump(raw, open(RIG, "w", encoding="utf8"), indent=1, ensure_ascii=False)
+                return True
+        return False
+
+    def _start_profile(self, pedal_id, force=False):
+        pedal = next((c for c in self._rig()["custom"] if c["id"] == pedal_id), None)
+        if not pedal:
+            return {"ok": False, "error": "Pedal not found"}
+        if self._job.get("state") == "running":
+            return {"ok": False, "error": "Already working on something"}
+        if pedal.get("profile") and not force:
+            return {"ok": True}
+        self._cancel.clear()
+        self._job = {"state": "running", "note": "Researching the pedal…", "query": pedal["name"], "kind": "profile", "id": pedal_id}
+        threading.Thread(target=self._run_profile, args=(pedal,), daemon=True).start()
+        return {"ok": True}
+
+    def _profile_prompt(self, pedal):
+        return (f"Research the guitar pedal \"{pedal['name']}\" (the owner says: {pedal.get('about') or 'no description'}) with a web search; "
+                "read the manufacturer's manual page if you can find it. Do not edit any files. Reply with ONE JSON object and nothing else. "
+                + local_llm.PROFILE_GUIDE)
+
+    def _run_profile(self, pedal):
+        try:
+            cfg = local_llm.config(SETTINGS)
+            if cfg:
+                obj = local_llm.research_pedal(cfg, pedal, self._local_ctx(), self._note)
+            else:
+                obj, problems = None, ["no reply"]
+                for attempt in range(2):
+                    asyncio.run(self._agent(self._profile_prompt(pedal) if attempt == 0 else
+                                            "Fix these problems and reply with the corrected JSON object only:\n- " + "\n- ".join(problems)))
+                    try:
+                        data = local_llm.extract_json(self._last_text)
+                        obj = data.get("profile", data) if isinstance(data, dict) else data
+                        problems = local_llm.check_profile(obj)
+                    except Exception as e:
+                        problems = [f"{type(e).__name__}: {e}"]
+                    if not problems:
+                        break
+                else:
+                    raise RuntimeError("Could not describe this pedal: " + problems[0][:200])
+            if not self._store_profile(pedal["id"], obj):
+                raise RuntimeError("The pedal was removed while it was being researched")
+            self._job = {"state": "done", "id": pedal["id"], "kind": "profile"}
+        except Exception as e:
+            msg = str(e)
+            if "Not logged in" in msg or "authentication" in msg.lower():
+                msg = "Claude is not signed in. See the README: run the one-time login."
+            self._job = {"state": "error", "error": msg, "kind": "profile", "id": pedal["id"]}
 
     def _active_pedals(self):
         rig, cat = self._rig(), self._catalog()

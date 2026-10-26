@@ -19,3 +19,16 @@
 .gr-btns { display: flex; gap: 8px; }
 .gr .p.ghost { background: #2a2a3a; }
 .gr-body > .p.ghost { margin-top: 2px; }
+.gr-card { margin-bottom: 8px; border-radius: 10px; background: #1b1b25; border: 1.5px solid #2a2a3a; overflow: hidden; }
+.gr-card:has(input:checked) { border-color: #5a5aa8; background: #1d1d34; }
+.gr-card .gr-row.gr-nomb { margin: 0; border: 0; background: transparent; border-radius: 0; }
+.gr-prof { padding: 2px 12px 12px 52px; font-size: 13px; color: #d6d6de; line-height: 1.45; }
+.gr-sum { margin: 0 0 4px; } .gr-dim { color: var(--muted); font-size: 12.5px; margin: 4px 0; }
+.gr-h { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 800; margin: 10px 0 4px; }
+.gr-acts { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 -8px; } .gr-err { color: #ff8a8a; margin-bottom: 4px; }
+.gr-badge.confirmed { background: #3ddc84; } .gr-badge.likely { background: #ffd75e; } .gr-badge.unknown { background: #8a8aa0; }
+.gr-x { border: 0; background: transparent; color: var(--muted); cursor: pointer; margin-left: 4px; padding: 0 2px; font-size: 14px; line-height: 1; } .gr-x:hover { color: #ff6b6b; }
+.gr-prof .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.gr-prof .steps { margin: 0 0 4px; padding-left: 20px; }
+.gr-prof .gr-rm { color: #b9b9c8; }
+.gr-prof .gr-rm:hover { color: #fff; }

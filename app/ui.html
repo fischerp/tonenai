@@ -490,7 +490,8 @@ function gearCard(s, p) {
   return `<div class="band"><h4>${esc(p.name)} <span class="badge2 ${esc(g.use || "no")}">${label}</span></h4>
     ${(g.settings || []).length ? `<div class="chips">${g.settings.map(x => `<span class="chip"><b>${esc(x.name)}</b>${esc(x.value)}</span>`).join("")}</div>` : ""}
     ${(g.steps || []).length ? `<ol class="steps">${g.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
-    ${g.tips ? `<div class="tip">${esc(g.tips)}</div>` : ""}</div>`;
+    ${g.tips ? `<div class="tip">${esc(g.tips)}</div>` : ""}
+    ${p.profile && p.profile.watch ? `<div class="tip">${tx("Pedal note: {0}", esc(p.profile.watch))}</div>` : ""}</div>`;
 }
 
 // ---- hero carousel: what is on the amp now, then the songs you last sent to it

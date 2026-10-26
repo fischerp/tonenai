@@ -153,7 +153,7 @@ One-time sign-in for that feature is in the Quick start above (the app uses the 
 **My gear:** tell TonenAI what you own and it only shows and builds setups for that. Pick your **amp** (Katana MkII is the
 tested one; other Katanas carry a "not tested" warning), switch your **pedals** on or off, and register your **guitars**.
 The Whammy DT and Trio+ are on by default. Add any other pedal with **＋ Add a pedal** (a name and what it does): the AI then
-works out its settings per song and the song screen gets a tile for it. A pedal you switch off disappears from the song
+researches the pedal once (summary, controls and ranges, MIDI, first-time setup, a watch-out note; shown as "Likely" or "Confirmed" until you check it, and you can remove wrong controls or research again), then uses that profile to work out its settings per song and checks them against the real controls. The song screen gets a tile for it. A pedal you switch off disappears from the song
 screen and from what the AI is asked to write; the data stays in the song files. Your choices live in `data/rig.json`
 (not in git). The built-in list is `gear/catalog.json`: add an amp or pedal there to offer it to everyone
 (`{"id", "name", "short", "icon", "about", "default"}`; use `"kind": "whammy"` or `"trio"` only for the two built-in pedals,

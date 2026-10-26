@@ -34,6 +34,16 @@ GEAR_GUIDE = (
     '"no" if it is not needed), "headline" (a short value for the summary tile, e.g. "Delay 380 ms", max 40 characters), '
     '"settings" (a list of {"name": ..., "value": ...} with the knob or switch settings, at most 12), "steps" (a list of '
     'short how-to steps, at most 8) and "tips" (one or two sentences, may say what could not be verified).')
+PROFILE_GUIDE = (
+    'Reply with {"profile": {...}} where profile has: "summary" (one or two sentences: what the pedal is and does), '
+    '"controls" (1-16 objects {"name": the label printed on the pedal, "type": "knob"|"switch"|"footswitch"|"mode"|"other", '
+    '"range": short text such as "0-10" or "10 ms - 1 s" (optional), "options": list of the positions or modes (optional, at most 12)}), '
+    '"midi" ("yes", "no" or "unknown"), "setup" (at most 8 short steps to connect and configure it for the first time), '
+    '"watch" (one sentence about the thing people get wrong with this pedal, or "" if none) and "confidence" '
+    '("confirmed" only if the notes or the manual back the controls, "likely" if you know the pedal well, "unknown" if you are guessing). '
+    'Use the real labels from the pedal. Never invent controls: if you cannot find the pedal, return a short list of the usual '
+    'controls for that kind of pedal and set confidence to "unknown".')
+CONTROL_TYPES = {"knob", "switch", "footswitch", "mode", "other"}
 SEARCH_TOPIC = {"band": "tempo BPM key song structure", "whammy": "guitar tuning pitch effect whammy octave",
                 "guitar": "guitar pickups used on the recording"}
 
@@ -258,7 +268,52 @@ def _is_num(v):
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
-def check_gear(obj):
+def check_profile(obj):
+    if not isinstance(obj, dict):
+        return ['"profile" must be a JSON object']
+    p = []
+    if not isinstance(obj.get("summary"), str) or not 1 <= len(obj["summary"]) <= 400:
+        p.append("summary must be a short text (1-400 characters)")
+    cs = obj.get("controls")
+    if not isinstance(cs, list) or not 1 <= len(cs) <= 16:
+        p.append("controls must be a list of 1-16 objects")
+    else:
+        for c in cs:
+            if not isinstance(c, dict) or not isinstance(c.get("name"), str) or not 1 <= len(c["name"]) <= 40:
+                p.append('every control needs a "name" (1-40 characters)')
+            elif c.get("type") not in CONTROL_TYPES:
+                p.append(f'control {c["name"]!r}: type must be one of {sorted(CONTROL_TYPES)}')
+            elif c.get("range") is not None and (not isinstance(c["range"], str) or len(c["range"]) > 60):
+                p.append(f'control {c["name"]!r}: range must be a short text')
+            elif c.get("options") is not None and (not isinstance(c["options"], list) or len(c["options"]) > 12
+                                                    or not all(isinstance(x, (str, int, float)) for x in c["options"])):
+                p.append(f'control {c["name"]!r}: options must be a list of at most 12 values')
+    if obj.get("midi") not in ("yes", "no", "unknown"):
+        p.append('midi must be "yes", "no" or "unknown"')
+    st = obj.get("setup")
+    if not isinstance(st, list) or len(st) > 8 or not all(isinstance(x, str) for x in st):
+        p.append("setup must be a list of at most 8 texts")
+    if obj.get("watch") is not None and not isinstance(obj.get("watch"), str):
+        p.append("watch must be a text")
+    if obj.get("confidence") not in CONFIDENCE:
+        p.append("confidence must be confirmed, likely or unknown")
+    return p
+
+
+def _control_names(profile):
+    return {str(c.get("name", "")).strip().lower() for c in (profile or {}).get("controls") or [] if isinstance(c, dict)}
+
+
+def profile_text(profile):
+    """The pedal's controls as a short text for a prompt."""
+    lines = []
+    for c in (profile or {}).get("controls") or []:
+        extra = " / ".join(x for x in (c.get("range"), ", ".join(map(str, c.get("options") or []))) if x)
+        lines.append(f"- {c.get('name')} ({c.get('type')}){': ' + extra if extra else ''}")
+    return "\n".join(lines)
+
+
+def check_gear(obj, profile=None):
     if not isinstance(obj, dict):
         return ['the setup must be a JSON object']
     p = []
@@ -275,12 +330,17 @@ def check_gear(obj):
         p.append("steps must be a list of at most 10 texts")
     if obj.get("tips") is not None and not isinstance(obj.get("tips"), str):
         p.append("tips must be a text")
+    names = _control_names(profile)
+    if names and isinstance(st, list):                 # the settings must be the pedal's real controls
+        bad = [x.get("name") for x in st if isinstance(x, dict) and str(x.get("name", "")).strip().lower() not in names]
+        if bad:
+            p.append(f"settings use names that are not controls of this pedal: {bad}. Use only: {sorted(names)}")
     return p
 
 
-def check_section(kind, obj):
+def check_section(kind, obj, profile=None):
     if kind.startswith("gear:"):
-        return check_gear(obj)
+        return check_gear(obj, profile)
     if not isinstance(obj, dict):
         return [f'"{kind}" must be a JSON object']
     p = []
@@ -427,8 +487,11 @@ def add_section(cfg, sid, kind, ctx, note):
         if not pedal:
             raise RuntimeError("That pedal is not in your gear")
         topic = f"{pedal['name']} pedal settings effect used"
+        prof = pedal.get("profile") or {}
         guide = (f"The player owns this pedal: {pedal['name']} ({pedal.get('about') or 'guitar pedal'}). Work out how to set it "
-                 "for this song: which settings, when to use it, and short steps to dial it in.\n" + GEAR_GUIDE)
+                 "for this song: which settings, when to use it, and short steps to dial it in.\n"
+                 + (f"Its real controls (use exactly these names for the settings, and values within these ranges):\n{profile_text(prof)}\n" if prof.get("controls") else "")
+                 + (f"Watch out: {prof['watch']}\n" if prof.get("watch") else "") + GEAR_GUIDE)
         example = ""
         system_head = f'You add a setup for the pedal "{pedal["name"]}" to a song for a guitarist. Reply with ONE JSON object and nothing else. '
     else:
@@ -452,7 +515,7 @@ def add_section(cfg, sid, kind, ctx, note):
         try:
             data = extract_json(reply)
             obj = data.get("setup" if pedal else kind, data) if isinstance(data, dict) else data
-            problems = check_section(kind, obj)
+            problems = check_section(kind, obj, (pedal or {}).get("profile"))
         except Exception as e:
             problems = [f"{type(e).__name__}: {e}"]
         if not problems:
@@ -467,3 +530,30 @@ def add_section(cfg, sid, kind, ctx, note):
     else:
         specs[0][kind] = obj
     _write(path, specs)
+
+
+def research_pedal(cfg, pedal, ctx, note):
+    """Look the pedal up (web notes + what the model knows) and return its profile: controls, MIDI, first-time setup."""
+    note("Researching the pedal…")
+    notes = web_notes(cfg, f"{pedal['name']} guitar pedal manual controls knobs switches modes MIDI")
+    system = (f'You describe a guitar pedal for its owner. Reply with ONE JSON object and nothing else. You cannot run commands. '
+              "Never invent facts: if the notes do not support a control, a range or a mode, leave it out or use the 'unknown' option.\n\n"
+              "INSTRUCTIONS:\n" + PROFILE_GUIDE)
+    user = (f"Pedal: {pedal['name']}\nWhat the owner says it does: {pedal.get('about') or '(not said)'}\n\nResearch notes from a web search "
+            f"(may be partial or off-topic):\n{notes or '(no web access: use only what you know; mark unverified items)'}"
+            f"{ctx.get('lang_note', '')}")
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    for attempt in range(cfg["retries"]):
+        note("Writing…" if attempt == 0 else "Fixing…")
+        reply = chat(cfg, messages, on_progress=ctx.get("progress"), cancel=ctx.get("cancel"))
+        try:
+            data = extract_json(reply)
+            obj = data.get("profile", data) if isinstance(data, dict) else data
+            problems = check_profile(obj)
+        except Exception as e:
+            problems = [f"{type(e).__name__}: {e}"]
+        if not problems:
+            return obj
+        messages += [{"role": "assistant", "content": reply},
+                     {"role": "user", "content": "Fix these problems and return the corrected JSON object:\n- " + "\n- ".join(problems)}]
+    raise RuntimeError("The AI model could not describe this pedal: " + problems[0][:200] + " | it answered: " + reply[:120].replace("\n", " "))

@@ -4,6 +4,9 @@
 const IDS = ["rhcp-under-the-bridge", "audioslave-like-a-stone", "gnr-welcome-to-the-jungle", "nirvana-smells-like-teen-spirit", "pearl-jam-animal", "pink-floyd-wish-you-were-here", "van-halen-jump", "the-cranberries-zombie"];
 const MOCK = `<script>
 let cur="Jungle Rhythm";
+const MOCKPROF={summary:"A delay pedal with up to 600 ms of repeats. Set Time and Feedback first, then blend with Mix.",controls:[{name:"Time",type:"knob",range:"20-600 ms"},{name:"Feedback",type:"knob",range:"0-10"},{name:"Mix",type:"knob",range:"0-10"},{name:"Mode",type:"mode",options:["Digital","Analog","Tape"]}],midi:"no",setup:["Put it in the amp's effects loop.","Set Mix to 10 o'clock and tap the tempo."],watch:"High Feedback can self-oscillate; start low.",confidence:"likely"};
+function mockRes(id){const r=(window._res||{})[id]; if(!r) return {profile:null,research:{state:"none"}}; if(r.profile) return {profile:r.profile,research:{state:"done"}}; if(Date.now()-r.t<4000) return {profile:null,research:{state:"running"}}; return {profile:MOCKPROF,research:{state:"done"}};}
+
 window.pywebview={api:{
   songs: async()=>{const out=[];for(const id of ${JSON.stringify(IDS)}){let s=await (await fetch("../songs/"+id+".json",{cache:"no-store"})).json();s=Array.isArray(s)?s:[s];
     const head=(s[0].memo||"").split(":")[0].split(" - ");
@@ -20,12 +23,14 @@ window.pywebview={api:{
   play_intro: async()=>({ok:true}), stop_intro: async()=>({ok:true}),
   song_meta: async()=>JSON.parse(localStorage.getItem("sm")||'{"rhcp-under-the-bridge":{"status":"played"},"pink-floyd-wish-you-were-here":{"status":"learning"},"audioslave-like-a-stone":{"status":"learning"}}'),
   set_song_meta: async(id,d)=>{const m=JSON.parse(localStorage.getItem("sm")||"{}");m[id]=Object.assign(m[id]||{},d);localStorage.setItem("sm",JSON.stringify(m));return{ok:true,meta:m};},
+  research_pedal: async(id)=>{(window._res=window._res||{})[id]={t:Date.now()};return{ok:true};},
+  save_pedal_profile: async(id,pr)=>{(window._res=window._res||{})[id]={t:0,profile:{...pr,reviewed:true}};const g=await window.pywebview.api.get_gear();return{ok:true,...g};},
   get_gear: async()=>{const cat={amps:[{id:"katana-mkii",name:"BOSS Katana MkII",tested:true,about:"The amp TonenAI is built and tested on."},{id:"katana-other",name:"Another BOSS Katana model",tested:false,about:"Not tested. Parameters may differ, so check a patch by ear before trusting it."}],
       pedals:[{id:"whammy-dt",name:"DigiTech Whammy DT",short:"WHAMMY DT",icon:"〰",kind:"whammy",default:true,about:"Pitch shifter: works out the tuning and the octave or harmony effect a song needs."},{id:"trio-plus",name:"DigiTech Trio+",short:"TRIO+",icon:"🥁",kind:"trio",default:true,about:"Band creator: works out genre, tempo and parts so it can play bass and drums along with you."}]};
-    const raw=JSON.parse(localStorage.getItem("rig")||"{}"); const custom=(raw.custom||[]).map(c=>({id:c.id||("custom-"+c.name.toLowerCase().replace(/[^a-z0-9]+/g,"-")),name:c.name,short:c.name.toUpperCase().slice(0,14),icon:"🎛",kind:"generic",custom:true,about:c.about||""}));
+    const raw=JSON.parse(localStorage.getItem("rig")||"{}"); const custom=(raw.custom||[]).map(c=>({id:c.id||("custom-"+c.name.toLowerCase().replace(/[^a-z0-9]+/g,"-")),name:c.name,short:c.name.toUpperCase().slice(0,14),icon:"🎛",kind:"generic",custom:true,about:c.about||"",...mockRes(c.id||("custom-"+c.name.toLowerCase().replace(/[^a-z0-9]+/g,"-")))}));
     const ids=new Set([...cat.pedals,...custom].map(p=>p.id)); const pedals=Array.isArray(raw.pedals)?raw.pedals.filter(i=>ids.has(i)):["whammy-dt","trio-plus"];
     return {amps:cat.amps,pedals:[...cat.pedals,...custom],rig:{amp:cat.amps.some(a=>a.id===raw.amp)?raw.amp:"katana-mkii",pedals}};},
-  set_gear: async(d)=>{localStorage.setItem("rig",JSON.stringify({amp:d.amp,pedals:d.pedals,custom:d.custom||[]}));return {ok:true,...(await window.pywebview.api.get_gear())};},
+  set_gear: async(d)=>{window._res=window._res||{};for(const c of (d.custom||[])){const id=c.id||("custom-"+c.name.toLowerCase().replace(/[^a-z0-9]+/g,"-"));if(!window._res[id])window._res[id]={t:Date.now()};}localStorage.setItem("rig",JSON.stringify({amp:d.amp,pedals:d.pedals,custom:d.custom||[]}));return {ok:true,...(await window.pywebview.api.get_gear())};},
   generate_section: async(id,kind)=>{window._j={state:"running",t:Date.now()};window._gen=[id,kind];return{ok:true};},
   recent: async()=>["pearl-jam-animal","van-halen-jump","rhcp-under-the-bridge"],
   delete_song: async()=>({ok:true}),
