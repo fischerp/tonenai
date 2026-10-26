@@ -20,7 +20,7 @@ or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to brow
 | --- | --- |
 | ![Livesets](docs/screenshots/livesets.png) | ![My guitars](docs/screenshots/guitars.png) |
 
-*Screenshots use sample data and placeholder covers (generated, not album artwork).*
+*Screenshots use sample data and generated covers (the app draws one when a song has no artwork; no album art is included).*
 
 ## What is a `.tsl` file?
 The file format BOSS TONE STUDIO uses to save a set of patches (a "liveset"; the name is inferred from the app,

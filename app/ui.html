@@ -275,7 +275,16 @@ const api = () => window.pywebview && window.pywebview.api;
 
 function hue(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
 function bg(s) { return s.cover ? `linear-gradient(0deg, #0006, #0002), url('${s.cover}') center/cover` : grad(s); }
-function grad(s) { const h = hue(s.artist || s.title); return `linear-gradient(155deg, hsl(${h} 65% 38%), hsl(${(h + 50) % 360} 70% 18%))`; }
+function grad(s) {   // no cover yet: a colourful generated one, always the same for the same song
+  const h = hue(s.artist || s.title), st = Math.floor(hue((s.id || "") + (s.title || "")) / 7) % 4;
+  const base = `linear-gradient(155deg, hsl(${h} 72% 48%), hsl(${(h + 50) % 360} 75% 20%))`;
+  const pat = [
+    "repeating-radial-gradient(circle at 68% 30%, transparent 0 34px, #ffffff26 34px 40px)",
+    "repeating-linear-gradient(115deg, #ffffff1c 0 22px, transparent 22px 56px)",
+    "radial-gradient(circle at 50% 34%, #ffeccc70 0 27%, transparent 28%)",
+    "repeating-linear-gradient(60deg, #ffffff16 0 30px, transparent 30px 60px), repeating-linear-gradient(-60deg, #ffffff10 0 30px, transparent 30px 60px)"][st];
+  return `${pat}, ${base}`;
+}
 function store(get, set) { try { return get ? JSON.parse(localStorage.getItem(get) || "null") : localStorage.setItem(...set); } catch (e) { return null; } }
 let META = {};      // your practice status + notes per song: { id: { status: "learning" | "played", notes } } (data/song_meta.json)
 let RECENT = null;   // songs last sent to the amp, newest first; kept on disk by the app (data/recent.json)
