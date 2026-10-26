@@ -1,0 +1,72 @@
+[
+ {
+  "name": "Where Is My Mind",
+  "memo": "Pixies - Where Is My Mind?: surfy clean-ish guitar with spring reverb, light grit and a little chorus. Informed approximation.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "slow half-time pulse, kick on 1, snare on 3, steady hi-hat; loud-quiet dynamics",
+   "bpm": 164,
+   "time_signature": "4/4",
+   "key": "E major",
+   "parts": [
+    "Part A: intro - the two-note arpeggio guitar line, very sparse drums",
+    "Part B: verse - bass and drums enter, steady groove",
+    "Part C: chorus (\"With your feet on the air and your head on the ground\") - fuller band",
+    "Part D: solo/instrumental break - full band",
+    "Part E: outro - repeat of the intro line and fade"
+   ],
+   "tips": "Sources list about 162-164 BPM, but the song feels like roughly 82 BPM in half-time, so choose a slow style and check the Trio+ tempo against the record. Key and tempo came from secondary sources; confirm by ear. Play the intro line cleanly for 2 bars before the Trio+ starts learning."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Leave the Whammy DT off; play in standard tuning."],
+   "tips": "No pitch effect or alternate tuning was found for this recording."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "1970s Gibson Les Paul Goldtop reissue (pickup covers removed)", "player": "Joey Santiago", "pickups": "humbucker"}
+   ],
+   "pickups_needed": "any",
+   "position": "bridge pickup for the arpeggio line, tone around 7-8",
+   "tone_notes": "Santiago's Les Paul is his signature guitar, but one source says the surfy sound on Surfer Rosa may come from overdubbed Jazzmaster/Telecaster parts. Single-coils suit this tone well; with humbuckers, roll the treble up a bit.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CLEAN",
+   "gain": 35,
+   "bass": 50,
+   "mid": 55,
+   "treble": 60,
+   "presence": 55,
+   "volume": 50
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": false,
+   "time": 300,
+   "feedback": 15,
+   "level": 20
+  },
+  "reverb": {
+   "type": "SPRING",
+   "on": true,
+   "time": 40,
+   "level": 40
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ }
+]

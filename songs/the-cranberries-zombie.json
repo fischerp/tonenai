@@ -1,0 +1,54 @@
+[
+ {
+  "name": "Zombie Rhythm",
+  "memo": "The Cranberries - Zombie: verses on a chorus-washed clean-ish crunch, chorus on a big fuzzy wall (Big Muff into cranked Marshall/AC30 sound). Informed approximation.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "mid-tempo straight rock, kick on 1 and 3, snare on 2 and 4; quiet verses, huge choruses",
+   "bpm": 86,
+   "time_signature": "4/4",
+   "key": "E minor",
+   "parts": [
+    "Part A: intro/verse - sparse drums, clean-ish guitar",
+    "Part B: chorus - full band, distorted guitar",
+    "Part C: instrumental/solo - full band"
+   ],
+   "tips": "The whole song loops Em - C - G - D (D/F# on the record). 86 BPM comes from a sheet-music arrangement, not a measurement of the recording, so check it against the track. Play 2 bars of the progression cleanly before the Trio+ starts learning."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Leave the Whammy DT off; play in standard tuning."],
+   "tips": "No alternate tuning or pitch effect was found for this recording."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Gibson ES-335", "player": "Noel Hogan", "pickups": "humbucker"},
+    {"guitar": "Gibson Les Paul", "player": "Noel Hogan", "pickups": "humbucker"},
+    {"guitar": "Fender Telecaster or Stratocaster", "player": "Noel Hogan", "pickups": "single-coil"}
+   ],
+   "pickups_needed": "any",
+   "position": "bridge pickup, tone around 7-8",
+   "tone_notes": "Hogan says the sound is a blend of an ES-335, a Les Paul and a Tele/Strat through cranked Marshalls and AC30s, with a Big Muff for the heavy parts. Any guitar works; with single-coils add a little gain.",
+   "confidence": "likely"
+  },
+  "amp": {"type": "CRUNCH", "gain": 45, "bass": 55, "mid": 50, "treble": 60, "presence": 55, "volume": 50},
+  "booster": {"type": "DISTORTION", "on": false, "drive": 60, "level": 50, "tone": 40},
+  "mod": {"type": "CHORUS", "on": true},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Zombie Chorus",
+  "memo": "The Cranberries - Zombie (chorus/lead): fuzz-style wall of distortion, Big Muff into cranked amps. Informed approximation.",
+  "amp": {"type": "LEAD", "gain": 65, "bass": 55, "mid": 45, "treble": 60, "presence": 55, "volume": 55},
+  "booster": {"type": "DISTORTION", "on": true, "drive": 60, "level": 50, "tone": 40},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ }
+]

@@ -1,0 +1,54 @@
+[
+ {
+  "name": "Jump Rhythm",
+  "memo": "Van Halen - Jump: rhythm/riff. Brown amp (hot-rodded plexi style), light boost, subtle phaser. Approximation, tweak by ear.",
+  "band": {
+   "genre": "Rock",
+   "style_feel": "moderate straight eighths, kick on 1 and 3, snare on 2 and 4, synth-driven pop-rock",
+   "bpm": 129,
+   "time_signature": "4/4",
+   "key": "C major (solo reported in B-flat minor by some sources)",
+   "parts": [
+    "Part A: intro synth riff - drums and bass enter after a few bars",
+    "Part B: verse - tight, steady groove",
+    "Part C: chorus (\"Jump!\") - full band",
+    "Part D: guitar solo - full band, driving",
+    "Part E: final chorus and outro - full band"
+   ],
+   "tips": "Tempo is about 129 BPM per Wikipedia. The song is keyboard-led, so play the guitar as accents and chords under the synth; keep strumming steady while the Trio+ learns."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Leave the Whammy DT off; play in standard tuning."],
+   "tips": "No pitch effect was found for this song in the sources; none is set."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Eddie Van Halen's modified Frankenstrat-style guitar (humbucker in bridge)", "player": "Eddie Van Halen", "pickups": "humbucker"}
+   ],
+   "pickups_needed": "humbucker",
+   "position": "bridge pickup, volume full (back off a little for the cleaner solo), tone at 10",
+   "tone_notes": "Bright, crisp, fairly open humbucker tone from a modified Marshall plexi with a phaser. A single-coil guitar will be thinner: add a bit of gain and mids.",
+   "confidence": "likely"
+  },
+  "amp": {"type": "BROWN", "gain": 55, "bass": 50, "mid": 60, "treble": 65, "presence": 65, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 20, "level": 50},
+  "mod": {"type": "PHASER", "on": true},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 18},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Jump Solo",
+  "memo": "Van Halen - Jump: solo. Brown amp with more gain and mids, a touch of delay.",
+  "amp": {"type": "BROWN", "gain": 70, "bass": 45, "mid": 65, "treble": 65, "presence": 65, "volume": 55},
+  "booster": {"type": "T-SCREAM", "drive": 30, "level": 60},
+  "mod": {"type": "PHASER", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 20, "level": 25},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ }
+]

@@ -1,0 +1,115 @@
+[
+ {
+  "name": "Knockin Rhythm",
+  "memo": "Guns N' Roses - Knockin' On Heaven's Door: rhythm. Clean-ish chorus-washed arpeggios in the verses, edge of breakup for the big choruses.",
+  "band": {
+   "genre": "Rock",
+   "style_feel": "slow ballad, half-time backbeat, snare on 3, soft ride/hi-hat, bass on the root; builds to a full band in the choruses",
+   "bpm": 66,
+   "time_signature": "4/4",
+   "key": "Gb major sounding (recorded a half step down; G major shapes G D Am7 / G D C in standard tuning)",
+   "parts": [
+    "Part A: intro and verse - soft drums, sparse bass",
+    "Part B: chorus - fuller band, snare on the backbeat",
+    "Part C: second verse and chorus - steady, a little louder",
+    "Part D: guitar solo - full band, big sustain",
+    "Part E: long outro chorus - full band, loud and open"
+   ],
+   "tips": "Sources disagree on tempo (about 66 BPM with a variable feel; automatic detectors report 89 or 133, which are double/triple readings), so set the Trio+ by ear and tap the tempo. Play the intro chords cleanly for 2 bars before the Trio+ starts learning."
+  },
+  "whammy": {
+   "use": "yes",
+   "tuning": "Eb standard (Eb Ab Db Gb Bb Eb), half step down",
+   "when": "Whole song",
+   "settings": {"effect": null, "harmony": null, "transpose_down": 1, "transpose_up": null, "detune": null},
+   "how": [
+    "Tune your guitar to standard (E A D G B E).",
+    "Turn the right knob to TRANSPOSE DOWN 1.",
+    "Press DROPTUNE (light on) before the song."
+   ],
+   "tips": "Play the G-D-Am7 / G-D-C shapes as in standard tuning; the pedal sounds them a half step lower to match the recording. No whammy or octave effect is documented on the track. Alternatively retune to Eb and leave the pedal off."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Gibson Explorer (1958) / Gibson Flying V (1959 Korina), reported for the solo", "player": "Slash", "pickups": "humbucker"}
+   ],
+   "pickups_needed": "humbucker",
+   "position": "neck pickup for the verse arpeggios, bridge pickup for the choruses; volume full, tone around 7",
+   "tone_notes": "Warm humbucker tone with a chorused clean verse and a singing, sustained lead; a single-coil guitar will be thinner, so add a little gain and roll back treble on the lead patch. Sources disagree on which guitar was used for the solo.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CLEAN",
+   "gain": 30,
+   "bass": 50,
+   "mid": 50,
+   "treble": 55,
+   "presence": 50,
+   "volume": 45
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": false,
+   "time": 450,
+   "feedback": 15,
+   "level": 20
+  },
+  "reverb": {
+   "type": "PLATE",
+   "on": true,
+   "time": 30,
+   "level": 25
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ },
+ {
+  "name": "Knockin Lead",
+  "memo": "Guns N' Roses - Knockin' On Heaven's Door: lead. Singing, sustained Brown-amp solo tone with a touch of delay and reverb.",
+  "amp": {
+   "type": "BROWN",
+   "gain": 65,
+   "bass": 50,
+   "mid": 65,
+   "treble": 55,
+   "presence": 55,
+   "volume": 55
+  },
+  "booster": {
+   "type": "T-SCREAM",
+   "drive": 25,
+   "level": 55
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": false
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 450,
+   "feedback": 20,
+   "level": 25
+  },
+  "reverb": {
+   "type": "PLATE",
+   "on": true,
+   "time": 35,
+   "level": 25
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ }
+]

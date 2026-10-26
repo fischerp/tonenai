@@ -32,7 +32,14 @@ function tabSettings(id) {
   document.body.appendChild(ov);
 }
 document.addEventListener("change", e => { if (e.target.name === "tabsvc") { const t = document.getElementById("tab-tpl"); if (t) t.style.display = e.target.value === "custom" ? "block" : "none"; } });
+/* YouTube guitar lessons: a search link, so nothing is downloaded and no API key is needed. */
+async function openLessons(id) {
+  const s = SONGS.find(x => x.id === id); if (!s) return;
+  const r = await api().open_url("https://www.youtube.com/results?search_query=" + tabQuery(s) + "+guitar+lesson");
+  if (!r.ok) toast(r.error, true);
+}
 document.addEventListener("click", async e => {
+  const l = e.target.closest("[data-lessons-open]"); if (l) return openLessons(l.dataset.lessonsOpen);
   const o = e.target.closest("[data-tabs-open]"); if (o) return openTabs(o.dataset.tabsOpen);
   const g = e.target.closest("[data-tabs-set]"); if (g) return tabSettings(g.dataset.tabsSet);
   if (e.target.closest("[data-tabcancel]")) { const ov = document.getElementById("tabov"); if (ov) ov.remove(); return; }

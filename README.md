@@ -1,7 +1,7 @@
 # TonenAI
 
 Tell Claude a song or band; it builds a BOSS Katana MkII patch and applies it to the amp over USB MIDI,
-or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a Netflix-style desktop app to pick songs.
+or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to browse your songs and send them to the amp.
 
 > **Unofficial.** This project is not affiliated with, endorsed by or sponsored by BOSS or Roland. "BOSS",
 > "Roland", "KATANA" and "TONE STUDIO" are trademarks of Roland Corporation, used here only to say which
@@ -18,17 +18,114 @@ of hex bytes. Tone Studio's full backups use `.alb`.
 - Tested: Katana MkII. Likely: other MkII sizes. Unknown: original Katana (MkI), Gen 3, Air, Go, Artist.
 - macOS only so far (Core MIDI + pywebview). PRs welcome.
 
-## Requirements
-- BOSS TONE STUDIO for KATANA MkII installed (the parameter list is read from the installed app at setup; no
-  BOSS files are shipped in this repo, and `tools/catalog.json` and `songs/covers/` are git-ignored on purpose).
-- The KATANA USB driver, Python 3.12+, and the amp connected over USB.
-- Optional, for "Create with Claude": a Claude sign-in (below) or your own Anthropic API key.
+## Quick start
+**You need:** a Mac, Python 3.12+, BOSS TONE STUDIO for KATANA MkII (free from BOSS)
+installed in its default folder (`/Applications/BOSS/KATANA MkII/`) and the KATANA USB driver. Keep Tone Studio installed: the app reads its parameter
+files every time it starts (nothing from BOSS is copied into this repo). The amp must be on and connected over USB to play patches.
+No amp yet? You can still browse, create and export `.tsl` files; only "send to the amp" needs it.
 
-## Setup
+1. **Get the code and install**
+   ```
+   git clone <repo-url> tonenai && cd tonenai
+   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+   .venv/bin/python tools/extract_catalog.py tools/catalog.json    # builds the parameter names list from your Tone Studio
+   ```
+2. **Choose the AI that builds patches** (only needed for "Create"; browsing and playing existing songs works without it)
+   - *Claude (default):* sign in once with `"$(.venv/bin/python -c 'import importlib.util as u, pathlib as p; print(p.Path(u.find_spec("claude_agent_sdk").origin).parent / "_bundled" / "claude")')" /login`
+   - *Anything else:* open the app, click **AI** in the header and pick Ollama, LM Studio, OpenAI, OpenRouter or a custom URL (see [AI providers](#ai-providers)).
+3. **Back up your amp** once: `.venv/bin/python tools/patch.py backup -o backups/before.tsl`. TonenAI only writes the amp's temporary (live) patch, but a backup is cheap.
+4. **Start it:** `./run.command` (or double-click `TonenAI.app`). Search a song. If it is not in the library, press **Create**, wait about a minute, then click a patch to hear it.
+
+**If something does not work**
+- *"Katana not found":* amp off, cable or USB driver missing, or another app (usually BOSS TONE STUDIO) is holding the amp's MIDI port. Quit it and wait a few seconds.
+- *`FileNotFoundError ... address_map.js`:* Tone Studio is not installed at the default path above.
+- *"Claude is not signed in":* repeat the sign-in in step 2. For another provider, use **AI > Test connection**.
+- *Created tone sounds off:* patches are informed approximations. Tweak by ear and check the guitar and pickup advice on the song page.
+
+## How it works
+A song goes in, a patch comes out. The app keeps the AI, your files and the amp in separate layers, so you can swap any one of them:
+
+```mermaid
+flowchart TB
+    YOU(["You"])
+    subgraph APP["Desktop app (macOS)"]
+        UI["Window<br/>app/ui.html, pywebview"]
+        SVC["Backend<br/>app/service.py<br/>library, play, livesets, guitars, settings"]
+        JOB["Create and generate jobs<br/>background thread"]
+    end
+    subgraph AIL["AI provider (you choose)"]
+        CL["Claude Agent SDK<br/>default, agent with web search"]
+        OA["OpenAI-compatible server<br/>Ollama, LM Studio, OpenAI, OpenRouter<br/>app/local_llm.py"]
+    end
+    subgraph TOOLS["tools/"]
+        PATCH["patch.py<br/>song spec to patch bytes<br/>apply, export, backup"]
+        PARAMS["params.py<br/>parameter map and type names"]
+        KAT["katana.py<br/>SysEx messages"]
+    end
+    SONGS[("songs/<br/>song.json + song.tsl")]
+    DATA[("data/ on your machine<br/>guitars, favourites, notes,<br/>settings and API key<br/>git-ignored")]
+    TS["BOSS TONE STUDIO<br/>installed on your Mac"]
+    AMP{{"BOSS Katana MkII"}}
+    ITUNES["iTunes Search API<br/>cover art and song search"]
+
+    YOU --> UI
+    UI -->|"calls"| SVC
+    SVC --> JOB
+    JOB -->|"song, rules, valid names"| CL
+    JOB -->|"song, rules, valid names"| OA
+    CL -->|"writes song JSON"| SONGS
+    OA -->|"returns JSON, app saves it"| SONGS
+    SVC <--> SONGS
+    SVC <--> DATA
+    SVC -->|"play a patch"| PATCH
+    JOB -->|"validate and export"| PATCH
+    PATCH --> PARAMS
+    PARAMS -->|"reads parameter files"| TS
+    PATCH --> KAT
+    KAT -->|"SysEx over USB MIDI"| AMP
+    PATCH -->|"exports"| SONGS
+    SONGS -.->|"import .tsl"| TS
+    SVC -->|"covers, search"| ITUNES
 ```
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python tools/extract_catalog.py tools/catalog.json   # needs BOSS TONE STUDIO installed
+
+What happens when you create a song and play it:
+
+```mermaid
+sequenceDiagram
+    actor You
+    participant UI as Window
+    participant S as service.py
+    participant AI as AI provider
+    participant P as patch.py
+    participant A as Katana amp
+
+    You->>UI: search for a song
+    UI->>S: search_songs
+    S-->>UI: library matches and catalog matches
+    You->>UI: press Create
+    UI->>S: create_song
+    S->>AI: song name, katana-patch rules, valid parameter names
+    AI->>AI: research the tone (guitar, amp, pedals, tuning, tempo)
+    Note over AI,P: Claude writes the file and runs patch.py export itself. Other providers return JSON and the app validates it
+    AI->>P: build and validate every patch
+    P-->>AI: ok, or an error to fix (up to 3 rounds)
+    AI-->>S: songs/artist-title.json
+    S->>P: export the .tsl
+    S-->>UI: song appears in your library
+    You->>UI: click a patch
+    UI->>S: play
+    S->>P: build patch bytes from the song JSON
+    P->>A: SysEx over USB MIDI to the temporary patch
+    A-->>You: the tone
 ```
+
+| Folder | What lives there |
+|---|---|
+| `app/` | the desktop window (`ui.html`, `*.js`, translations in `i18n.js`) and the Python backend (`service.py`, `local_llm.py`) |
+| `tools/` | amp protocol and patch building: `patch.py` (CLI too), `params.py`, `katana.py`, `extract_catalog.py` |
+| `songs/` | your library: one `.json` spec and one `.tsl` per song, plus cached album covers (git-ignored) |
+| `data/` | everything personal: your guitars, favourites, notes, settings, API key (git-ignored) |
+| `.claude/` | the `katana-patch` skill (the rules the AI follows) and helper agents for contributors |
 
 ## Desktop app
 ```
@@ -37,12 +134,9 @@ Double-click TonenAI.app (keep it inside the project folder; drag it to the Dock
 ```
 **Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played with macOS `afplay`). Click or press any key to skip.
 
-Netflix-style library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Search the library; if a
+A visual library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Press Enter in the search box to see your library matches first, then other popular songs from the iTunes catalog (shown with **Create**); click any band name (on a card, the song page or a row title) to list all your songs by that band plus more of theirs you can add; the list length is **⚙ > Results per search** (default 10, `search_limit` in `data/settings.json`, 3-30). Search the library; if a
 song is not found, **Create with Claude** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
-One-time sign-in for that feature (the app uses the Claude Agent SDK bundled in the venv):
-```
-.venv/lib/python3.14/site-packages/claude_agent_sdk/_bundled/claude /login
-```
+One-time sign-in for that feature is in the Quick start above (the app uses the Claude Agent SDK bundled in the venv).
 **My guitars:** register the guitars you own (stored locally in `data/`, not in git). Each song lists the original
 guitars and pickups used on the record (researched by Claude, with a confidence level) and ranks your guitars for it,
 with the pickup position to use.
@@ -54,6 +148,27 @@ with the pickup position to use.
 **Language:** English, Português (Brasil) and Español. Pick it from the flag list in the header; the first launch follows your system language and the choice is remembered (`data/settings.json`). In Portuguese or Spanish, songs created with Claude get their notes and tips written in that language too. To add a language, add it to `LANGS` and `I18N` in `app/i18n.js` (and to `LANG_NAMES` in `app/service.py`).
 
 UI dev without the amp: `python3 -m http.server 8765` then open `http://localhost:8765/app/preview.html` (mock amp).
+
+## AI providers
+Click **AI** in the app header and pick a card, then **Save**:
+- **Claude** (default): uses your Claude sign-in, nothing else to set up.
+- **Ollama** or **LM Studio** (free, runs on your computer): the app checks the server for you and lists the models you have installed. If Ollama is not installed it tells you the one command to run.
+- **ChatGPT / OpenAI** or **OpenRouter**: paste an API key, press **Connect**, choose a model from the list. Note that a ChatGPT subscription is not an API key: create one at platform.openai.com/api-keys (pay per use).
+- **Other server**: any OpenAI-style URL (type the URL under the card).
+
+Everyone connects their own account: nothing is shared or bundled. The key belongs to the server it was entered for and is dropped if you switch to another one.
+
+The choice is stored in `data/settings.json` (git-ignored, file mode 600; the API key is never sent back to the UI):
+```
+{"lang": "en", "provider": "openai",
+ "openai": {"preset": "ollama", "base_url": "http://localhost:11434/v1", "model": "qwen2.5:14b-instruct", "search": "duckduckgo"}}
+```
+Optional keys: `api_key`, `timeout` (900 s), `retries` (3). Environment overrides: `TONENAI_PROVIDER=claude|openai`, `TONENAI_API_KEY`.
+
+How the other providers work: this is not an agent loop like the Claude path. The model gets the skill text, the valid type names and an
+example song, returns JSON, and the app validates it against the Katana tables, feeding errors back for up to `retries` rounds. Research is a
+best-effort DuckDuckGo snippet search (switch it off in the AI dialog), so smaller models guess more about gear, tempo and tuning; they are told
+to mark unverified facts `unknown`. For Ollama, `ollama pull qwen2.5:14b-instruct` first and give the server at least 8k context.
 
 ## CLI
 ```

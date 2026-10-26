@@ -4,3 +4,12 @@ tools/catalog.json
 backups/
 songs/covers/
 data/
+.DS_Store
+Claude outputs/
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.alb
+.claude/settings.local.json

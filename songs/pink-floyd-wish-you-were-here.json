@@ -1,0 +1,54 @@
+[
+ {
+  "name": "Wish Acoustic",
+  "memo": "Pink Floyd - Wish You Were Here: intro and verses. Acoustic-style 12-string strum, clean and open with a touch of chorus and room.",
+  "band": {
+   "genre": "Folk",
+   "style_feel": "slow, gentle strummed feel with soft brushed drums and a simple bass line, sparse in the verses",
+   "bpm": 60,
+   "time_signature": "4/4",
+   "key": "G major (intro riff around Em7 / G / A7sus4)",
+   "parts": [
+    "Part A: intro and verses - quiet, sparse drums",
+    "Part B: chorus - fuller band, steady strum",
+    "Part C: solo section - open and spacious",
+    "Part D: outro - soft fade"
+   ],
+   "tips": "Tempo is about 60 BPM (some sources feel it as 120); the recording drifts slightly, so start the Trio+ learning after 2 bars of steady strumming. Keep the strum relaxed and even."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Leave the pedal off; play in standard tuning."],
+   "tips": "The song is in standard tuning. No whammy effect is used on the recording."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Martin D-35 acoustic (opening solo)", "player": "David Gilmour", "pickups": "any"},
+    {"guitar": "Martin D12-28 12-string acoustic", "player": "David Gilmour", "pickups": "any"}
+   ],
+   "pickups_needed": "any",
+   "position": "any pickup, neck or middle on a Strat-style guitar, tone around 7",
+   "tone_notes": "The recording uses real acoustic guitars (6- and 12-string); the amp's ACOUSTIC model approximates that on an electric. Roll the tone knob back a little to avoid harshness.",
+   "confidence": "likely"
+  },
+  "amp": {"type": "ACOUSTIC", "gain": 30, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 45},
+  "booster": {"type": "MID BOOST", "on": false},
+  "mod": {"type": "CHORUS", "on": true},
+  "delay": {"type": "DIGITAL", "on": false, "time": 400, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 25, "level": 30},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ },
+ {
+  "name": "Wish Solo",
+  "memo": "Pink Floyd - Wish You Were Here: lead lines. Gilmour-style Strat tone, warm crunch with delay and hall reverb.",
+  "amp": {"type": "CRUNCH", "gain": 40, "bass": 50, "mid": 55, "treble": 55, "presence": 50, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 25, "level": 50},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 450, "feedback": 25, "level": 30},
+  "reverb": {"type": "HALL", "on": true, "time": 35, "level": 30},
+  "noise_suppressor": {"on": true, "threshold": 15}
+ }
+]

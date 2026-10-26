@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import katana as k      # noqa: E402
 import params as P      # noqa: E402
 import patch as PT      # noqa: E402
+import local_llm        # noqa: E402
 
 SONGS = os.path.join(ROOT, "songs")
 COVERS = os.path.join(SONGS, "covers")
@@ -53,6 +54,7 @@ class Service:
         self._lock = threading.Lock()
         self._inp = self._out = None
         self._job = {"state": "idle"}
+        self._cancel = threading.Event()
         self._last_text = ""
 
     # -------------------------------------------------------------- library
@@ -221,6 +223,76 @@ class Service:
         json.dump(cfg, open(SETTINGS, "w"), indent=1)
         return {"ok": True}
 
+    # -------------------------------------------------------------- AI provider (Claude by default, or any OpenAI-compatible server)
+    def _settings(self):
+        try:
+            cfg = json.load(open(SETTINGS))
+            return cfg if isinstance(cfg, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def _save_settings(self, cfg):
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(cfg, open(SETTINGS, "w"), indent=1)
+        try:
+            os.chmod(SETTINGS, 0o600)               # may hold an API key
+        except OSError:
+            pass
+
+    def get_ai(self):
+        """Current provider for the UI. The API key itself never leaves the backend (only has_key)."""
+        saved = self._settings().get("openai")
+        o = {**local_llm.DEFAULTS, **(saved if isinstance(saved, dict) else {})}
+        return {"provider": "openai" if local_llm.config(SETTINGS) else "claude", "presets": local_llm.PRESETS,
+                "env": bool(os.environ.get("TONENAI_PROVIDER")),
+                "openai": {"preset": o["preset"], "base_url": o["base_url"], "model": o["model"], "search": o["search"],
+                           "has_key": bool(o.get("api_key") or os.environ.get("TONENAI_API_KEY"))}}
+
+    def set_ai(self, data):
+        data = data if isinstance(data, dict) else {}
+        if data.get("provider") not in ("claude", "openai"):
+            return {"ok": False, "error": "Unknown provider"}
+        cfg = self._settings()
+        cfg["provider"] = data["provider"]
+        if data["provider"] == "openai":
+            url, model = str(data.get("base_url", "")).strip().rstrip("/"), str(data.get("model", "")).strip()
+            if not re.match(r"https?://\S+$", url):
+                return {"ok": False, "error": "Enter the server URL (http://… or https://…)"}
+            if not model:
+                return {"ok": False, "error": "Pick a model first"}
+            old = cfg.get("openai") if isinstance(cfg.get("openai"), dict) else {}
+            new = {**old, "preset": str(data.get("preset") or "custom")[:20], "base_url": url, "model": model,
+                   "search": "none" if data.get("search") == "none" else "duckduckgo"}
+            key = str(data.get("api_key", "")).strip()
+            if key:
+                new["api_key"] = key
+            elif data.get("clear_key") or url != str(old.get("base_url", "")).rstrip("/"):
+                new.pop("api_key", None)           # a key belongs to the server it was entered for
+            cfg["openai"] = new
+        self._save_settings(cfg)
+        return {"ok": True, "ai": self.get_ai()}
+
+    def test_ai(self, data):
+        """Check the server (with the form's values, not yet saved) and list its models."""
+        data = data if isinstance(data, dict) else {}
+        saved = self._settings().get("openai")
+        saved = saved if isinstance(saved, dict) else {}
+        url = str(data.get("base_url") or saved.get("base_url") or "").strip()
+        cfg = {**local_llm.DEFAULTS, **saved, "base_url": url}
+        if url.rstrip("/") != str(saved.get("base_url", "")).rstrip("/"):
+            cfg["api_key"] = ""                    # never send a saved key to a different server
+        key = str(data.get("api_key") or "").strip()
+        if key:
+            cfg["api_key"] = key
+        if os.environ.get("TONENAI_API_KEY") and not key:
+            cfg["api_key"] = os.environ["TONENAI_API_KEY"]
+        if not re.match(r"https?://\S+$", cfg["base_url"]):
+            return {"ok": False, "error": "Enter the server URL (http://… or https://…)"}
+        try:
+            return {"ok": True, "models": local_llm.list_models(cfg)}
+        except RuntimeError as e:
+            return {"ok": False, "error": str(e)}
+
     def _lang_note(self):
         lang = self.get_lang()
         if lang in (None, "en"):
@@ -256,21 +328,67 @@ class Service:
         """Ask the Claude agent to research a song and write songs/<id>.json (+ .tsl). Poll job_status()."""
         if self._job.get("state") == "running":
             return {"ok": False, "error": "Already creating a song"}
-        self._job = {"state": "running", "note": "Starting Claude…", "query": text}
+        self._cancel.clear()
+        self._job = {"state": "running", "note": "Starting Claude…", "query": text, "stage": 0, "round": 0, "t0": int(time.time() * 1000)}
         threading.Thread(target=self._run_job, args=(text,), daemon=True).start()
         return {"ok": True}
 
     def job_status(self):
         return dict(self._job)
 
+    def _note(self, text):
+        self._job = {**self._job, "note": text}
+
+    # create-song stages: 0 research, 1 write the patches, 2 check against the amp's parameters, 3 save to the library
+    TOOL_STAGE = {"WebSearch": 0, "WebFetch": 0, "Read": 0, "Write": 1, "Edit": 1, "Bash": 2}
+
+    def _stage(self, stage, round_=0):
+        """Set the stage explicitly (local-model path: it may go back from checking to writing when it has to fix something)."""
+        self._job = {**self._job, "stage": stage, "round": round_, "tokens": 0, "thinking": False}
+
+    def _tool_progress(self, tool):
+        """Claude agent path: stages only move forward, and each Bash export counts as one check round."""
+        if "stage" not in self._job:                 # band / whammy / guitar jobs have no stages
+            return
+        rnd = self._job.get("round", 0) + (1 if tool == "Bash" else 0)
+        self._job = {**self._job, "stage": max(self._job["stage"], self.TOOL_STAGE.get(tool, 0)), "round": rnd}
+
+    def _progress(self, tokens, thinking):
+        self._job = {**self._job, "tokens": tokens, "thinking": thinking}
+
+    def cancel_job(self):
+        """Stop a running create/generate job (OpenAI-compatible providers; the Claude agent runs to the end)."""
+        self._cancel.set()
+        return {"ok": True}
+
+    def _local_ctx(self):
+        """Everything the local-model backend needs, without importing the Claude SDK."""
+        skill = open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read()
+        example = []
+        for path in sorted(glob.glob(os.path.join(SONGS, "*.json"))):      # first song that has band + whammy + guitar
+            try:
+                specs = json.load(open(path))
+            except (OSError, ValueError):
+                continue
+            if isinstance(specs, list) and specs and all(specs[0].get(x) for x in ("band", "whammy", "guitar")):
+                example = specs
+                break
+        return {"skill": re.sub(r"^---.*?---", "", skill, flags=re.S), "example": example, "tables": P.TABLES,
+                "build": PT.build, "songs_dir": SONGS, "lang_note": self._lang_note(), "progress": self._progress, "cancel": self._cancel, "stage": self._stage}
+
     def _run_job(self, text):
         before = set(glob.glob(os.path.join(SONGS, "*.json")))
         try:
-            asyncio.run(self._agent(self._create_prompt(text)))
+            cfg = local_llm.config(SETTINGS)
+            if cfg:
+                local_llm.create_song(cfg, text, self._local_ctx(), self._note)
+            else:
+                asyncio.run(self._agent(self._create_prompt(text)))
             new = sorted(set(glob.glob(os.path.join(SONGS, "*.json"))) - before)
             if not new:
                 raise RuntimeError("Claude finished but did not create a song file")
             sid = os.path.basename(new[0])[:-5]
+            self._stage(3)
             self._validate(sid)
             self._job = {"state": "done", "id": sid}
         except Exception as e:
@@ -298,13 +416,14 @@ class Service:
             allowed_tools=["Read", "Write", "Edit", "WebSearch", "WebFetch",
                            "Bash(.venv/bin/python tools/patch.py export:*)"],
             permission_mode="acceptEdits", max_turns=25)
-        labels = {"WebSearch": "Researching the tone…", "WebFetch": "Reading about the gear…",
+        labels = {"WebSearch": "Researching the tone…", "WebFetch": "Reading about the gear…", "Edit": "Fixing the patch…",
                   "Write": "Writing the patch…", "Bash": "Building the .tsl…", "Read": "Reading notes…"}
         async for msg in query(prompt=prompt, options=opts):
             if isinstance(msg, AssistantMessage):
                 for b in msg.content:
                     if isinstance(b, ToolUseBlock):
                         self._job = {**self._job, "note": labels.get(b.name, "Working…")}
+                        self._tool_progress(b.name)
                     elif isinstance(b, TextBlock) and b.text.strip():
                         self._last_text = b.text.strip()
 
@@ -357,6 +476,7 @@ class Service:
             return {"ok": False, "error": "Already working on something"}
         if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or "") or not os.path.exists(os.path.join(SONGS, song_id + ".json")):
             return {"ok": False, "error": "Song not found"}
+        self._cancel.clear()
         self._job = {"state": "running", "note": "Starting Claude…", "query": kind + " setup", "kind": kind, "id": song_id}
         threading.Thread(target=self._run_band, args=(song_id, kind), daemon=True).start()
         return {"ok": True}
@@ -364,7 +484,11 @@ class Service:
     def _run_band(self, sid, kind="band"):
         try:
             for attempt in range(2):          # the agent occasionally finishes without saving; try once more
-                asyncio.run(self._agent({"band": self._band_prompt, "whammy": self._whammy_prompt, "guitar": self._guitar_prompt}[kind](sid)))
+                cfg = local_llm.config(SETTINGS)
+                if cfg:
+                    local_llm.add_section(cfg, sid, kind, self._local_ctx(), self._note)
+                else:
+                    asyncio.run(self._agent({"band": self._band_prompt, "whammy": self._whammy_prompt, "guitar": self._guitar_prompt}[kind](sid)))
                 self._validate(sid)
                 specs = json.load(open(os.path.join(SONGS, sid + ".json")))
                 specs = specs if isinstance(specs, list) else [specs]
@@ -410,9 +534,35 @@ class Service:
         return {"cover": ""}
 
     # -------------------------------------------------------------- song search (library + iTunes catalog)
-    def search_songs(self, text, limit=5):
-        """Top matches: songs already in the library first, then catalog hits (iTunes). Max `limit` items."""
+    SEARCH_DEFAULT, SEARCH_MIN, SEARCH_MAX = 10, 3, 30
+
+    def get_search_limit(self):
+        try:
+            v = int(self._settings().get("search_limit"))
+        except (TypeError, ValueError):
+            return self.SEARCH_DEFAULT
+        return max(self.SEARCH_MIN, min(self.SEARCH_MAX, v))
+
+    def set_search_limit(self, n):
+        try:
+            n = int(n)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "Enter a number"}
+        if not self.SEARCH_MIN <= n <= self.SEARCH_MAX:
+            return {"ok": False, "error": f"Choose between {self.SEARCH_MIN} and {self.SEARCH_MAX}"}
+        cfg = self._settings()
+        cfg["search_limit"] = n
+        self._save_settings(cfg)
+        return {"ok": True, "limit": n}
+
+    def search_songs(self, text, limit=None, by_artist=False):
+        """Up to `limit` results (setting "search_limit", default 10): songs already in your library first, then the
+        best catalog matches (iTunes) for other songs, until the list is full.
+        by_artist=True (clicking a band name): ALL your songs by exactly that artist, then up to `limit` more songs by them."""
+        limit = int(limit) if limit else self.get_search_limit()
         norm = lambda t: re.sub(r"[^a-z0-9 ]", "", re.sub(r"\s*[\(\[].*?[\)\]]|\s+-\s+.*$", "", t.lower())).strip()
+        if by_artist:
+            return self._search_artist(text, limit, norm)
         words = [w for w in re.findall(r"[a-z0-9]+", text.lower())]
         lib = []
         for song in self.songs():
@@ -423,8 +573,9 @@ class Service:
         items, seen = lib[:limit], {(norm(x["artist"]), norm(x["title"])) for x in lib}
         if len(items) < limit:
             try:
+                # ask for plenty: remasters, live cuts and songs you already own are dropped below
                 url = "https://itunes.apple.com/search?" + urllib.parse.urlencode(
-                    {"term": text, "entity": "song", "limit": 25})
+                    {"term": text, "entity": "song", "limit": min(200, max(25, limit * 4))})
                 for r in json.load(urllib.request.urlopen(url, timeout=8))["results"]:
                     key = (norm(r["artistName"]), norm(r["trackName"]))
                     if key in seen:
@@ -439,6 +590,31 @@ class Service:
                 if not items:
                     return {"ok": False, "error": f"Search failed (offline?): {e}"}
         return {"ok": True, "items": items}
+
+    def _search_artist(self, name, limit, norm):
+        want = norm(name)
+        lib = [{"inLibrary": True, "id": x["id"], "artist": x["artist"], "title": x["title"], "album": "", "art": "",
+                "patches": len(x["patches"])} for x in self.songs() if norm(x["artist"]) == want]
+        seen, items = {(want, norm(x["title"])) for x in lib}, list(lib)
+        extra = []
+        try:
+            url = "https://itunes.apple.com/search?" + urllib.parse.urlencode(
+                {"term": name, "entity": "song", "attribute": "artistTerm", "limit": min(200, max(50, limit * 5))})
+            rows = json.load(urllib.request.urlopen(url, timeout=8))["results"]
+            exact = [r for r in rows if norm(r["artistName"]) == want]
+            for r in (exact or [r for r in rows if want in norm(r["artistName"]) or norm(r["artistName"]) in want]):
+                key = (want, norm(r["trackName"]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                extra.append({"inLibrary": False, "artist": r["artistName"], "title": r["trackName"],
+                              "album": r.get("collectionName", ""), "art": r["artworkUrl100"].replace("100x100bb", "300x300bb")})
+                if len(extra) >= limit:
+                    break
+        except Exception as e:
+            if not items:
+                return {"ok": False, "error": f"Search failed (offline?): {e}"}
+        return {"ok": True, "items": items + extra, "artist": name, "inLibrary": len(lib), "toAdd": len(extra)}
 
     # -------------------------------------------------------------- delete (to the macOS Trash, so it is reversible)
     def delete_song(self, song_id):

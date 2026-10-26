@@ -1,0 +1,58 @@
+[
+ {
+  "name": "Whiskey Rhythm",
+  "memo": "Metallica - Whiskey In the Jar: rhythm. Hetfield's Garage Inc. crunch, tight mid-heavy Brown amp with a light boost, moderate gain so the chords stay clear.",
+  "band": {
+   "genre": "Rock",
+   "style_feel": "steady mid-tempo straight eighths, kick on 1 and 3, snare on 2 and 4, no fills in the verses",
+   "bpm": 134,
+   "time_signature": "4/4",
+   "key": "F major (recorded tuned a whole step down; G major shapes in standard tuning)",
+   "parts": [
+    "Part A: intro riff and verse - steady drums, riff stays simple",
+    "Part B: chorus (\"Musha rain dum a doo, dum a da\") - full band",
+    "Part C: guitar solo - same groove, full band",
+    "Part D: outro - full band, repeat chorus feel"
+   ],
+   "tips": "Tempo sources disagree (about 134 BPM from a transcription; automated tools give other numbers), so check against the recording and tap the Trio+ tempo by ear. Play the riff cleanly for 2 bars before the Trio+ starts learning."
+  },
+  "whammy": {
+   "use": "yes",
+   "tuning": "D standard (D G C F A D), whole step down",
+   "when": "Whole song",
+   "settings": {"effect": null, "harmony": null, "transpose_down": 2, "transpose_up": null, "detune": null},
+   "how": [
+    "Tune your guitar to standard (E A D G B E).",
+    "Turn the right knob to TRANSPOSE DOWN 2.",
+    "Press DROPTUNE (light on) before the song."
+   ],
+   "tips": "Play it as if in standard tuning (G major shapes); the pedal sounds it a whole step lower, matching Metallica's recording. No whammy or octave effect is documented on the song. One tab lists drop D, but most sources and Eric Bell's account say whole step down."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "ESP James Hetfield Signature JH-1 'Hot Rod' (seen in the music video)", "player": "James Hetfield", "pickups": "humbucker"},
+    {"guitar": "1963 Gibson SG (listed for the Garage Inc. sessions)", "player": "James Hetfield", "pickups": "humbucker"}
+   ],
+   "pickups_needed": "humbucker",
+   "position": "bridge pickup, volume full, tone knob around 8",
+   "tone_notes": "Humbucker crunch with moderate gain. A single-coil guitar will sound thinner: add a little gain and roll back treble. Gear is only partly documented for this specific track (database entries for the album, one source for the video guitar).",
+   "confidence": "likely"
+  },
+  "amp": {"type": "BROWN", "gain": 60, "bass": 55, "mid": 60, "treble": 58, "presence": 55, "volume": 50},
+  "booster": {"type": "T-SCREAM", "drive": 25, "level": 50},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
+  "reverb": {"type": "ROOM", "on": true, "time": 20, "level": 15},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ },
+ {
+  "name": "Whiskey Lead",
+  "memo": "Metallica - Whiskey In the Jar: lead. Singing, sustained lead tone with a short delay and a touch of reverb.",
+  "amp": {"type": "LEAD", "gain": 65, "bass": 50, "mid": 65, "treble": 58, "presence": 55, "volume": 55},
+  "booster": {"type": "T-SCREAM", "drive": 30, "level": 60},
+  "mod": {"type": "CHORUS", "on": false},
+  "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 20, "level": 25},
+  "reverb": {"type": "ROOM", "on": true, "time": 25, "level": 20},
+  "noise_suppressor": {"on": true, "threshold": 20}
+ }
+]

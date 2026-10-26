@@ -1,0 +1,110 @@
+[
+ {
+  "name": "Tear Clean",
+  "memo": "Red Hot Chili Peppers - Tear: verses and intro. Clean Strat-style tone with Boss CE-1 style chorus and a touch of room reverb.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "slow ballad, half-time backbeat with soft snare on 3, sparse hi-hat, bass holding long notes",
+   "bpm": 66,
+   "time_signature": "4/4",
+   "key": "C major (C - G - Am - F, with Em and Dm in the chorus)",
+   "parts": [
+    "Part A: intro and verse - quiet, sparse drums",
+    "Part B: chorus - fuller band",
+    "Part C: solo - full band, driving",
+    "Part D: final verse and chorus - full band, then fade"
+   ],
+   "tips": "Tempo sources disagree: about 66 BPM felt in half-time (131 BPM if counted in doubles). Verify against the recording by tapping. Play the intro 2 bars cleanly before the Trio+ starts learning and keep strumming steady."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Tune your guitar to standard (E A D G B E).", "Leave the Whammy DT off."],
+   "tips": "Chord sheets for this song use standard tuning and no whammy or octave effect is documented, so none is set."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Fender Stratocaster (1962 and 1954 models were his main guitars of the era)", "player": "John Frusciante", "pickups": "single-coil"}
+   ],
+   "pickups_needed": "single-coil",
+   "position": "neck or neck+middle pickup for the clean verse; bridge pickup for the chorus and solo, tone around 7",
+   "tone_notes": "Glassy single-coil clean with chorus. A humbucker guitar will sound thicker: use the neck pickup and raise treble a little.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CLEAN",
+   "gain": 25,
+   "bass": 50,
+   "mid": 50,
+   "treble": 55,
+   "presence": 50,
+   "volume": 45
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": false,
+   "time": 300,
+   "feedback": 15,
+   "level": 15
+  },
+  "reverb": {
+   "type": "ROOM",
+   "on": true,
+   "time": 25,
+   "level": 20
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ },
+ {
+  "name": "Tear Chorus",
+  "memo": "Red Hot Chili Peppers - Tear: chorus and solo. Marshall-style crunch with a fuzz/distortion boost, Frusciante style.",
+  "amp": {
+   "type": "CRUNCH",
+   "gain": 55,
+   "bass": 50,
+   "mid": 60,
+   "treble": 55,
+   "presence": 55,
+   "volume": 50
+  },
+  "booster": {
+   "type": "MUFF FUZZ",
+   "drive": 35,
+   "level": 50
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": false
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 350,
+   "feedback": 20,
+   "level": 20
+  },
+  "reverb": {
+   "type": "ROOM",
+   "on": true,
+   "time": 25,
+   "level": 20
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 20
+  }
+ }
+]

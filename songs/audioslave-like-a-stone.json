@@ -1,0 +1,155 @@
+[
+ {
+  "name": "Stone Verse",
+  "memo": "Audioslave - Like a Stone: verse/intro. Clean, single-coil style tone with chorus and a long delay, in the spirit of Tom Morello's clean sound.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "slow, spacious mid-tempo groove, kick on 1 and 3, snare on 2 and 4, open ride/hi-hat in the verses",
+   "bpm": 109,
+   "time_signature": "4/4",
+   "key": "unconfirmed (sources disagree: G minor / C major); play by ear with the recording",
+   "parts": [
+    "Part A: intro and verse - clean guitar, sparse drums",
+    "Part B: pre-chorus - drums and bass build",
+    "Part C: chorus - full band, big and open",
+    "Part D: solo - heavy drums, driving",
+    "Part E: final chorus and outro - full band"
+   ],
+   "tips": "Tempo estimates range about 108-112 BPM (Musicnotes lists 112, other analyses 108-109). Play the intro cleanly for 2 bars before the Trio+ starts learning, and keep strumming steady."
+  },
+  "whammy": {
+   "use": "optional",
+   "tuning": "Drop D (D A D G B E) is commonly cited for Audioslave, but this song's tuning is not confirmed (one chord site lists standard)",
+   "when": "Solo (pitch-shifting squeals)",
+   "settings": {"effect": "2 OCT UP", "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": [
+    "Turn the left knob to 2 OCT UP.",
+    "Leave the WHAMMY footswitch off until the solo.",
+    "Switch it on at the solo and rock the heel-toe pedal for the squeals.",
+    "If you want Drop D, retune only your 6th string down to D; the Whammy DT cannot make true Drop D."
+   ],
+   "tips": "The Whammy is part of the Like a Stone solo sound per several gear guides; the exact interval is not documented, so set it by ear (OCT UP is a tamer alternative)."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "Fender Stratocaster-style 'Soul Power' guitar with Ibanez Edge tremolo", "player": "Tom Morello", "pickups": "single-coil"}
+   ],
+   "pickups_needed": "single-coil",
+   "position": "neck pickup for the clean verse; bridge pickup for chorus and solo, volume full",
+   "tone_notes": "Gear guides recommend single-coil pickups, with the neck pickup for a smoother tone. With humbuckers, roll back the gain a little and use the neck pickup.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CLEAN",
+   "gain": 25,
+   "bass": 50,
+   "mid": 50,
+   "treble": 55,
+   "presence": 50,
+   "volume": 45
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 550,
+   "feedback": 25,
+   "level": 25
+  },
+  "reverb": {
+   "type": "PLATE",
+   "on": true,
+   "time": 30,
+   "level": 25
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ },
+ {
+  "name": "Stone Chorus",
+  "memo": "Audioslave - Like a Stone: chorus. Crunchy, open and full, with a flat-EQ style boost.",
+  "amp": {
+   "type": "CRUNCH",
+   "gain": 55,
+   "bass": 55,
+   "mid": 55,
+   "treble": 55,
+   "presence": 55,
+   "volume": 55
+  },
+  "booster": {
+   "type": "T-SCREAM",
+   "drive": 20,
+   "level": 55
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": false
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": false,
+   "time": 400,
+   "feedback": 15,
+   "level": 20
+  },
+  "reverb": {
+   "type": "ROOM",
+   "on": true,
+   "time": 20,
+   "level": 20
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ },
+ {
+  "name": "Stone Solo",
+  "memo": "Audioslave - Like a Stone: solo. High-gain lead with a Helldrive-style overdrive after the Whammy, plus delay.",
+  "amp": {
+   "type": "LEAD",
+   "gain": 75,
+   "bass": 50,
+   "mid": 60,
+   "treble": 60,
+   "presence": 60,
+   "volume": 55
+  },
+  "booster": {
+   "type": "T-SCREAM",
+   "drive": 40,
+   "level": 60
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": false
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 400,
+   "feedback": 25,
+   "level": 25
+  },
+  "reverb": {
+   "type": "PLATE",
+   "on": true,
+   "time": 25,
+   "level": 22
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 20
+  }
+ }
+]
