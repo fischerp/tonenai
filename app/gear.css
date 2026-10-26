@@ -18,3 +18,4 @@
 .gr-form input { background: #0f0f15; border: 1px solid #34344a; color: var(--text); padding: 9px 11px; border-radius: 8px; font-size: 14px; } .gr-form input:focus { outline: none; border-color: #7a7af0; }
 .gr-btns { display: flex; gap: 8px; }
 .gr .p.ghost { background: #2a2a3a; }
+.gr-body > .p.ghost { margin-top: 2px; }

@@ -45,6 +45,7 @@ function newGuitarState(kind) {
 function gmClose() {
   $("#gmodal").classList.remove("open");
   if (typeof SHEET !== "undefined" && SHEET && $("#modal").classList.contains("open")) openSong(SHEET);   // refresh the song's guitar ranking
+  if (typeof GEAR_BACK !== "undefined" && GEAR_BACK) { GEAR_BACK = false; openGear(); }   // opened from My gear: go back there
 }
 const fin = k => { const x = GUITAR_FINISHES.find(x => x.key === k) || GUITAR_FINISHES[0]; return { ...x, label: tx(x.label) }; };
 const suggestName = f => [f.brand.trim(), gtype(f.kind).w].filter(Boolean).join(" ");

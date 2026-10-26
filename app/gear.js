@@ -1,6 +1,6 @@
 /* My gear: the amp and pedals you own. The song screen, the AI prompts and the generators follow this list.
    The catalog lives in gear/catalog.json; your own pedals are kept in data/rig.json with your choices. */
-let GADD = false;
+let GADD = false, GEAR_BACK = false;   // GEAR_BACK: the guitar editor was opened from here, so come back when it closes
 
 function openGear() { GADD = false; gearRender(); $("#gearmodal").classList.add("open"); }
 function gearClose() { $("#gearmodal").classList.remove("open"); }
@@ -26,17 +26,20 @@ function gearRender() {
         <input id="gr-about" maxlength="200" placeholder="${tx("What does it do? (delay, overdrive, looper…)")}" aria-label="${tx("What does it do? (delay, overdrive, looper…)")}">
         <div class="gr-btns"><button class="p" data-gradd="1">${tx("Add")}</button><button class="p ghost" data-grcancel="1">${tx("Cancel")}</button></div></div>`
     : `<button class="p ghost" data-gropen="1">${tx("＋ Add a pedal")}</button>`;
+  const guitarRows = GUITARS.map(g => `<div class="gr-row"><div class="gthumb">${guitarPic(g.kind, g.name, g.finish)}</div>
+    <span class="gr-t"><b>${esc(g.name)}</b><small>${[g.brand, PK[g.pickups] || g.pickups, fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}</small></span>
+    <button class="gr-rm" data-gredit="${esc(g.id)}">${tx("Edit")}</button></div>`).join("");
   $("#gearsheet").innerHTML = `<div class="gr">
     <div class="gr-head"><h3>${tx("My gear")}</h3><div class="sub">${tx("TonenAI only shows and builds setups for gear you own.")}</div>
       <button class="ls-x" data-grclose="1" aria-label="${tx("Close")}">×</button></div>
     <div class="gr-body">
-      <h4>${tx("Amp")}</h4>${ampRows}
-      ${amp && !amp.tested ? `<p class="gr-warn">${tx("Only the Katana MkII is tested. Check each patch by ear before you trust it on another amp.")}</p>` : ""}
+      <h4>${tx("Guitars")}</h4>${guitarRows}
+      <button class="p ghost" data-gradg="1">${tx("＋ Add guitar")}</button>
+      <p class="gr-note">${tx("The app recommends which one to play for each song.")}</p>
       <h4>${tx("Pedals")}</h4>${pedRows}${add}
       <p class="gr-note">${tx("Your own pedals: the AI works out the settings for each song from the name and what it does.")}</p>
-      <h4>${tx("Guitars")}</h4>
-      <div class="gr-row"><span class="gr-t"><b>${GUITARS.length ? tx("{0} guitars", GUITARS.length) : tx("No guitars yet")}</b><small>${tx("The app recommends which one to play for each song.")}</small></span>
-        <button class="p ghost" data-grguitars="1">${tx("Manage guitars")}</button></div>
+      <h4>${tx("Amp")}</h4>${ampRows}
+      ${amp && !amp.tested ? `<p class="gr-warn">${tx("Only the Katana MkII is tested. Check each patch by ear before you trust it on another amp.")}</p>` : ""}
     </div></div>`;
   if (GADD) { const n = $("#gr-name"); if (n) n.focus(); }
 }
@@ -54,7 +57,8 @@ document.getElementById("gearmodal").addEventListener("click", async e => {
   if (b.dataset.grclose) return gearClose();
   if (b.dataset.gropen) { GADD = true; return gearRender(); }
   if (b.dataset.grcancel) { GADD = false; return gearRender(); }
-  if (b.dataset.grguitars) { gearClose(); return openGuitars(); }
+  if (b.dataset.gredit) { gearClose(); GEAR_BACK = true; return openGuitars(b.dataset.gredit); }
+  if (b.dataset.gradg) { gearClose(); GEAR_BACK = true; openGuitars(); if (GM.view === "list") { GM = { view: "form", f: newGuitarState("Stratocaster") }; gmRender(); } return; }
   if (b.dataset.grm) {
     const id = b.dataset.grm;
     return gearSave({ pedals: GEAR.rig.pedals.filter(x => x !== id), custom: GEAR.pedals.filter(p => p.custom && p.id !== id).map(p => ({ id: p.id, name: p.name, about: p.about })) });
