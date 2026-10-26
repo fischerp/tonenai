@@ -205,6 +205,8 @@ file names are listed in the credits above). Needs `pip install opencv-python-he
   use and are not part of this repo. Artwork belongs to its respective owners.
 - Optional web research for local models uses DuckDuckGo's HTML results (best-effort snippets, no API; can be turned
   off under AI provider, "Web research").
+- The opening sting (`assets/tonenai-intro.wav`) was synthesized for this project with Claude's help; it contains no
+  samples or third-party recordings and is covered by the project licence.
 - Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.
 - Amp parameter layout was learned from the installed BOSS TONE STUDIO app and from testing on real hardware, for
   interoperability.
