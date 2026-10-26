@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="guitar-manager.css">
 <link rel="stylesheet" href="livesets.css">
+<link rel="stylesheet" href="gear.css">
 <style>
   :root {
     --bg: #0b0b0f; --panel: #16161d; --text: #f4f4f6; --muted: #9a9aa8; --accent: #e11d2e;
@@ -186,7 +187,7 @@
   .patch .pi { width: 38px; height: 38px; border-radius: 50%; background: #e11d2e; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
   .patch.live .pi { background: #3ddc84; color: #04120a; } .patch .n { font-weight: 800; font-size: 15px; } .patch .d { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
   .patch .tag { margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #3ddc84; white-space: nowrap; }
-  .tiles3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 30px 14px; } @media (max-width: 640px) { .tiles3 { grid-template-columns: 1fr; } }
+  .tiles3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; padding: 0 30px 14px; } @media (max-width: 640px) { .tiles3 { grid-template-columns: 1fr; } }
   .stile { text-align: left; border: 1.5px solid #2a2a3a; background: #1b1b25; border-radius: 12px; padding: 12px 14px; cursor: pointer; color: var(--text); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .stile:hover { border-color: #4a4a62; } .stile[aria-expanded="true"] { border-color: #7a7af0; background: #1d1d34; }
   .stile .l { font-size: 11px; letter-spacing: 1.1px; color: var(--muted); font-weight: 800; display: flex; justify-content: space-between; } .stile .l i { font-style: normal; opacity: .7; }
@@ -240,7 +241,7 @@
   <div class="logo"><img src="tonenai-mark.svg" alt=""><span>Tonen<b>AI</b></span></div>
   <div class="search"><input id="q" placeholder="Search songs or artists" autocomplete="off"></div>
   <button class="p nav" id="lbtn" title="Plan what goes into the amp's banks"><span class="ic">📻</span><span class="lbl">Livesets</span></button>
-  <button class="p nav" id="gbtn" title="Register the guitars you own"><span class="ic">🎸</span><span class="lbl">My guitars</span></button>
+  <button class="p nav" id="gbtn" title="Your amp, pedals and guitars"><span class="ic">🎛</span><span class="lbl">My gear</span></button>
   <div class="menubox"><button class="p ico" id="mbtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menu" aria-label="Settings and more" title="Settings and more">⚙</button>
     <div class="menu" id="menu" role="menu" hidden>
       <button class="mi" role="menuitem" id="imp" title="Load a Tone Studio .tsl file"><span class="mic">＋</span><span>Import .tsl</span></button>
@@ -256,6 +257,7 @@
 <main id="rows"></main>
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 <div class="modal" id="gmodal"><div class="sheet" id="gsheet"></div></div>
+<div class="modal" id="gearmodal"><div class="sheet" id="gearsheet"></div></div>
 <div class="modal" id="lmodal"><div class="sheet xl" id="lsheet"></div></div>
 <div class="modal" id="amodal"><div class="sheet" id="asheet"></div></div>
 <div class="toast" id="toast"></div>
@@ -265,10 +267,15 @@
 <script src="guitars.js"></script>
 <script src="guitar-manager.js"></script>
 <script src="livesets.js"></script>
+<script src="gear.js"></script>
 <script src="tabs.js"></script>
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
-let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [], FAVS = [];   // RES = search results view (set when the user presses Enter)
+let q = "", JOB = null, RES = null, SHEET = null, GUITARS = [], FAVS = [];
+// the amp and pedals you own (My gear); until the app answers, the two default pedals
+let GEAR = { amps: [], pedals: [{ id: "whammy-dt", name: "DigiTech Whammy DT", short: "WHAMMY DT", icon: "〰", kind: "whammy" }, { id: "trio-plus", name: "DigiTech Trio+", short: "TRIO+", icon: "🥁", kind: "trio" }], rig: { amp: "", pedals: ["whammy-dt", "trio-plus"] } };
+const rigPedals = () => GEAR.pedals.filter(p => GEAR.rig.pedals.includes(p.id));
+const hasKind = k => rigPedals().some(p => p.kind === k);   // RES = search results view (set when the user presses Enter)
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const api = () => window.pywebview && window.pywebview.api;
@@ -474,6 +481,18 @@ function whammyCard(s) {
     ${w.tips ? `<div class="tip">${esc(w.tips)}</div>` : ""}</div>`;
 }
 
+function gearCard(s, p) {
+  if (!p) return "";
+  const g = (s.gear || {})[p.id];
+  if (!g) return `<div class="band"><h4>${esc(p.name)}</h4><p class="tip" style="margin:0 0 10px">${txa("No setup yet. Claude can work out how to set this pedal for the song.")}</p>
+    <button class="p" data-gengear="${esc(s.id)}|${esc(p.id)}">${tx("✦ Generate setup")}</button></div>`;
+  const label = { yes: tx("USE IT"), optional: tx("OPTIONAL"), no: tx("NOT NEEDED") }[g.use] || "";
+  return `<div class="band"><h4>${esc(p.name)} <span class="badge2 ${esc(g.use || "no")}">${label}</span></h4>
+    ${(g.settings || []).length ? `<div class="chips">${g.settings.map(x => `<span class="chip"><b>${esc(x.name)}</b>${esc(x.value)}</span>`).join("")}</div>` : ""}
+    ${(g.steps || []).length ? `<ol class="steps">${g.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+    ${g.tips ? `<div class="tip">${esc(g.tips)}</div>` : ""}</div>`;
+}
+
 // ---- hero carousel: what is on the amp now, then the songs you last sent to it
 let CAR = { i: 0, sig: "", timer: null, paused: false };
 function carouselSlides() {
@@ -501,7 +520,7 @@ function renderCarousel() {
   }
   clearInterval(CAR.timer);
   if (slides.length > 1 && !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches))
-    CAR.timer = setInterval(() => { if (!CAR.paused && !document.hidden && !$("#modal").classList.contains("open") && !$("#gmodal").classList.contains("open") && !$("#lmodal").classList.contains("open") && !$("#amodal").classList.contains("open")) carGo(1); }, 6500);
+    CAR.timer = setInterval(() => { if (!CAR.paused && !document.hidden && !$("#modal").classList.contains("open") && !$("#gmodal").classList.contains("open") && !$("#gearmodal").classList.contains("open") && !$("#lmodal").classList.contains("open") && !$("#amodal").classList.contains("open")) carGo(1); }, 6500);
 }
 function carShow(i) {
   const slides = document.querySelectorAll("#hero .slide"), dots = document.querySelectorAll("#hero .car-dot"); if (!slides.length) return;
@@ -535,19 +554,24 @@ function summaryTiles(s) {
     ? tile("guitar", tx("🎸 PLAY THIS"), `<div class="v">${esc(best.g.name)}</div>`, `<span class="star">${"★".repeat(best.stars)}</span> ${esc(gi.position || best.why)}`)
     : gi ? tile("guitar", tx("🎸 GUITAR"), `<div class="v">${esc(((gi.originals || [])[0] || {}).guitar || tx("Unknown"))}</div>`, GUITARS.length ? esc(gi.position || "") : tx("Add your guitars to get a pick"))
          : tile("guitar", tx("🎸 GUITAR"), '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to find the originals"));
-  const trio = b ? tile("trio", tx("🥁 TRIO+"), `<div class="v">${esc(b.genre || "—")}</div>`, `${esc(b.time_signature || "4/4")} · ${tx("style {0}", (b.time_signature || "").startsWith("3") ? "10–12" : "1–9")}`,
+  const trioT = () => b ? tile("trio", tx("🥁 TRIO+"), `<div class="v">${esc(b.genre || "—")}</div>`, `${esc(b.time_signature || "4/4")} · ${tx("style {0}", (b.time_signature || "").startsWith("3") ? "10–12" : "1–9")}`,
         b.bpm ? `<button type="button" class="p mini" data-click="${b.bpm}">${tx("▶ Click {0}", b.bpm)}</button>` : "")
     : tile("trio", tx("🥁 TRIO+"), '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
-  const wh = w ? tile("whammy", "〰 WHAMMY DT", `<div class="v ${w.cls}">${esc(w.v)}</div>`, esc(w.sub)) : tile("whammy", "〰 WHAMMY DT", '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
-  return guitar + trio + wh;
+  const whT = () => w ? tile("whammy", "〰 WHAMMY DT", `<div class="v ${w.cls}">${esc(w.v)}</div>`, esc(w.sub)) : tile("whammy", "〰 WHAMMY DT", '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
+  const gearT = p => { const g = (s.gear || {})[p.id], lbl = `${p.icon || "🎛"} ${esc(p.short || p.name)}`;
+    if (!g) return tile("gear:" + p.id, lbl, '<div class="v">' + tx("Not set up") + '</div>', tx("Tap to generate"));
+    const cls = g.use === "yes" ? "ok" : g.use === "optional" ? "warn" : "";
+    return tile("gear:" + p.id, lbl, `<div class="v ${cls}">${esc(g.headline)}</div>`, esc({ yes: tx("USE IT"), optional: tx("OPTIONAL"), no: tx("NOT NEEDED") }[g.use] || "")); };
+  return guitar + rigPedals().map(p => p.kind === "trio" ? trioT() : p.kind === "whammy" ? whT() : gearT(p)).join("");
 }
 function openSong(id) {
   const s = SONGS.find(x => x.id === id); if (!s) return;
   if (id !== SHEET) TAB = null;
+  if (TAB && TAB !== "guitar" && !rigPedals().some(p => (p.kind === "generic" ? "gear:" + p.id : p.kind) === TAB)) TAB = null;
   SHEET = id;
   const b = s.band || {}, tun = tuningShort((s.whammy || {}).tuning);
   const fact = (v, small, l) => v ? `<div class="fact"><div class="v">${esc(v)}${small ? `<small>${esc(small)}</small>` : ""}</div><div class="l">${l}</div></div>` : "";
-  const detail = TAB === "guitar" ? guitarCard(s) : TAB === "trio" ? bandCard(s) : TAB === "whammy" ? whammyCard(s) : "";
+  const detail = TAB === "guitar" ? guitarCard(s) : TAB === "trio" ? bandCard(s) : TAB === "whammy" ? whammyCard(s) : TAB && TAB.startsWith("gear:") ? gearCard(s, GEAR.pedals.find(p => "gear:" + p.id === TAB)) : "";
   $("#sheet").classList.add("wide");
   $("#sheet").innerHTML = `<div class="sg-top" style="background:${bg(s)}">
       <div class="sg-x"><button data-fav="${esc(s.id)}" class="${FAVS.includes(s.id) ? "favon" : ""}" title="${tx("Favourite")}" aria-label="${tx("Favourite")}">${FAVS.includes(s.id) ? "♥" : "♡"}</button><button data-tabs-set="${esc(s.id)}" title="${tx("Choose your tab site or paste an exact link")}" aria-label="${tx("Tab settings")}">⚙</button><button data-reveal="${esc(s.id)}" title="${tx("Show the .tsl file (for BOSS Tone Studio)")}" aria-label="${tx("Show .tsl file")}">⤓</button><button data-gm-close-song="1" aria-label="${tx("Close")}">×</button></div>
@@ -596,16 +620,17 @@ async function startCreate(text) {
 
 async function startExtra(id, kind) {
   const a = api(); if (!a) return;
-  const r = await (kind === "whammy" ? a.generate_whammy(id) : a.generate_band(id));
+  const r = await (a.generate_section ? a.generate_section(id, kind) : kind === "whammy" ? a.generate_whammy(id) : a.generate_band(id));
   if (!r.ok) return toast(r.error, true);
-  const sel = kind === "whammy" ? "[data-whammy]" : "[data-band]", again = kind === "whammy" ? tx("✦ Generate Whammy setup") : tx("✦ Generate Trio+ setup");
-  const btn = document.querySelector(sel); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + tx("Researching…"); }
+  const sel = kind === "whammy" ? "[data-whammy]" : kind === "band" ? "[data-band]" : kind === "guitar" ? "[data-genguitar]" : "[data-gengear]";
+  const btn = document.querySelector(sel), again = btn ? btn.innerHTML : "";
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + tx("Researching…"); }
   const t = setInterval(async () => {
     const j = await a.job_status();
     if (j.state === "running") { if (btn) btn.innerHTML = '<span class="spin"></span>' + esc(jobText(j)); return; }
     clearInterval(t);
     if (j.state === "done") { SONGS = await a.songs(); loadCovers(); render(); openSong(id); toast(tx("Setup added")); }
-    else { toast(j.error || tx("Could not build the setup"), true); if (btn) { btn.disabled = false; btn.textContent = again; } }
+    else { toast(j.error || tx("Could not build the setup"), true); if (btn) { btn.disabled = false; btn.innerHTML = again; } }
   }, 1500);
 }
 
@@ -642,10 +667,12 @@ document.addEventListener("click", async e => {
   if (tb) { TAB = TAB === tb.dataset.tab ? null : tb.dataset.tab; const st = $("#sheet").scrollTop; openSong(SHEET); $("#sheet").scrollTop = st;
     if (TAB) setTimeout(() => { const el = document.getElementById("panel"); if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30); return; }
   const bd = e.target.closest("[data-band]"); if (bd) return startExtra(bd.dataset.band, "band");
+  const gx = e.target.closest("[data-gengear]"); if (gx) { const [sid, pid] = gx.dataset.gengear.split("|"); return startExtra(sid, "gear:" + pid); }
   const gg = e.target.closest("[data-genguitar]"); if (gg) return startExtra(gg.dataset.genguitar, "guitar");
   if (e.target.closest("[data-guitars]")) return openGuitars();
   if (e.target.id === "gmodal") { gmClose(); return; }
   if (e.target.id === "lmodal") { lsClose(); return; }
+  if (e.target.id === "gearmodal") { gearClose(); return; }
   const wh = e.target.closest("[data-whammy]"); if (wh) return startExtra(wh.dataset.whammy, "whammy");
   const mk = e.target.closest("[data-make]"); if (mk) { const r = RES.items[mk.dataset.make]; return startCreate(`${r.artist} - ${r.title}` + (r.album ? ` (from the album ${r.album})` : "")); }
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
@@ -669,13 +696,14 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.matches && e.target.matches("#hero h1[data-open]")) { openSong(e.target.dataset.open); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
   if (e.key !== "Escape" || menuOpen()) return;
+  if ($("#gearmodal").classList.contains("open")) { gearClose(); return; }
   if ($("#lmodal").classList.contains("open")) { const o = $("#lconfirm") || $("#lpick"); if (o) { o.remove(); } else lsClose(); return; }
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
   else if ($("#gmodal").classList.contains("open")) gmClose();
   else if ($("#amodal").classList.contains("open")) aiClose();
   else if (RES) { RES = null; q = ""; $("#q").value = ""; render(); }
 });
-$("#gbtn").addEventListener("click", openGuitars);
+$("#gbtn").addEventListener("click", openGear);
 $("#lbtn").addEventListener("click", openLivesets);
 $("#imp").addEventListener("click", async () => {
   const a = api(); if (!a) return;
@@ -862,7 +890,7 @@ function applyStatic() {
   $("#q").placeholder = tx("Search songs or artists");
   $("#mbtn").setAttribute("aria-label", tx("Settings and more")); $("#mbtn").title = tx("Settings and more");
   const nav = (id, ic, key, tip) => { $(id).innerHTML = `<span class="ic" aria-hidden="true">${ic}</span><span class="lbl">${tx(key)}</span>`; $(id).title = tx(tip); $(id).setAttribute("aria-label", tx(key)); };
-  nav("#lbtn", "📻", "Livesets", "Plan what goes into the amp's banks"); nav("#gbtn", "🎸", "My guitars", "Register the guitars you own");
+  nav("#lbtn", "📻", "Livesets", "Plan what goes into the amp's banks"); nav("#gbtn", "🎛", "My gear", "Your amp, pedals and guitars");
   $("#imp").innerHTML = `<span class="mic" aria-hidden="true">＋</span><span>${tx("Import .tsl")}</span>`; $("#imp").title = tx("Load a Tone Studio .tsl file");
   $("#abtn").innerHTML = `<span class="mic" aria-hidden="true">🤖</span><span class="mt">${tx("AI provider")}<small>${esc(aiCurrent())}</small></span>`; $("#abtn").title = tx("Choose which AI builds your patches");
   renderLang(); renderSearchLimit();
@@ -873,6 +901,7 @@ function rerenderAll() {
   if ($("#modal").classList.contains("open") && SHEET) openSong(SHEET);
   if ($("#gmodal").classList.contains("open") && GM) gmRender();
   if ($("#lmodal").classList.contains("open")) lsRender();
+  if ($("#gearmodal").classList.contains("open")) gearRender();
   if ($("#amodal").classList.contains("open")) aiRender();
 }
 // language picklist: a button showing the current language + a list with flags (no native <select>: it cannot show icons)
@@ -899,6 +928,7 @@ async function init() {
   applyStatic();
   SONGS = a ? await a.songs() : [];
   GUITARS = a ? await a.guitars() : [];
+  try { if (a && a.get_gear) GEAR = await a.get_gear(); } catch (e) {}
   loadTabCfg();
   FAVS = a ? await a.favorites() : [];
   if (a) RECENT = await a.recent();

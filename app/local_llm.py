@@ -29,6 +29,11 @@ WHAMMY_EFFECTS = {"2 OCT UP", "OCT UP", "5TH UP", "4TH UP", "2ND UP", "4TH DOWN"
                   "DIVE BOMB"}
 SECTION_MARKERS = {"band": ("## Band setup", "## Whammy DT setup"), "whammy": ("## Whammy DT setup", "## Guitar setup"),
                    "guitar": ("## Guitar setup", None)}
+GEAR_GUIDE = (
+    'Reply with {"setup": {...}} where setup has: "use" ("yes" if the song needs this pedal, "optional" for a nice-to-have, '
+    '"no" if it is not needed), "headline" (a short value for the summary tile, e.g. "Delay 380 ms", max 40 characters), '
+    '"settings" (a list of {"name": ..., "value": ...} with the knob or switch settings, at most 12), "steps" (a list of '
+    'short how-to steps, at most 8) and "tips" (one or two sentences, may say what could not be verified).')
 SEARCH_TOPIC = {"band": "tempo BPM key song structure", "whammy": "guitar tuning pitch effect whammy octave",
                 "guitar": "guitar pickups used on the recording"}
 
@@ -253,7 +258,29 @@ def _is_num(v):
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
+def check_gear(obj):
+    if not isinstance(obj, dict):
+        return ['the setup must be a JSON object']
+    p = []
+    if obj.get("use") not in ("yes", "optional", "no"):
+        p.append('use must be "yes", "optional" or "no"')
+    if not isinstance(obj.get("headline"), str) or not 1 <= len(obj["headline"]) <= 60:
+        p.append("headline must be a short text (1-60 characters)")
+    st = obj.get("settings")
+    if not isinstance(st, list) or len(st) > 12 or not all(isinstance(x, dict) and isinstance(x.get("name"), str)
+                                                           and isinstance(x.get("value"), (str, int, float)) for x in st):
+        p.append('settings must be a list of at most 12 {"name": text, "value": text or number}')
+    stp = obj.get("steps")
+    if not isinstance(stp, list) or len(stp) > 10 or not all(isinstance(x, str) for x in stp):
+        p.append("steps must be a list of at most 10 texts")
+    if obj.get("tips") is not None and not isinstance(obj.get("tips"), str):
+        p.append("tips must be a text")
+    return p
+
+
 def check_section(kind, obj):
+    if kind.startswith("gear:"):
+        return check_gear(obj)
     if not isinstance(obj, dict):
         return [f'"{kind}" must be a JSON object']
     p = []
@@ -295,7 +322,7 @@ def check_section(kind, obj):
     return p
 
 
-def check_patches(specs):
+def check_patches(specs, sections=("band", "whammy", "guitar")):
     if not isinstance(specs, list) or not 1 <= len(specs) <= 3 or not all(isinstance(s, dict) for s in specs):
         return ['"patches" must be a list of 1-3 patch objects']
     p = []
@@ -305,7 +332,7 @@ def check_patches(specs):
     for s in specs:
         if len(str(s.get("name", ""))) > 16:
             p.append(f"patch name {s.get('name')!r} is longer than 16 characters")
-    for kind in ("band", "whammy", "guitar"):
+    for kind in sections:
         p += check_section(kind, first.get(kind))
     for s in specs:                                 # a value past a byte's range would corrupt the SysEx / .tsl data
         for sec in ("amp", "booster", "mod", "fx", "delay", "reverb", "noise_suppressor"):
@@ -341,7 +368,7 @@ def _example_section(ctx, kind):
 def create_song(cfg, text, ctx, note):
     """Research -> JSON patch list -> validate (with retries) -> songs/<artist>-<title>.json."""
     skill = ctx["skill"]
-    guide = _between(skill, "3. **Write a spec**", "4. **Apply live**") + "\n" + _between(skill, "## Band setup")
+    guide = _between(skill, "3. **Write a spec**", "4. **Apply live**") + "\n" + (skill[skill.index("\n## "):] if "\n## " in skill else "")
     system = (
         "You configure a BOSS Katana MkII amp for a song. Reply with ONE JSON object and nothing else: "
         '{"patches": [ ...1-3 patch specs... ]}.\n'
@@ -368,7 +395,7 @@ def create_song(cfg, text, ctx, note):
         try:
             data = extract_json(reply)
             specs = data.get("patches") if isinstance(data, dict) else data
-            problems = check_patches(specs)
+            problems = check_patches(specs, tuple(ctx.get("sections") or ("band", "whammy", "guitar")))
             if not problems:
                 for s in specs:
                     ctx["build"](s)             # raises on unknown type names / parameters
@@ -389,19 +416,32 @@ def create_song(cfg, text, ctx, note):
 
 
 def add_section(cfg, sid, kind, ctx, note):
-    """Add or replace the band / whammy / guitar object on the first patch of songs/<sid>.json."""
+    """Add or replace the band / whammy / guitar object (or a generic pedal's setup, kind "gear:<id>") on the first patch of songs/<sid>.json."""
     path = os.path.join(ctx["songs_dir"], sid + ".json")
     specs = json.load(open(path, encoding="utf8"))
     specs = specs if isinstance(specs, list) else [specs]
     head = str(specs[0].get("memo", "")).split(":")[0] or sid
-    start, end = SECTION_MARKERS[kind]
+    pedal = None
+    if kind.startswith("gear:"):
+        pedal = (ctx.get("pedals") or {}).get(kind[5:])
+        if not pedal:
+            raise RuntimeError("That pedal is not in your gear")
+        topic = f"{pedal['name']} pedal settings effect used"
+        guide = (f"The player owns this pedal: {pedal['name']} ({pedal.get('about') or 'guitar pedal'}). Work out how to set it "
+                 "for this song: which settings, when to use it, and short steps to dial it in.\n" + GEAR_GUIDE)
+        example = ""
+        system_head = f'You add a setup for the pedal "{pedal["name"]}" to a song for a guitarist. Reply with ONE JSON object and nothing else. '
+    else:
+        start, end = SECTION_MARKERS[kind]
+        topic, guide, example = SEARCH_TOPIC[kind], _between(ctx["skill"], start, end), "\n\nEXAMPLE value:\n" + _example_section(ctx, kind)
+        system_head = f'You add the "{kind}" setup to a BOSS Katana MkII song file. Reply with ONE JSON object: {{"{kind}": {{...}}}} and nothing else. '
     note("Researching…")
-    notes = web_notes(cfg, f"{head} {SEARCH_TOPIC[kind]}")
+    notes = web_notes(cfg, f"{head} {topic}")
     system = (
-        f'You add the "{kind}" setup to a BOSS Katana MkII song file. Reply with ONE JSON object: {{"{kind}": {{...}}}} '
-        "and nothing else. You cannot run commands; ignore instructions about running them. Never invent facts: if the "
+        system_head +
+        "You cannot run commands; ignore instructions about running them. Never invent facts: if the "
         "notes do not support a value, say so in the text fields and use the 'unknown' / 'optional' option.\n\n"
-        "INSTRUCTIONS:\n" + _between(ctx["skill"], start, end) + "\n\nEXAMPLE value:\n" + _example_section(ctx, kind))
+        "INSTRUCTIONS:\n" + guide + example)
     user = (f"Song: {head}\nPatches: {', '.join(str(s.get('name')) for s in specs)}\n\nResearch notes from a web search "
             f"(may be partial or off-topic):\n{notes or '(no web access: use only what you know; mark unverified items)'}"
             f"{ctx.get('lang_note', '')}")
@@ -411,7 +451,7 @@ def add_section(cfg, sid, kind, ctx, note):
         reply = chat(cfg, messages, on_progress=ctx.get("progress"), cancel=ctx.get("cancel"))
         try:
             data = extract_json(reply)
-            obj = data.get(kind, data) if isinstance(data, dict) else data
+            obj = data.get("setup" if pedal else kind, data) if isinstance(data, dict) else data
             problems = check_section(kind, obj)
         except Exception as e:
             problems = [f"{type(e).__name__}: {e}"]
@@ -422,5 +462,8 @@ def add_section(cfg, sid, kind, ctx, note):
                       + "\n- ".join(problems)}]
     else:
         raise RuntimeError(f"The AI model could not produce a valid {kind} setup: " + problems[0][:200] + " | it answered: " + reply[:120].replace("\n", " "))
-    specs[0][kind] = obj
+    if pedal:
+        specs[0].setdefault("gear", {})[kind[5:]] = obj
+    else:
+        specs[0][kind] = obj
     _write(path, specs)

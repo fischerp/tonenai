@@ -44,9 +44,32 @@ RECENT = os.path.join(DATA, "recent.json")
 SETTINGS = os.path.join(DATA, "settings.json")
 SONG_META = os.path.join(DATA, "song_meta.json")   # your practice status + notes per song
 LANG_NAMES = {"en": "English", "pt-BR": "Brazilian Portuguese (pt-BR)", "es": "Spanish (es)"}   # UI languages; keep in sync with LANGS in i18n.js
+RIG = os.path.join(DATA, "rig.json")                # which amp and pedals you own (see gear/catalog.json)
+CATALOG = os.path.join(ROOT, "gear", "catalog.json")
+SECTION_OF_KIND = {"trio": "band", "whammy": "whammy"}   # built-in pedals keep their own song sections
 BACKUPS = os.path.join(DATA, "backups")
 EXPORTS = os.path.join(DATA, "exports")
 BANK_KEYS = P.SLOT_KEYS[1:]            # A1..A4, B1..B4: the 8 channels that can be written (the Panel cannot)
+
+
+def _read_json(path, default):
+    try:
+        return json.load(open(path, encoding="utf8"))
+    except (OSError, ValueError):
+        return default
+
+
+def _short(name):
+    """Tile label: the name in capitals, cut at a word boundary to fit."""
+    n = str(name).upper().strip()
+    if len(n) <= 14:
+        return n
+    cut = n[:15].rsplit(" ", 1)[0]
+    return cut if len(cut) >= 4 else n[:14]
+
+
+def _slug(text):
+    return re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")[:30]
 
 
 class Service:
@@ -69,7 +92,7 @@ class Service:
             specs = specs if isinstance(specs, list) else [specs]
             artist, title = _split_title(specs[0].get("memo"), sid)
             res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "", "added": _added(path), "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"),
+                "id": sid, "artist": artist, "title": title, "cover": "", "added": _added(path), "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"), "gear": specs[0].get("gear"),
                 "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
                              "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
                             for i, s in enumerate(specs)],
@@ -363,17 +386,24 @@ class Service:
 
     def _local_ctx(self):
         """Everything the local-model backend needs, without importing the Claude SDK."""
-        skill = open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read()
+        sections = self._sections()
+        skill = self._skill(sections)
         example = []
-        for path in sorted(glob.glob(os.path.join(SONGS, "*.json"))):      # first song that has band + whammy + guitar
+        for path in sorted(glob.glob(os.path.join(SONGS, "*.json"))):      # first song that has every section you use
             try:
                 specs = json.load(open(path))
             except (OSError, ValueError):
                 continue
-            if isinstance(specs, list) and specs and all(specs[0].get(x) for x in ("band", "whammy", "guitar")):
+            if isinstance(specs, list) and specs and all(specs[0].get(x) for x in sections):
                 example = specs
                 break
-        return {"skill": re.sub(r"^---.*?---", "", skill, flags=re.S), "example": example, "tables": P.TABLES,
+        if example:                                    # show only the sections you use, so the model does not copy the rest
+            example = [dict(example[0]), *example[1:]]
+            for key in ("band", "whammy", "guitar", "gear"):
+                if key not in sections:
+                    example[0].pop(key, None)
+        pedals = {x["id"]: x for x in self._active_pedals() if x.get("kind") == "generic"}
+        return {"skill": skill, "example": example, "tables": P.TABLES, "sections": sections, "pedals": pedals,
                 "build": PT.build, "songs_dir": SONGS, "lang_note": self._lang_note(), "progress": self._progress, "cancel": self._cancel, "stage": self._stage}
 
     def _run_job(self, text):
@@ -409,8 +439,7 @@ class Service:
         prompt += self._lang_note()
         from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock, TextBlock
         self._last_text = ""
-        skill = open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read()
-        skill = re.sub(r"^---.*?---", "", skill, flags=re.S)
+        skill = self._skill(self._sections())
         opts = ClaudeAgentOptions(
             cwd=ROOT, system_prompt={"type": "preset", "preset": "claude_code", "append": skill},
             allowed_tools=["Read", "Write", "Edit", "WebSearch", "WebFetch",
@@ -433,10 +462,16 @@ class Service:
             "Figure out the song (artist and title) and research the guitar tone (amp, pedals, effects, "
             "rhythm vs lead parts) with a web search. Then create ONE new file songs/<artist>-<title>.json "
             "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
-            "The first patch memo must start with 'Artist - Title: ' . Also add a \"band\" object and a \"whammy\" object "
-            "and a \"guitar\" object to the FIRST patch (see 'Band setup', 'Whammy DT setup' and 'Guitar setup' in the instructions). Validate and export by running "
+            "The first patch memo must start with 'Artist - Title: ' . Also add " + self._sections_text() + " to the FIRST patch. "
+            "Validate and export by running "
             "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
             "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done.")
+
+    def _sections_text(self):
+        names = {"band": 'a "band" object (see Band setup)', "whammy": 'a "whammy" object (see Whammy DT setup)',
+                 "guitar": 'a "guitar" object (see Guitar setup)'}
+        parts = [names[x] for x in self._sections()]
+        return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1] + " in the instructions"
 
     def _band_prompt(self, sid):
         return (
@@ -461,6 +496,31 @@ class Service:
             f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot confirm the guitar, set confidence to unknown. Reply with one short line when done.")
 
+    def _gear_prompt(self, sid, pedal):
+        return (
+            f"Add (or replace) the setup for the guitar pedal \"{pedal['name']}\" ({pedal.get('about') or 'guitar pedal'}) on the FIRST patch of songs/{sid}.json, "
+            f"as the object gear[\"{pedal['id']}\"]. It has: \"use\" (\"yes\" if the song needs it, \"optional\" for a nice-to-have, \"no\"), "
+            "\"headline\" (short value for a summary tile, max 40 characters), \"settings\" (a list of {\"name\", \"value\"} knob or switch "
+            "settings, at most 12), \"steps\" (at most 8 short how-to steps) and \"tips\" (one or two sentences). Use a web search to see how "
+            "the pedal was used on the recording. Edit only that file, "
+            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            "If you cannot verify something, say so in tips and set use to optional. Reply with one short line when done.")
+
+    def generate_section(self, song_id, kind):
+        """One entry point for every setup the song screen can generate: guitar, band, whammy or gear:<pedal id>."""
+        active = self._active_pedals()
+        if kind == "guitar":
+            pass
+        elif kind in ("band", "whammy"):
+            if not any(SECTION_OF_KIND.get(x.get("kind")) == kind for x in active):
+                return {"ok": False, "error": "That pedal is not in your gear"}
+        elif kind.startswith("gear:"):
+            if not any(x["id"] == kind[5:] and x.get("kind") == "generic" for x in active):
+                return {"ok": False, "error": "That pedal is not in your gear"}
+        else:
+            return {"ok": False, "error": "Unknown setup"}
+        return self._generate(song_id, kind)
+
     def generate_guitar(self, song_id):
         return self._generate(song_id, "guitar")
 
@@ -477,7 +537,7 @@ class Service:
         if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or "") or not os.path.exists(os.path.join(SONGS, song_id + ".json")):
             return {"ok": False, "error": "Song not found"}
         self._cancel.clear()
-        self._job = {"state": "running", "note": "Starting Claude…", "query": kind + " setup", "kind": kind, "id": song_id}
+        self._job = {"state": "running", "note": "Starting Claude…", "query": kind.split(":")[0] + " setup", "kind": kind, "id": song_id}
         threading.Thread(target=self._run_band, args=(song_id, kind), daemon=True).start()
         return {"ok": True}
 
@@ -488,11 +548,15 @@ class Service:
                 if cfg:
                     local_llm.add_section(cfg, sid, kind, self._local_ctx(), self._note)
                 else:
-                    asyncio.run(self._agent({"band": self._band_prompt, "whammy": self._whammy_prompt, "guitar": self._guitar_prompt}[kind](sid)))
+                    if kind.startswith("gear:"):
+                        pedal = next(x for x in self._active_pedals() if x["id"] == kind[5:])
+                        asyncio.run(self._agent(self._gear_prompt(sid, pedal)))
+                    else:
+                        asyncio.run(self._agent({"band": self._band_prompt, "whammy": self._whammy_prompt, "guitar": self._guitar_prompt}[kind](sid)))
                 self._validate(sid)
                 specs = json.load(open(os.path.join(SONGS, sid + ".json")))
                 specs = specs if isinstance(specs, list) else [specs]
-                if specs[0].get(kind):
+                if (specs[0].get("gear") or {}).get(kind[5:]) if kind.startswith("gear:") else specs[0].get(kind):
                     break
             else:
                 raise RuntimeError((self._last_text or f"Claude could not add the {kind} setup for this song")[:300])
@@ -502,6 +566,71 @@ class Service:
             if "Not logged in" in msg or "authentication" in msg.lower():
                 msg = "Claude is not signed in. See the README: run the one-time login."
             self._job = {"state": "error", "error": msg, "kind": kind}
+
+    # -------------------------------------------------------------- gear: the amp and pedals you own
+    def _catalog(self):
+        cat = _read_json(CATALOG, {})
+        return {"amps": [a for a in cat.get("amps", []) if isinstance(a, dict) and a.get("id")],
+                "pedals": [x for x in cat.get("pedals", []) if isinstance(x, dict) and x.get("id")]}
+
+    def _custom_pedals(self, raw):
+        """Your own pedals (data/rig.json): a name and what it does; the AI works out the settings per song."""
+        out, seen = [], set()
+        for c in raw if isinstance(raw, list) else []:
+            if not isinstance(c, dict) or not str(c.get("name", "")).strip():
+                continue
+            name = str(c["name"]).strip()[:40]
+            cid = c.get("id") if re.fullmatch(r"custom-[a-z0-9-]{1,30}", str(c.get("id", ""))) else "custom-" + (_slug(name) or "pedal")
+            if cid in seen:
+                continue
+            seen.add(cid)
+            out.append({"id": cid, "name": name, "short": _short(name), "icon": "🎛", "kind": "generic", "custom": True,
+                        "about": str(c.get("about", "")).strip()[:200]})
+        return out
+
+    def _rig(self):
+        cat, raw = self._catalog(), _read_json(RIG, {})
+        raw = raw if isinstance(raw, dict) else {}
+        custom = self._custom_pedals(raw.get("custom"))
+        known = {x["id"] for x in cat["pedals"]} | {c["id"] for c in custom}
+        if isinstance(raw.get("pedals"), list):
+            pedals = [i for i in raw["pedals"] if i in known]
+        else:                                                   # never saved: the catalog's defaults (Whammy DT, Trio+)
+            pedals = [x["id"] for x in cat["pedals"] if x.get("default")]
+        amps = [a["id"] for a in cat["amps"]]
+        amp = raw.get("amp") if raw.get("amp") in amps else (amps[0] if amps else "")
+        return {"amp": amp, "pedals": pedals, "custom": custom}
+
+    def get_gear(self):
+        cat, rig = self._catalog(), self._rig()
+        return {"amps": cat["amps"], "pedals": cat["pedals"] + rig["custom"], "rig": {"amp": rig["amp"], "pedals": rig["pedals"]}}
+
+    def set_gear(self, data):
+        """data = {amp, pedals: [ids you own], custom: [{id?, name, about}]}"""
+        if not isinstance(data, dict):
+            return {"ok": False, "error": "Bad request"}
+        rig = {"amp": data.get("amp"), "pedals": data.get("pedals") if isinstance(data.get("pedals"), list) else [],
+               "custom": self._custom_pedals(data.get("custom"))}
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(rig, open(RIG, "w", encoding="utf8"), indent=1, ensure_ascii=False)
+        return {"ok": True, **self.get_gear()}
+
+    def _active_pedals(self):
+        rig, cat = self._rig(), self._catalog()
+        allp = {x["id"]: x for x in cat["pedals"] + rig["custom"]}
+        return [allp[i] for i in rig["pedals"] if i in allp]
+
+    def _sections(self):
+        """Song sections the AI writes when it creates a song: the guitar always, plus one per built-in pedal you own."""
+        return ["guitar"] + [SECTION_OF_KIND[x.get("kind")] for x in self._active_pedals() if x.get("kind") in SECTION_OF_KIND]
+
+    def _skill(self, sections):
+        """The katana-patch skill text without the pedal sections you don't use."""
+        text = re.sub(r"^---.*?---", "", open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read(), flags=re.S)
+        head, *blocks = re.split(r"(?m)^(?=## )", text)
+        drop = {"## Band setup": "band", "## Whammy DT setup": "whammy"}
+        keep = [b for b in blocks if not any(b.startswith(h) and sec not in sections for h, sec in drop.items())]
+        return head + "".join(keep)
 
     # -------------------------------------------------------------- cover art (iTunes Search API, cached)
     def cover(self, song_id):

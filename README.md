@@ -16,9 +16,9 @@ or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to brow
 
 ![Home: now playing, favourites and your practice lists](docs/screenshots/home.png)
 
-| Livesets: plan the amp's banks | My guitars: the app recommends one per song |
+| Livesets: plan the amp's banks | My gear: your amp, pedals and guitars |
 | --- | --- |
-| ![Livesets](docs/screenshots/livesets.png) | ![My guitars](docs/screenshots/guitars.png) |
+| ![Livesets](docs/screenshots/livesets.png) | ![My gear](docs/screenshots/gear.png) |
 
 *Screenshots use sample data and generated covers (the app draws one when a song has no artwork; no album art is included).*
 
@@ -150,13 +150,22 @@ Double-click TonenAI.app (keep it inside the project folder; drag it to the Dock
 A visual library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Press Enter in the search box to see your library matches first, then other popular songs from the iTunes catalog (shown with **Create**); click any band name (on a card, the song page or a row title) to list all your songs by that band plus more of theirs you can add; the list length is **⚙ > Results per search** (default 10, `search_limit` in `data/settings.json`, 3-30). Search the library; if a
 song is not found, **Create with Claude** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
 One-time sign-in for that feature is in the Quick start above (the app uses the Claude Agent SDK bundled in the venv).
+**My gear:** tell TonenAI what you own and it only shows and builds setups for that. Pick your **amp** (Katana MkII is the
+tested one; other Katanas carry a "not tested" warning), switch your **pedals** on or off, and register your **guitars**.
+The Whammy DT and Trio+ are on by default. Add any other pedal with **＋ Add a pedal** (a name and what it does): the AI then
+works out its settings per song and the song screen gets a tile for it. A pedal you switch off disappears from the song
+screen and from what the AI is asked to write; the data stays in the song files. Your choices live in `data/rig.json`
+(not in git). The built-in list is `gear/catalog.json`: add an amp or pedal there to offer it to everyone
+(`{"id", "name", "short", "icon", "about", "default"}`; use `"kind": "whammy"` or `"trio"` only for the two built-in pedals,
+any other pedal is generic and its setup is stored per song under `gear.<id>`).
+
 **My guitars:** register the guitars you own (stored locally in `data/`, not in git). Each song lists the original
 guitars and pickups used on the record (researched by Claude, with a confidence level) and ranks your guitars for it,
 with the pickup position to use.
 
 **My practice:** mark a song as **Learning** or **Played** and keep your own notes on it (stored locally in `data/song_meta.json`). Songs you are learning get their own row on the home screen.
 
-**Also per song:** Trio+ band setup (genre, BPM, click track, steps) and Whammy DT setup (tuning, when to use it).
+**Also per song (for the pedals you own):** Trio+ band setup (genre, BPM, click track, steps), Whammy DT setup (tuning, when to use it) and a setup card for every pedal you added.
 
 **Language:** English, Português (Brasil) and Español. Pick it from the flag list in the header; the first launch follows your system language and the choice is remembered (`data/settings.json`). In Portuguese or Spanish, songs created with Claude get their notes and tips written in that language too. To add a language, add it to `LANGS` and `I18N` in `app/i18n.js` (and to `LANG_NAMES` in `app/service.py`).
 

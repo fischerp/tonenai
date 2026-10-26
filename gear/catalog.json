@@ -1,0 +1,14 @@
+{
+ "amps": [
+  {"id": "katana-mkii", "name": "BOSS Katana MkII", "tested": true,
+   "about": "The amp TonenAI is built and tested on."},
+  {"id": "katana-other", "name": "Another BOSS Katana model", "tested": false,
+   "about": "Not tested. Parameters may differ, so check a patch by ear before trusting it."}
+ ],
+ "pedals": [
+  {"id": "whammy-dt", "name": "DigiTech Whammy DT", "short": "WHAMMY DT", "icon": "〰", "kind": "whammy", "default": true,
+   "about": "Pitch shifter: works out the tuning and the octave or harmony effect a song needs."},
+  {"id": "trio-plus", "name": "DigiTech Trio+", "short": "TRIO+", "icon": "🥁", "kind": "trio", "default": true,
+   "about": "Band creator: works out genre, tempo and parts so it can play bass and drums along with you."}
+ ]
+}

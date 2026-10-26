@@ -1,0 +1,20 @@
+/* My gear: the amp and pedals you own. */
+.gr { display: flex; flex-direction: column; max-height: 86vh; position: relative; }
+.gr-head { position: relative; padding: 24px 30px 16px; background: linear-gradient(155deg, #3a2a12, #1d1608 70%); }
+.gr-head h3 { margin: 0; font-size: 26px; } .gr-head .sub { color: #ffffffb8; font-size: 14px; margin-top: 2px; }
+.gr-body { overflow: auto; padding: 6px 30px 22px; }
+.gr-body h4 { margin: 18px 0 8px; font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+.gr-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #1b1b25; margin-bottom: 8px; border: 1.5px solid #2a2a3a; }
+.gr-row:has(input:checked) { border-color: #5a5aa8; background: #1d1d34; }
+.gr-lab { display: flex; align-items: center; gap: 12px; flex: 1; cursor: pointer; min-width: 0; }
+.gr-row > label.gr-row, label.gr-row { cursor: pointer; }
+.gr-row input { width: 18px; height: 18px; accent-color: #7a7af0; flex: none; }
+.gr-ic { font-size: 22px; width: 28px; text-align: center; flex: none; }
+.gr-t { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; } .gr-t b { font-size: 15px; } .gr-t small { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.gr-badge { align-self: flex-start; display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: #f5a623; color: #000; padding: 2px 6px; border-radius: 4px; vertical-align: middle; }
+.gr-warn { margin: 0 0 8px; color: #ffd75e; font-size: 13px; line-height: 1.45; } .gr-note { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; line-height: 1.45; }
+.gr-rm { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; } .gr-rm:hover { color: #ff6b6b; }
+.gr-form { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: #14141c; border: 1.5px dashed #34344a; }
+.gr-form input { background: #0f0f15; border: 1px solid #34344a; color: var(--text); padding: 9px 11px; border-radius: 8px; font-size: 14px; } .gr-form input:focus { outline: none; border-color: #7a7af0; }
+.gr-btns { display: flex; gap: 8px; }
+.gr .p.ghost { background: #2a2a3a; }
