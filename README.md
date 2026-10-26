@@ -235,5 +235,11 @@ Patches are written to the amp's temporary (live) patch, not to its memory slots
 your stored sounds. Still, back up first (`patch.py backup`) and use at your own risk; see the license.
 
 ## License
-PolyForm Noncommercial 1.0.0 (commercial use needs a separate written licence from the author), see [LICENSE](LICENSE), with one exception: `app/guitar-shapes.js` is derived from CC BY-SA works and stays under
-the share-alike terms of those licences (see Credits and data sources).
+[PolyForm Noncommercial 1.0.0](LICENSE): free for personal, hobby, educational and other noncommercial use, and you
+may change and share it under the same terms. **Commercial use (selling it, bundling it in a paid product or service)
+needs a separate written licence from the author**; get in touch to agree terms. Exception: `app/guitar-shapes.js` is
+derived from CC BY-SA works and stays under the share-alike terms of those licences, which allow commercial use of
+that file (see Credits and data sources).
+
+This is source-available rather than "open source" in the OSI sense. TonenAI is an independent project and is not
+affiliated with or endorsed by BOSS, DigiTech or Anthropic.

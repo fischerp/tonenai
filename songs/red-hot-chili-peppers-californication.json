@@ -1,0 +1,111 @@
+[
+ {
+  "name": "Calif Verse",
+  "memo": "Red Hot Chili Peppers - Californication: verse/intro. Clean-edge Strat-style tone with a touch of chorus and room; melodic and open.",
+  "band": {
+   "genre": "Alternative Rock",
+   "style_feel": "slow, spacious mid-tempo groove, soft kick pattern and light hi-hat in the verses, bigger backbeat in the chorus",
+   "bpm": 96,
+   "time_signature": "4/4",
+   "key": "A minor",
+   "parts": [
+    "Part A: intro and verse - sparse drums, Am F groove",
+    "Part B: chorus - full band, adds C G Dm",
+    "Part C: interlude - back to Am F, quiet and open",
+    "Part D: solo - brighter section, full band"
+   ],
+   "tips": "Sources disagree on tempo (about 95-97 BPM is the most common reading), so check it against the recording before the Trio+ learns. Play the intro riff cleanly for 2 bars, then keep strumming steady."
+  },
+  "whammy": {
+   "use": "no",
+   "tuning": "Standard (E A D G B E)",
+   "when": "Not needed",
+   "settings": {"effect": null, "harmony": null, "transpose_down": null, "transpose_up": null, "detune": null},
+   "how": ["Keep your guitar in standard tuning (E A D G B E).", "Leave the Whammy DT off."],
+   "tips": "No pitch effect or alternate tuning is documented for this song."
+  },
+  "guitar": {
+   "originals": [
+    {"guitar": "1954 Fender Stratocaster", "player": "John Frusciante", "pickups": "single-coil"},
+    {"guitar": "1957 Gretsch White Falcon (one source credits it for the main riff)", "player": "John Frusciante", "pickups": "any"}
+   ],
+   "pickups_needed": "single-coil",
+   "position": "neck or middle pickup for the verses, bridge pickup for the chorus; volume full, tone around 7",
+   "tone_notes": "Clear single-coil tone with a little chorus. A humbucker guitar will sound thicker: roll back the tone knob and pick the neck pickup for the verses.",
+   "confidence": "likely"
+  },
+  "amp": {
+   "type": "CLEAN",
+   "gain": 30,
+   "bass": 50,
+   "mid": 50,
+   "treble": 60,
+   "presence": 55,
+   "volume": 45
+  },
+  "booster": {
+   "type": "MID BOOST",
+   "on": false
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": false,
+   "time": 350,
+   "feedback": 15,
+   "level": 20
+  },
+  "reverb": {
+   "type": "ROOM",
+   "on": true,
+   "time": 25,
+   "level": 25
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ },
+ {
+  "name": "Calif Chorus",
+  "memo": "Red Hot Chili Peppers - Californication: chorus and solo. Crunch with a fuzz-style lift and a little echo.",
+  "amp": {
+   "type": "CRUNCH",
+   "gain": 55,
+   "bass": 50,
+   "mid": 55,
+   "treble": 60,
+   "presence": 55,
+   "volume": 50
+  },
+  "booster": {
+   "type": "T-SCREAM",
+   "drive": 25,
+   "level": 50
+  },
+  "mod": {
+   "type": "CHORUS",
+   "on": true
+  },
+  "delay": {
+   "type": "DIGITAL",
+   "on": true,
+   "time": 400,
+   "feedback": 20,
+   "level": 25
+  },
+  "reverb": {
+   "type": "ROOM",
+   "on": true,
+   "time": 25,
+   "level": 25
+  },
+  "noise_suppressor": {
+   "on": true,
+   "threshold": 15
+  }
+ }
+]
