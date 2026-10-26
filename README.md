@@ -5,7 +5,10 @@ or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to brow
 
 > **Unofficial.** This project is not affiliated with, endorsed by or sponsored by BOSS or Roland. "BOSS",
 > "Roland", "KATANA" and "TONE STUDIO" are trademarks of Roland Corporation, used here only to say which
-> hardware and software this works with. Tones are informed approximations of how a song sounds, not copies.
+> hardware and software this works with. Fender, Stratocaster, Telecaster, Jaguar, Gibson, Les Paul, SG, ES-335, Explorer,
+> Flying V, PRS, Martin, Yamaha, Apple, iTunes, DuckDuckGo, Claude and Anthropic are trademarks of their respective owners,
+> named only to describe guitar models or the services this app can use; no affiliation or endorsement is implied.
+> Tones are informed approximations of how a song sounds, not copies.
 
 **Status:** tested only on a Katana MkII. Other Katana models may or may not work; see Compatibility.
 
@@ -198,8 +201,10 @@ file names are listed in the credits above). Needs `pip install opencv-python-he
   Fender Telecaster American Vintage 1952 (CC BY-SA 3.0), Full front R9 Les Paul (CC BY-SA 4.0), Iommi SG (CC BY-SA 2.0),
   1960 Gibson ES-335TD (CC BY-SA 4.0), Fender Jaguar 3 tone burst (CC BY-SA 4.0), PRS Custom (1988) Santana (CC BY-SA 4.0).
   Gibson Explorer dark red (CC0) was traced for the Explorer, Martin D-28 Acoustic Guitar (CC BY-SA 4.0) for the Dreadnought, Yamaha Acoustic Guitar FG-331 (CC0) for the Concert/OM and Classical Guitar (CC BY-SA 3.0) for the Classical. The Les Paul outline was redrawn by hand from measurements of the traced shape; the Flying V outline is hand-drawn. Credit and share-alike apply to `app/guitar-shapes.js`.
-- Album art and song search use Apple's public iTunes Search API; covers are downloaded to a local cache for your own
+- Album art and song search use data provided by Apple's public iTunes Search API; covers are downloaded to a local cache for your own
   use and are not part of this repo. Artwork belongs to its respective owners.
+- Optional web research for local models uses DuckDuckGo's HTML results (best-effort snippets, no API; can be turned
+  off under AI provider, "Web research").
 - Create with Claude uses the Claude Agent SDK; each user signs in themselves or supplies their own API key.
 - Amp parameter layout was learned from the installed BOSS TONE STUDIO app and from testing on real hardware, for
   interoperability.
@@ -209,4 +214,5 @@ Patches are written to the amp's temporary (live) patch, not to its memory slots
 your stored sounds. Still, back up first (`patch.py backup`) and use at your own risk; see the license.
 
 ## License
-PolyForm Noncommercial 1.0.0 (commercial use needs a separate written licence from the author), see [LICENSE](LICENSE).
+PolyForm Noncommercial 1.0.0 (commercial use needs a separate written licence from the author), see [LICENSE](LICENSE), with one exception: `app/guitar-shapes.js` is derived from CC BY-SA works and stays under
+the share-alike terms of those licences (see Credits and data sources).
