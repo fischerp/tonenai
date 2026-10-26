@@ -1,8 +1,11 @@
 /* My guitars: list + add/edit form.
    UX rules: pick the type first and pre-fill everything else from it (brand, name, pickups, finish) while never
    overwriting what the user typed; one clear primary action; inline validation; instant live preview; undo instead of confirm. */
-const PK = { "single-coil": "Single-coil", humbucker: "Humbucker", p90: "P-90", hss: "HSS", hsh: "HSH", acoustic: "Acoustic" };
-const PK_LONG = { hss: "HSS: humbucker + two single-coils", hsh: "HSH: two humbuckers + a single-coil", "single-coil": "Single-coil pickups", humbucker: "Humbucker pickups", p90: "P-90 pickups", acoustic: "Acoustic (no pickups)" };
+const PK = { "single-coil": "Single-coil", humbucker: "Humbucker", p90: "P-90", sss: "SSS", hh: "HH", hs: "HS", hss: "HSS", hsh: "HSH", other: "Other", acoustic: "Acoustic" };
+const pkLabel = g => g.pickups === "other" ? (g.pickups_other || PK.other) : (PK[g.pickups] || g.pickups);
+// What a layout means for matching a song: single-coil, humbucker, p90, mixed (both kinds) or other (unknown)
+const pkClass = pk => ({ sss: "single-coil", hh: "humbucker", hs: "mixed", hss: "mixed", hsh: "mixed" })[pk] || pk;
+const PK_LONG = { sss: "SSS: three single-coils (Strat style)", hh: "HH: two humbuckers", hs: "HS: humbucker + single-coil", hss: "HSS: humbucker + two single-coils", hsh: "HSH: two humbuckers + a single-coil", "single-coil": "Single-coil pickups", humbucker: "Humbucker pickups", p90: "P-90 pickups", other: "Something else: say what it is", acoustic: "Acoustic (no pickups)" };
 const GTYPES = [
   { k: "Stratocaster", short: "Strat", w: "Stratocaster", pk: "single-coil", fin: "sunburst", brands: ["Fender", "Squier"] },
   { k: "Telecaster", short: "Tele", w: "Telecaster", pk: "single-coil", fin: "butter", brands: ["Fender", "Squier"] },
@@ -31,7 +34,7 @@ let GM = null;   // { view: "list" | "form", f: form state }
 function openGuitars(editId) {
   const id = typeof editId === "string" ? editId : null;
   const g = id && GUITARS.find(x => x.id === id);
-  if (g) GM = { view: "form", f: { id: g.id, kind: normKind(g.kind, g.name), brand: g.brand || "", name: g.name, nameTouched: true, brandTouched: true, pickups: g.pickups, pkTouched: true,
+  if (g) GM = { view: "form", f: { id: g.id, kind: normKind(g.kind, g.name), brand: g.brand || "", name: g.name, nameTouched: true, brandTouched: true, pickups: g.pickups, pickupsOther: g.pickups_other || "", pkTouched: true,
     finish: defFinish(g), finTouched: true, notes: g.notes || "" } };
   else if (GUITARS.length) GM = { view: "list" };
   else GM = { view: "form", f: newGuitarState("Stratocaster"), first: true };
@@ -40,7 +43,7 @@ function openGuitars(editId) {
 }
 function newGuitarState(kind) {
   const t = gtype(kind);
-  return { id: "", kind, brand: t.brands[0] || "", name: "", nameTouched: false, brandTouched: false, pickups: t.pk, pkTouched: false, finish: t.fin, finTouched: false, notes: "" };
+  return { id: "", kind, brand: t.brands[0] || "", name: "", nameTouched: false, brandTouched: false, pickups: t.pk, pickupsOther: "", pkTouched: false, finish: t.fin, finTouched: false, notes: "" };
 }
 function gmClose() {
   $("#gmodal").classList.remove("open");
@@ -54,7 +57,7 @@ function gmRender() {
   const sheet = $("#gsheet");
   if (GM.view === "list") {
     const rows = GUITARS.map(g => `<div class="gm-row"><div class="gthumb">${guitarPic(g.kind, g.name, g.finish)}</div>
-      <div class="m"><div class="n">${esc(g.name)}</div><div class="d">${[g.brand, PK[g.pickups] || g.pickups, fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
+      <div class="m"><div class="n">${esc(g.name)}</div><div class="d">${[g.brand, pkLabel(g), fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}${g.notes ? " · " + esc(g.notes) : ""}</div></div>
       <div class="act"><button class="gm-link" data-gm="edit" data-id="${esc(g.id)}">${tx("Edit")}</button><button class="gm-link danger" data-gm="remove" data-id="${esc(g.id)}">${tx("Remove")}</button></div></div>`).join("");
     sheet.innerHTML = `<div class="gm"><div class="gm-head"><button class="gm-x" data-gm="close" aria-label="${tx("Close")}">×</button><h3>${tx("My guitars")}</h3><div class="sub">${tx("TonenAI recommends the best one for each song")}</div></div>
       <div class="gm-body"><div class="gm-list">${rows}</div></div>
@@ -76,7 +79,8 @@ function gmRender() {
         <div class="err" id="name-err" role="alert">${tx("Give your guitar a name (at least 2 characters).")}</div><div class="hint" id="name-hint"></div></div>
       <div class="fld"><div class="lbl"><span id="l-pk">${tx("4 · Pickups")}</span><span class="opt" id="pk-note"></span></div>
         <div class="seg" role="radiogroup" aria-labelledby="l-pk">${Object.keys(PK).filter(k => k !== "acoustic" || isAcoustic(f.kind)).map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="false" title="${esc(tx(PK_LONG[k]))}">${esc(PK[k])}</button>`).join("")}</div>
-        <div class="hint" id="pk-hint"></div></div>
+        <div class="hint" id="pk-hint"></div>
+        <input class="in" id="g-pkother" maxlength="40" placeholder="${tx("e.g. Filter'Tron, EMG 81/85")}" value="${esc(f.pickupsOther || "")}" style="display:none;margin-top:6px" aria-label="${tx("Which pickups?")}"></div>
       <div class="fld"><div class="lbl"><span id="l-fin">${tx("5 · Finish")}</span><span class="opt" id="fin-name"></span></div>
         <div class="swatches" role="radiogroup" aria-labelledby="l-fin">${GUITAR_FINISHES.map(x => `<button type="button" class="sw" role="radio" data-fin="${x.key}" aria-checked="false" aria-label="${esc(tx(x.label))}" title="${esc(tx(x.label))}" style="background:${x.css}"></button>`).join("")}</div></div>
       <div class="fld"><div class="lbl"><label for="g-notes">${tx("Notes")}</label><span class="opt">${tx("Optional")}</span></div>
@@ -98,12 +102,13 @@ function gmSync(initial) {   // push state f into the DOM (idempotent; never tou
   $("#brand-chips").innerHTML = t.brands.length ? `<span class="tl">${tx("Common for a {0}:", esc(tx(t.short)))}</span>` + t.brands.map(b => `<button type="button" class="pillbtn${b === f.brand ? " on" : ""}" data-brand="${esc(b)}">${esc(b)}</button>`).join("") : "";
   const sug = suggestName(f);
   $("#name-hint").innerHTML = f.name.trim() === sug || !sug ? (sug ? tx("Suggested from brand + type. Edit it any time.") : "") : tx("Suggested: <b>{0}</b> · <button type=\"button\" class=\"linkbtn\" data-gm=\"usesug\">Use it</button>", esc(sug));
+  $("#g-pkother").style.display = f.pickups === "other" ? "" : "none";
   $("#pk-note").textContent = f.pickups === t.pk ? tx("Pre-filled for this type") : "";
   $("#pk-hint").innerHTML = `${esc(tx(PK_LONG[f.pickups] || ""))}${f.pickups !== t.pk ? ` · <button type="button" class="linkbtn" data-gm="usepk">${tx("Reset to typical ({0})", esc(PK[t.pk]))}</button>` : ""}`;
   $("#fin-name").textContent = fin(f.finish).label;
   $("#prev-pic").innerHTML = guitarPic(f.kind, f.name, f.finish);
   $("#prev-name").textContent = f.name.trim() || tx("Your guitar");
-  $("#prev-meta").textContent = [f.brand.trim(), PK[f.pickups], fin(f.finish).label].filter(Boolean).join(" · ");
+  $("#prev-meta").textContent = [f.brand.trim(), pkLabel({ pickups: f.pickups, pickups_other: f.pickupsOther }), fin(f.finish).label].filter(Boolean).join(" · ");
   // acoustic pickup option only for acoustics
   const seg = document.querySelector("#gsheet .seg"); const hasAc = !!seg.querySelector('[data-pk="acoustic"]');
   if (isAcoustic(f.kind) !== hasAc) { seg.innerHTML = Object.keys(PK).filter(k => k !== "acoustic" || isAcoustic(f.kind)).map(k => `<button type="button" role="radio" data-pk="${k}" aria-checked="${k === f.pickups}" title="${esc(tx(PK_LONG[k]))}">${esc(PK[k])}</button>`).join(""); }
@@ -125,13 +130,14 @@ async function gmSubmit() {
   const f = GM.f, name = $("#g-name").value.trim();
   const bad = name.length < 2; $("#fld-name").classList.toggle("bad", bad); $("#g-name").setAttribute("aria-invalid", String(bad));
   if (bad) { $("#g-name").focus(); return; }
-  const r = await api().save_guitar({ id: f.id || undefined, brand: f.brand.trim(), name, kind: f.kind, pickups: f.pickups, finish: f.finish, notes: $("#g-notes").value.trim() });
+  const r = await api().save_guitar({ id: f.id || undefined, brand: f.brand.trim(), name, kind: f.kind, pickups: f.pickups, pickups_other: f.pickups === "other" ? ($("#g-pkother").value.trim() || f.pickupsOther || "") : "", finish: f.finish, notes: $("#g-notes").value.trim() });
   if (!r.ok) return toast(r.error, true);
   GUITARS = r.guitars; toast(f.id ? tx("Changes saved") : tx("Guitar added")); GM = { view: "list" }; gmRender();
 }
 
 (function wire() {
   const sheet = document.getElementById("gsheet");
+  sheet.addEventListener("input", e => { if (e.target.id === "g-pkother" && GM && GM.f) { GM.f.pickupsOther = e.target.value; gmSync(); } });
   sheet.addEventListener("click", async e => {
     const el = e.target.closest("[data-gm],[data-kind],[data-pk],[data-fin],[data-brand]"); if (!el) return;
     if (el.dataset.kind) { return gmSetKind(el.dataset.kind); }

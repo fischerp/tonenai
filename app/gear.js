@@ -55,7 +55,7 @@ function gearRender() {
         <div class="gr-btns"><button class="p" data-gradd="1">${tx("Add")}</button><button class="p ghost" data-grcancel="1">${tx("Cancel")}</button></div></div>`
     : `<button class="p ghost" data-gropen="1">${tx("＋ Add a pedal")}</button>`;
   const guitarRows = GUITARS.map(g => `<div class="gr-row"><div class="gthumb">${guitarPic(g.kind, g.name, g.finish)}</div>
-    <span class="gr-t"><b>${esc(g.name)}</b><small>${[g.brand, PK[g.pickups] || g.pickups, fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}</small></span>
+    <span class="gr-t"><b>${esc(g.name)}</b><small>${[g.brand, pkLabel(g), fin(defFinish(g)).label].filter(Boolean).map(esc).join(" · ")}</small></span>
     <button class="gr-rm" data-gredit="${esc(g.id)}">${tx("Edit")}</button></div>`).join("");
   $("#gearsheet").innerHTML = `<div class="gr">
     <div class="gr-head"><h3>${tx("My gear")}</h3><div class="sub">${tx("TonenAI only shows and builds setups for gear you own.")}</div>

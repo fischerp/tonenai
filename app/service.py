@@ -884,12 +884,13 @@ class Service:
         if not name:
             return {"ok": False, "error": "Give the guitar a name"}
         pickups = guitar.get("pickups", "humbucker")
-        if pickups not in ("humbucker", "single-coil", "p90", "hss", "hsh", "acoustic"):
+        if pickups not in ("humbucker", "single-coil", "p90", "sss", "hh", "hs", "hss", "hsh", "other", "acoustic"):
             return {"ok": False, "error": "Unknown pickup type"}
         items = self.guitars()
         gid = guitar.get("id") or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "guitar"
         entry = {"id": gid, "name": name[:60], "brand": (guitar.get("brand") or "").strip()[:40],
                  "kind": (guitar.get("kind") or "")[:40], "pickups": pickups,
+                 "pickups_other": (guitar.get("pickups_other") or "").strip()[:40] if pickups == "other" else "",
                  "finish": re.sub(r"[^a-z]", "", (guitar.get("finish") or "").lower())[:20],
                  "notes": (guitar.get("notes") or "")[:200]}
         items = [g for g in items if g["id"] != gid] + [entry]

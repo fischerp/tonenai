@@ -427,16 +427,17 @@ function modelMatch(g, originals) {
     return MODELS.some(m => (m.length > 3 ? mine.includes(m) && t.includes(m) : new RegExp("\\b" + m + "\\b").test(mine) && new RegExp("\\b" + m + "\\b").test(t))); });
 }
 function rate(g, gi) {   // -> {stars 0-3, score (for sorting), why, exact}
-  const need = gi.pickups_needed || "any", pk = g.pickups;
+  const need = gi.pickups_needed || "any", pk = pkClass(g.pickups);
   if (pk === "acoustic") return { stars: 0, score: 0, why: tx("Acoustic: it won't suit this electric patch.") };
   const exact = modelMatch(g, gi.originals);
   if (exact) {   // the same model as on the record always ranks first; the same brand edges out lookalikes
     const mine = (g.brand + " " + g.name).toLowerCase(), sameBrand = (gi.originals || []).some(o => g.brand && (o.guitar || "").toLowerCase().includes(g.brand.toLowerCase()));
     return { stars: 3, score: 4 + (sameBrand ? .3 : 0) + (pk === need ? .1 : 0), exact: true, why: tx("The same model as on the record.") };
   }
-  if (need === "any") return { stars: pk === "hss" || pk === "hsh" ? 3 : 2, score: pk === "hss" || pk === "hsh" ? 2.6 : 2, why: tx("Pickup type isn't critical for this song.") };
-  if (pk === need) return { stars: 3, score: 3, why: tx("{0} pickups, like the original.", PK[pk]) };
-  if (pk === "hss" || pk === "hsh") return { stars: 3, score: 2.8, why: need === "humbucker" ? tx("Use a humbucker position (bridge).") : tx("Use the single-coil positions (middle/neck).") };
+  if (need === "any") return { stars: pk === "mixed" ? 3 : 2, score: pk === "mixed" ? 2.6 : 2, why: tx("Pickup type isn't critical for this song.") };
+  if (pk === need) return { stars: 3, score: 3, why: tx("{0} pickups, like the original.", PK[g.pickups]) };
+  if (pk === "other") return { stars: 2, score: 2, why: tx("Your pickups are custom: check this patch by ear.") };
+  if (pk === "mixed") return { stars: 3, score: 2.8, why: need === "humbucker" ? tx("Use a humbucker position (bridge).") : tx("Use the single-coil positions (middle/neck).") };
   if (pk === "p90" || need === "p90") return { stars: 2, score: 2, why: tx("P-90s sit between single-coil and humbucker; a close match.") };
   return need === "humbucker"
     ? { stars: 1, score: 1, why: tx("Thinner than the record: use the bridge pickup, raise the Katana gain a little and trim treble.") }
