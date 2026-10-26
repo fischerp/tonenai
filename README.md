@@ -12,6 +12,16 @@ or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to brow
 
 **Status:** tested only on a Katana MkII. Other Katana models may or may not work; see Compatibility.
 
+## Screenshots
+
+![Home: now playing, favourites and your practice lists](docs/screenshots/home.png)
+
+| Livesets: plan the amp's banks | My guitars: the app recommends one per song |
+| --- | --- |
+| ![Livesets](docs/screenshots/livesets.png) | ![My guitars](docs/screenshots/guitars.png) |
+
+*Screenshots use sample data and placeholder covers (generated, not album artwork).*
+
 ## What is a `.tsl` file?
 The file format BOSS TONE STUDIO uses to save a set of patches (a "liveset"; the name is inferred from the app,
 BOSS does not spell it out). It is plain JSON: a name, format revision `0002`, the device name and each patch as lists

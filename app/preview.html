@@ -1,7 +1,7 @@
 <!doctype html><meta charset="utf-8"><title>TonenAI preview</title>
 <!-- Dev-only: renders ui.html in a normal browser with a mock amp, so the UI can be iterated without hardware. -->
 <script>
-const IDS = ["rhcp-under-the-bridge","thin-lizzy-whiskey-in-the-jar","acdc-back-in-black","gnr-welcome-to-the-jungle","nirvana-smells-like-teen-spirit","pearl-jam-animal","rhcp-snow-hey-oh"];
+const IDS = ["rhcp-under-the-bridge", "audioslave-like-a-stone", "gnr-welcome-to-the-jungle", "nirvana-smells-like-teen-spirit", "pearl-jam-animal", "pink-floyd-wish-you-were-here", "van-halen-jump", "the-cranberries-zombie"];
 const MOCK = `<script>
 let cur="Jungle Rhythm";
 window.pywebview={api:{
@@ -16,6 +16,11 @@ window.pywebview={api:{
     {inLibrary:false,artist:"AC/DC",title:"Thunderstruck",album:"The Razors Edge",art:""},
     {inLibrary:false,artist:"AC/DC",title:"You Shook Me All Night Long",album:"Back in Black",art:""},
     {inLibrary:false,artist:"AC/DC",title:"TNT",album:"High Voltage",art:""}]}),
+  get_lang: async()=>localStorage.getItem("lang")||"en", set_lang: async(l)=>{localStorage.setItem("lang",l);return{ok:true};},
+  play_intro: async()=>({ok:true}), stop_intro: async()=>({ok:true}),
+  song_meta: async()=>JSON.parse(localStorage.getItem("sm")||'{"rhcp-under-the-bridge":{"status":"played"},"pink-floyd-wish-you-were-here":{"status":"learning"},"audioslave-like-a-stone":{"status":"learning"}}'),
+  set_song_meta: async(id,d)=>{const m=JSON.parse(localStorage.getItem("sm")||"{}");m[id]=Object.assign(m[id]||{},d);localStorage.setItem("sm",JSON.stringify(m));return{ok:true,meta:m};},
+  recent: async()=>["pearl-jam-animal","van-halen-jump","rhcp-under-the-bridge"],
   delete_song: async()=>({ok:true}),
   favorites: async()=>JSON.parse(localStorage.getItem('fav')||'[]'),
   set_favorite: async(id,on)=>{let f=JSON.parse(localStorage.getItem('fav')||'[]').filter(x=>x!==id); if(on) f.unshift(id); localStorage.setItem('fav',JSON.stringify(f)); return {ok:true,favorites:f};},
