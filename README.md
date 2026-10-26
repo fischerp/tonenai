@@ -26,7 +26,7 @@ No amp yet? You can still browse, create and export `.tsl` files; only "send to 
 
 1. **Get the code and install**
    ```
-   git clone <repo-url> tonenai && cd tonenai
+   git clone https://github.com/fischerp/tonenai.git && cd tonenai
    python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
    .venv/bin/python tools/extract_catalog.py tools/catalog.json    # builds the parameter names list from your Tone Studio
    ```
