@@ -12,6 +12,23 @@ or exports a `.tsl` liveset for BOSS TONE STUDIO. Includes a desktop app to brow
 
 **Status:** tested only on a Katana MkII. Other Katana models may or may not work; see Compatibility.
 
+## Why this exists
+I play guitar, and I own a BOSS Katana MkII. It is a great amp, but every time I wanted to sound like a song I ended up on the same
+loop: look up what the guitarist used, guess which amp type and effects come close, then turn knobs or click through Tone Studio.
+I spent more time chasing the tone than playing.
+
+So I asked: what if I could just say the song's name?
+
+TonenAI does that. You type a song or a band, and an AI researches how it was recorded: the guitars, the pickups, the amp, the
+pedals, the tuning and the tempo. It turns that into a patch and sends it to the amp over USB. Playing starts one click after naming the song.
+
+Then it grew around my own rig. I have a Whammy DT and a Trio+, so the app works out their settings per song. I have several
+guitars, so it ranks which one suits each song and which pickup to use. I am learning songs, so I can mark them and keep notes.
+When I added pedals the app did not know, I made it research them too.
+
+The tones are informed approximations, not copies, so I still finish them by ear. But the part that used to be homework now takes a
+few seconds. I built it for myself first. If it saves you the same homework, I am glad.
+
 ## Screenshots
 
 ![Home: now playing, favourites and your practice lists](docs/screenshots/home.png)
