@@ -7,6 +7,14 @@ import katana as k      # noqa: E402
 import params as P      # noqa: E402
 import osutil            # noqa: E402
 
+SID = re.compile(r"[a-z0-9][a-z0-9\-]*")
+
+
+def _ok_sid(s):
+    """A song id is a lowercase slug; anything else (../, slashes, drive letters) is refused before it touches a path."""
+    return isinstance(s, str) and bool(SID.fullmatch(s))
+
+
 VPY = ".venv/Scripts/python" if sys.platform == "win32" else ".venv/bin/python"   # the venv interpreter, as the AI agent must call it
 import patch as PT      # noqa: E402
 import local_llm        # noqa: E402
@@ -73,6 +81,49 @@ def _short(name):
 
 def _slug(text):
     return re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")[:30]
+
+
+
+
+def _agent_guard_check(tool, inp, root=None):
+    """Return None if the AI agent may use this tool call, else the reason it may not.
+    The agent reads web pages, so it must not be able to change program files or read your settings:
+    it may only write songs/*.json and songs/*.tsl, and read inside the project except data/ and key files."""
+    root = os.path.realpath(root or ROOT)
+    songs = os.path.join(root, "songs")
+    paths = [os.path.expanduser(str(inp.get(k))) for k in ("file_path", "path", "notebook_path") if inp.get(k)]
+    if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
+        for p in paths or [""]:
+            full = os.path.realpath(p if os.path.isabs(p) else os.path.join(root, p))
+            if os.path.dirname(full) != songs or not full.endswith((".json", ".tsl")):
+                return "The agent may only write song files in songs/."
+    elif tool in ("Read", "Grep", "Glob", "NotebookRead"):
+        for p in paths:
+            full = os.path.realpath(p if os.path.isabs(p) else os.path.join(root, p))
+            rel = os.path.relpath(full, root)
+            parts = rel.split(os.sep)
+            if rel.startswith("..") or parts[0] == "data" or parts[-1].startswith(".env") or parts[-1].endswith((".pem", ".key")):
+                return "The agent may only read project files (not data/ or key files)."
+    elif tool == "Bash":
+        import shlex
+        try:
+            words = shlex.split(inp.get("command", ""))
+        except ValueError:
+            return "Could not read that command."
+        if "-o" in words and words.index("-o") + 1 < len(words):      # patch.py export ... -o <file>
+            out = words[words.index("-o") + 1]
+            full = os.path.realpath(out if os.path.isabs(out) else os.path.join(root, out))
+            if os.path.dirname(full) != songs or not full.endswith(".tsl"):
+                return "The agent may only export .tsl files into songs/."
+    return None
+
+
+async def _agent_guard(input_data, tool_use_id, context):
+    reason = _agent_guard_check(input_data.get("tool_name", ""), input_data.get("tool_input") or {})
+    if reason:
+        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                       "permissionDecisionReason": reason}}
+    return {}
 
 
 class Service:
@@ -161,6 +212,8 @@ class Service:
                 return {"connected": False, "error": str(e)}
 
     def play(self, song_id, index):
+        if not _ok_sid(song_id):
+            return {"ok": False, "error": "Invalid song id"}
         path = os.path.join(SONGS, song_id + ".json")
         if os.path.exists(path):
             specs = json.load(open(path))
@@ -336,6 +389,8 @@ class Service:
 
     # -------------------------------------------------------------- reveal .tsl
     def reveal(self, song_id):
+        if not _ok_sid(song_id):
+            return {"ok": False, "error": "Invalid song id"}
         tsl = os.path.join(SONGS, song_id + ".tsl")
         osutil.reveal(tsl if os.path.exists(tsl) else SONGS)
         return {"ok": True}
@@ -431,14 +486,15 @@ class Service:
 
     async def _agent(self, prompt):
         prompt += self._lang_note()
-        from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock, TextBlock
+        from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock, TextBlock, HookMatcher
         self._last_text = ""
         skill = self._skill(self._sections())
         opts = ClaudeAgentOptions(
             cwd=ROOT, system_prompt={"type": "preset", "preset": "claude_code", "append": skill},
             allowed_tools=["Read", "Write", "Edit", "WebSearch", "WebFetch",
                            "Bash(" + VPY + " tools/patch.py export:*)"],
-            permission_mode="acceptEdits", max_turns=25)
+            permission_mode="acceptEdits", max_turns=25,
+            hooks={"PreToolUse": [HookMatcher(matcher="Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash", hooks=[_agent_guard])]})
         labels = {"WebSearch": "Researching the tone…", "WebFetch": "Reading about the gear…", "Edit": "Fixing the patch…",
                   "Write": "Writing the patch…", "Bash": "Building the .tsl…", "Read": "Reading notes…"}
         async for msg in query(prompt=prompt, options=opts):
@@ -735,6 +791,8 @@ class Service:
     # -------------------------------------------------------------- cover art (iTunes Search API, cached)
     def cover(self, song_id):
         """Find and cache album art for a song. Returns {"cover": relative url or ""}."""
+        if not _ok_sid(song_id):
+            return {"cover": ""}
         dst, miss = os.path.join(COVERS, song_id + ".jpg"), os.path.join(COVERS, song_id + ".none")
         if os.path.exists(dst):
             return {"cover": _cover_url(song_id)}
@@ -753,7 +811,12 @@ class Service:
             if not hit:
                 raise LookupError("no match")
             art = hit["artworkUrl100"].replace("100x100bb", "600x600bb")
-            data = urllib.request.urlopen(art, timeout=10).read()
+            host = urllib.parse.urlparse(art)
+            if host.scheme != "https" or not (host.hostname or "").endswith(".mzstatic.com"):
+                raise LookupError("unexpected image host")       # only Apple's image servers
+            data = urllib.request.urlopen(art, timeout=10).read(5_000_000)
+            if not data.startswith(b"\xff\xd8"):
+                raise LookupError("not a JPEG")
             open(dst, "wb").write(data)
             return {"cover": _cover_url(song_id)}
         except LookupError:
