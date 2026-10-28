@@ -78,7 +78,7 @@ flowchart TB
     YOU(["You"])
     subgraph APP["Desktop app (macOS, Windows)"]
         UI["Window<br/>app/ui.html, pywebview"]
-        SVC["Backend<br/>app/service.py<br/>library, play, livesets, guitars, settings"]
+        SVC["Backend<br/>app/service.py<br/>library, play, livesets, guitars,<br/>my gear, settings"]
         JOB["Create and generate jobs<br/>background thread"]
     end
     subgraph AIL["AI provider (you choose)"]
@@ -91,8 +91,9 @@ flowchart TB
         KAT["katana.py<br/>SysEx messages"]
     end
     SONGS[("songs/<br/>song.json + song.tsl")]
-    DATA[("data/ on your machine<br/>guitars, favourites, notes,<br/>settings and API key<br/>git-ignored")]
-    TS["BOSS TONE STUDIO<br/>installed on your Mac"]
+    GEAR[("gear/catalog.json<br/>amps and pedals you can pick")]
+    DATA[("data/ on your machine<br/>guitars, rig.json (your amp,<br/>pedals and their researched profiles),<br/>favourites, notes, settings, API key<br/>git-ignored")]
+    TS["BOSS TONE STUDIO<br/>installed on your computer"]
     AMP{{"BOSS Katana MkII"}}
     ITUNES["iTunes Search API<br/>cover art and song search"]
 
@@ -105,6 +106,9 @@ flowchart TB
     OA -->|"returns JSON, app saves it"| SONGS
     SVC <--> SONGS
     SVC <--> DATA
+    SVC -->|"reads the list"| GEAR
+    JOB -->|"research a pedal once,<br/>then per-song settings"| CL
+    JOB -->|"research a pedal once,<br/>then per-song settings"| OA
     SVC -->|"play a patch"| PATCH
     JOB -->|"validate and export"| PATCH
     PATCH --> PARAMS
@@ -150,15 +154,18 @@ sequenceDiagram
 | Folder | What lives there |
 |---|---|
 | `app/` | the desktop window (`ui.html`, `*.js`, translations in `i18n.js`) and the Python backend (`service.py`, `local_llm.py`) |
-| `tools/` | amp protocol and patch building: `patch.py` (CLI too), `params.py`, `katana.py`, `extract_catalog.py` |
+| `tools/` | amp protocol and patch building: `patch.py` (CLI too), `params.py`, `katana.py`, `extract_catalog.py`; `toolstudio.py` (finds Tone Studio) and `osutil.py` (macOS/Windows helpers) |
+| `gear/` | `catalog.json`: the amps and pedals offered in My gear |
+| `assets/`, `docs/` | logo, icons and intro sound; README screenshots |
 | `songs/` | your library: one `.json` spec and one `.tsl` per song, plus cached album covers (git-ignored) |
-| `data/` | everything personal: your guitars, favourites, notes, settings, API key (git-ignored) |
+| `data/` | everything personal: your guitars, your rig and pedal profiles, favourites, notes, settings, API key (git-ignored) |
 | `.claude/` | the `katana-patch` skill (the rules the AI follows) and helper agents for contributors |
 
 ## Desktop app
 ```
-Double-click TonenAI.app (keep it inside the project folder; drag it to the Dock if you like)
-./run.command            # or from a terminal: .venv/bin/python app/main.py
+Double-click TonenAI.app (macOS; keep it inside the project folder; drag it to the Dock if you like)
+./run.command            # macOS, or from a terminal: .venv/bin/python app/main.py
+run.bat                  # Windows: double-click it
 ```
 **Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played natively: `afplay` on macOS, `winsound` on Windows). Click or press any key to skip.
 
@@ -225,8 +232,9 @@ to mark unverified facts `unknown`. For Ollama, `ollama pull qwen2.5:14b-instruc
 file names are listed in the credits above). Needs `pip install opencv-python-headless numpy`, then `EXPORT=1 python tools/trace_guitars.py`.
 
 ## Roadmap
-- Guitar/pickup profile so Claude tunes EQ per guitar; package as a double-click `.app`.
-- Optional: tag songs (played / learning), notes, export selection as one `.tsl` liveset.
+- Test on a real Windows PC and fix what turns up; a Linux path would need another way to get the parameter list.
+- Let Claude tune the EQ for the specific guitar you pick, not just advise on pickup position.
+- A hosted option, so people without their own AI sign-in can create songs.
 
 ## Credits and data sources
 - Guitar pictures in My guitars are original vector illustrations drawn for TonenAI. The **body outlines** of seven models
