@@ -680,7 +680,7 @@ document.addEventListener("click", async e => {
   const op = e.target.closest("[data-open]"); if (op) return openSong(op.dataset.open);
   const dl = e.target.closest("[data-del]");
   if (dl) { const sn = SONGS.find(x => x.id === dl.dataset.del);
-    $("#del").innerHTML = `<span class="confirm">${tx("Delete “{0}”? It goes to the Trash.", esc(sn ? sn.title : tx("song")))}<button class="p red" data-delyes="${esc(dl.dataset.del)}">${tx("Delete")}</button><button class="p" data-delno="1">${tx("Cancel")}</button></span>`; return; }
+    $("#del").innerHTML = `<span class="confirm">${tx("Delete “{0}”? It goes to the Trash or Recycle Bin.", esc(sn ? sn.title : tx("song")))}<button class="p red" data-delyes="${esc(dl.dataset.del)}">${tx("Delete")}</button><button class="p" data-delno="1">${tx("Cancel")}</button></span>`; return; }
   if (e.target.closest("[data-delno]")) return openSong(SHEET);
   const dy = e.target.closest("[data-delyes]");
   if (dy) { const r = await api().delete_song(dy.dataset.delyes);

@@ -1,5 +1,6 @@
 """Build Katana MkII patches from a high-level spec; apply live over USB MIDI or export a .tsl liveset."""
-import json, sys, time
+import json, os, sys, time
+import osutil
 import params as P
 
 AMP_BASE = 28  # preamp type = 28 + panel amp type (Acoustic..Brown), verified on the amp
@@ -195,7 +196,7 @@ def main():
     elif a.cmd == "export":
         specs = json.load(open(a.spec))
         specs = specs if isinstance(specs, list) else [specs]
-        name = a.out.rsplit("/", 1)[-1].rsplit(".", 1)[0] if a.out else "tonenai"
+        name = os.path.splitext(os.path.basename(a.out))[0] if a.out else "tonenai"
         json.dump(to_tsl(specs, name), open(a.out, "w"), indent=1)
         print("wrote", a.out, len(specs), "patches")
     elif a.cmd == "backup":
@@ -210,5 +211,6 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, __file__.rsplit("/", 1)[0])
+    osutil.utf8_or_relaunch()
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     main()

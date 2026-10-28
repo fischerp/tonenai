@@ -1,5 +1,5 @@
 """Minimal Katana MkII SysEx helper (Roland DT1/RQ1)."""
-import time, mido
+import os, time, mido
 
 HDR = [0x41, 0x00, 0x00, 0x00, 0x00, 0x33]
 
@@ -12,8 +12,24 @@ def addr4(a):
 def nib(a):  # app addresses are 7-bit-per-byte: 0x60000010 -> bytes 60 00 00 10
     return [(a >> 24) & 0xFF, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF]
 
+def _port(names):
+    """macOS lists the amp as "KATANA"; Windows adds a number ("KATANA 0") and may list a second MIDI
+    interface ("MIDIIN2 (KATANA)"). Set TONENAI_MIDI_PORT to force a name."""
+    want = os.environ.get("TONENAI_MIDI_PORT")
+    if want:
+        return want
+    if "KATANA" in names:
+        return "KATANA"
+    hits = [n for n in names if "katana" in n.lower()]
+    hits.sort(key=lambda n: ("midiin2" in n.lower() or "midiout2" in n.lower() or "2" in n.split("(")[0], n))
+    if not hits:
+        raise OSError("Katana not found. Ports seen: %s" % (names or "none"))
+    return hits[0]
+
+
 def open_ports():
-    return mido.open_input("KATANA"), mido.open_output("KATANA")
+    return (mido.open_input(_port(mido.get_input_names())),
+            mido.open_output(_port(mido.get_output_names())))
 
 def rq1(inp, out, addr, size, timeout=1.0, tries=4):
     for _ in range(tries):

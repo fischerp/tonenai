@@ -1,6 +1,7 @@
 """Extract parameter-to-name catalogs from the installed BOSS TONE STUDIO app bundle."""
-import json, re, sys, html
-R = "/Applications/BOSS/KATANA MkII/BOSS TONE STUDIO for KATANA MkII.app/Contents/Resources/html/export/"
+import json, os, re, sys, html
+import toolstudio
+R = os.path.join(toolstudio.find_html(), "export", "")
 items = json.load(open(R + "item.json"))
 div = open(R + "layout.div", encoding="utf8", errors="ignore").read()
 out = {}

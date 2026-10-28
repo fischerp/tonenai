@@ -2,3 +2,4 @@ mido
 python-rtmidi
 pywebview
 claude-agent-sdk
+send2trash

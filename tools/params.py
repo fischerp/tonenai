@@ -5,8 +5,8 @@ so base + offset is plain addition as long as no byte exceeds 0x7F.
 """
 import json, os, re
 
-RES = ("/Applications/BOSS/KATANA MkII/BOSS TONE STUDIO for KATANA MkII.app"
-       "/Contents/Resources/html/")
+import toolstudio
+RES = toolstudio.find_html()   # macOS default or a search of the Windows install folders (see tools/toolstudio.py)
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMP = 0x60000000
 

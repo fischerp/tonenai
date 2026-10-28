@@ -1,6 +1,12 @@
 """TonenAI desktop app: python app/main.py"""
 import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+import osutil
+
+if __name__ == "__main__":
+    osutil.utf8_or_relaunch()      # Windows: make sure text files are read as UTF-8
 import webview
 from service import Service
 
@@ -27,4 +33,4 @@ if __name__ == "__main__":
     svc = Service()
     webview.create_window("TonenAI", os.path.join(HERE, "ui.html"), js_api=svc,
                           width=1180, height=760, min_size=(760, 520), background_color="#0b0b0f")
-    webview.start(icon=ICON if os.path.isfile(ICON) else None)
+    webview.start(icon=ICON if sys.platform == "darwin" and os.path.isfile(ICON) else None)

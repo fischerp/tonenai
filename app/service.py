@@ -5,6 +5,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import katana as k      # noqa: E402
 import params as P      # noqa: E402
+import osutil            # noqa: E402
+
+VPY = ".venv/Scripts/python" if sys.platform == "win32" else ".venv/bin/python"   # the venv interpreter, as the AI agent must call it
 import patch as PT      # noqa: E402
 import local_llm        # noqa: E402
 
@@ -179,21 +182,12 @@ class Service:
         self._push_recent(song_id)
         return {"ok": True, "patch": label}
 
-    # -------------------------------------------------------------- opening sound (macOS afplay: not subject to web autoplay rules)
+    # -------------------------------------------------------------- opening sound (played natively: not subject to web autoplay rules)
     def play_intro(self):
-        path = os.path.join(ROOT, "assets", "tonenai-intro.wav")
-        if sys.platform != "darwin" or not os.path.exists(path):
-            return {"ok": False}
-        try:
-            self._intro = subprocess.Popen(["afplay", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return {"ok": True}
-        except OSError:
-            return {"ok": False}
+        return {"ok": osutil.play_sound(os.path.join(ROOT, "assets", "tonenai-intro.wav"))}
 
     def stop_intro(self):
-        p = getattr(self, "_intro", None)
-        if p and p.poll() is None:
-            p.terminate()
+        osutil.stop_sound()
         return {"ok": True}
 
     # -------------------------------------------------------------- practice: status (learning / played) + your own notes
@@ -258,7 +252,7 @@ class Service:
         os.makedirs(DATA, exist_ok=True)
         json.dump(cfg, open(SETTINGS, "w"), indent=1)
         try:
-            os.chmod(SETTINGS, 0o600)               # may hold an API key
+            os.chmod(SETTINGS, 0o600) if sys.platform != "win32" else None               # may hold an API key
         except OSError:
             pass
 
@@ -343,7 +337,7 @@ class Service:
     # -------------------------------------------------------------- reveal .tsl
     def reveal(self, song_id):
         tsl = os.path.join(SONGS, song_id + ".tsl")
-        subprocess.run(["open", "-R", tsl if os.path.exists(tsl) else SONGS])
+        osutil.reveal(tsl if os.path.exists(tsl) else SONGS)
         return {"ok": True}
 
     # -------------------------------------------------------------- create with Claude
@@ -443,7 +437,7 @@ class Service:
         opts = ClaudeAgentOptions(
             cwd=ROOT, system_prompt={"type": "preset", "preset": "claude_code", "append": skill},
             allowed_tools=["Read", "Write", "Edit", "WebSearch", "WebFetch",
-                           "Bash(.venv/bin/python tools/patch.py export:*)"],
+                           "Bash(" + VPY + " tools/patch.py export:*)"],
             permission_mode="acceptEdits", max_turns=25)
         labels = {"WebSearch": "Researching the tone…", "WebFetch": "Reading about the gear…", "Edit": "Fixing the patch…",
                   "Write": "Writing the patch…", "Bash": "Building the .tsl…", "Read": "Reading notes…"}
@@ -464,7 +458,7 @@ class Service:
             "(lowercase slug) holding a JSON list of 1-3 patch specs, following the instructions. "
             "The first patch memo must start with 'Artist - Title: ' . Also add " + self._sections_text() + " to the FIRST patch. "
             "Validate and export by running "
-            "`.venv/bin/python tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
+            "`" + VPY + " tools/patch.py export songs/<slug>.json -o songs/<slug>.tsl`; fix any error it "
             "reports. Do NOT apply to the amp and do not touch other files. Reply with one short line when done.")
 
     def _sections_text(self):
@@ -477,7 +471,7 @@ class Service:
         return (
             f"Add (or replace) the \"band\" object on the FIRST patch of songs/{sid}.json, following 'Band setup' in the "
             "instructions. Look up the song's real tempo, key and structure with a web search. Edit only that file, "
-            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            f"then run `{VPY} tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "Reply with one short line when done.")
 
     def _whammy_prompt(self, sid):
@@ -485,7 +479,7 @@ class Service:
             f"Add (or replace) the \"whammy\" object on the FIRST patch of songs/{sid}.json, following 'Whammy DT setup' in the "
             "instructions. Use a web search to find the tuning actually used on the recording and where a whammy/octave/harmony "
             "effect is used. Edit only that file, "
-            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            f"then run `{VPY} tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot verify the tuning, say so in tips and set use to optional. Reply with one short line when done.")
 
     def _guitar_prompt(self, sid):
@@ -493,7 +487,7 @@ class Service:
             f"Add (or replace) the \"guitar\" object on the FIRST patch of songs/{sid}.json, following 'Guitar setup' in the "
             "instructions. Use a web search to find which guitar(s) and pickups were really used on the recording and which "
             "pickup position sounds right. Edit only that file, "
-            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            f"then run `{VPY} tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot confirm the guitar, set confidence to unknown. Reply with one short line when done.")
 
     def _gear_prompt(self, sid, pedal):
@@ -506,7 +500,7 @@ class Service:
                 + (f"Watch out: {pedal['profile']['watch']}\n" if pedal["profile"].get("watch") else "")) if (pedal.get("profile") or {}).get("controls") else "")
             + "Use a web search to see how "
             "the pedal was used on the recording. Edit only that file, "
-            f"then run `.venv/bin/python tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
+            f"then run `{VPY} tools/patch.py export songs/{sid}.json -o songs/{sid}.tsl` to validate. "
             "If you cannot verify something, say so in tips and set use to optional. Reply with one short line when done.")
 
     def generate_section(self, song_id, kind):
@@ -732,11 +726,11 @@ class Service:
 
     def _skill(self, sections):
         """The katana-patch skill text without the pedal sections you don't use."""
-        text = re.sub(r"^---.*?---", "", open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md")).read(), flags=re.S)
+        text = re.sub(r"^---.*?---", "", open(os.path.join(ROOT, ".claude", "skills", "katana-patch", "SKILL.md"), encoding="utf8").read(), flags=re.S)
         head, *blocks = re.split(r"(?m)^(?=## )", text)
         drop = {"## Band setup": "band", "## Whammy DT setup": "whammy"}
         keep = [b for b in blocks if not any(b.startswith(h) and sec not in sections for h, sec in drop.items())]
-        return head + "".join(keep)
+        return (head + "".join(keep)).replace(".venv/bin/python", VPY)
 
     # -------------------------------------------------------------- cover art (iTunes Search API, cached)
     def cover(self, song_id):
@@ -851,7 +845,7 @@ class Service:
                 return {"ok": False, "error": f"Search failed (offline?): {e}"}
         return {"ok": True, "items": items + extra, "artist": name, "inLibrary": len(lib), "toAdd": len(extra)}
 
-    # -------------------------------------------------------------- delete (to the macOS Trash, so it is reversible)
+    # -------------------------------------------------------------- delete (to the Trash / Recycle Bin, so it is reversible)
     def delete_song(self, song_id):
         if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", song_id or ""):
             return {"ok": False, "error": "Invalid song id"}
@@ -860,15 +854,7 @@ class Service:
         files = [f for f in files if os.path.exists(f)]
         if not files:
             return {"ok": False, "error": "Song not found"}
-        items = ", ".join(f'POSIX file "{f}"' for f in files)
-        r = subprocess.run(["osascript", "-e", f'tell application "Finder" to delete {{{items}}}'],
-                           capture_output=True, text=True)
-        if r.returncode != 0:                      # Finder not allowed: keep a recoverable copy instead
-            import shutil
-            keep = os.path.join(ROOT, ".trash")
-            os.makedirs(keep, exist_ok=True)
-            for f in files:
-                shutil.move(f, os.path.join(keep, os.path.basename(f)))
+        osutil.trash(files, os.path.join(ROOT, ".trash"))   # Trash / Recycle Bin; a recoverable copy in .trash if that fails
         return {"ok": True}
 
     # -------------------------------------------------------------- my guitars (local, per user)
@@ -1017,7 +1003,7 @@ class Service:
         os.makedirs(EXPORTS, exist_ok=True)
         path = os.path.join(EXPORTS, re.sub(r"[^A-Za-z0-9]+", "-", ls["name"]).strip("-") + ".tsl")
         json.dump(PT.to_tsl(patches, ls["name"]), open(path, "w"), indent=1)
-        subprocess.run(["open", "-R", path])
+        osutil.reveal(path)
         return {"ok": True, "path": path, "count": len(patches)}
 
     # -------------------------------------------------------------- guitar tabs links (your own tab site; nothing is downloaded)
@@ -1043,7 +1029,7 @@ class Service:
         """Open a web page in the default browser (http/https only)."""
         if not re.match(r"https?://", url or ""):
             return {"ok": False, "error": "Not a web link"}
-        subprocess.run(["open", url])
+        osutil.open_url(url)
         return {"ok": True}
 
     # -------------------------------------------------------------- favourites (your own list, stored locally)

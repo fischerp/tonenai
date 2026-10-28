@@ -29,11 +29,15 @@ of hex bytes. Tone Studio's full backups use `.alb`.
 
 ## Compatibility
 - Tested: Katana MkII. Likely: other MkII sizes. Unknown: original Katana (MkI), Gen 3, Air, Go, Artist.
-- macOS only so far (Core MIDI + pywebview). PRs welcome.
+- **macOS:** developed and tested here.
+- **Windows 10/11:** supported but not yet tested on a real PC (the code paths are exercised with simulated Windows paths and
+  port names). It needs Python 3.12+, the Microsoft Edge WebView2 runtime (already part of Windows 11 and most
+  Windows 10 installs), the BOSS KATANA USB driver and BOSS TONE STUDIO for KATANA MkII. Please open an issue with what you see.
+- **Linux:** not supported officially (there is no Tone Studio for Linux, so the parameter list cannot be built). PRs welcome.
 
 ## Quick start
-**You need:** a Mac, Python 3.12+, BOSS TONE STUDIO for KATANA MkII (free from BOSS)
-installed in its default folder (`/Applications/BOSS/KATANA MkII/`) and the KATANA USB driver. Keep Tone Studio installed: the app reads its parameter
+**You need:** a Mac or a Windows PC, Python 3.12+, BOSS TONE STUDIO for KATANA MkII (free from BOSS)
+installed in its default folder (macOS: `/Applications/BOSS/KATANA MkII/`; Windows: searched under Program Files, see below) and the KATANA USB driver. Keep Tone Studio installed: the app reads its parameter
 files every time it starts (nothing from BOSS is copied into this repo). The amp must be on and connected over USB to play patches.
 No amp yet? You can still browse, create and export `.tsl` files; only "send to the amp" needs it.
 
@@ -43,15 +47,26 @@ No amp yet? You can still browse, create and export `.tsl` files; only "send to 
    python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
    .venv/bin/python tools/extract_catalog.py tools/catalog.json    # builds the parameter names list from your Tone Studio
    ```
+   On Windows (PowerShell), the same three steps are:
+   ```
+   git clone https://github.com/fischerp/tonenai.git; cd tonenai
+   py -3 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
+   .venv\Scripts\python tools\extract_catalog.py tools\catalog.json
+   ```
+   Everywhere below, read `.venv/bin/python` as `.venv\Scripts\python` on Windows.
 2. **Choose the AI that builds patches** (only needed for "Create"; browsing and playing existing songs works without it)
    - *Claude (default):* sign in once with `"$(.venv/bin/python -c 'import importlib.util as u, pathlib as p; print(p.Path(u.find_spec("claude_agent_sdk").origin).parent / "_bundled" / "claude")')" /login`
    - *Anything else:* open the app, click **AI** in the header and pick Ollama, LM Studio, OpenAI, OpenRouter or a custom URL (see [AI providers](#ai-providers)).
 3. **Back up your amp** once: `.venv/bin/python tools/patch.py backup -o backups/before.tsl`. TonenAI only writes the amp's temporary (live) patch, but a backup is cheap.
-4. **Start it:** `./run.command` (or double-click `TonenAI.app`). Search a song. If it is not in the library, press **Create**, wait about a minute, then click a patch to hear it.
+4. **Start it:** `./run.command` or double-click `TonenAI.app` (macOS), or double-click `run.bat` (Windows). Search a song. If it is not in the library, press **Create**, wait about a minute, then click a patch to hear it.
 
 **If something does not work**
 - *"Katana not found":* amp off, cable or USB driver missing, or another app (usually BOSS TONE STUDIO) is holding the amp's MIDI port. Quit it and wait a few seconds.
-- *`FileNotFoundError ... address_map.js`:* Tone Studio is not installed at the default path above.
+- *`FileNotFoundError ... address_map.js`:* Tone Studio was not found. On macOS it must be in the default folder. On Windows the app
+  searches the BOSS/Roland folders under Program Files and `%LOCALAPPDATA%\Programs`; if yours is elsewhere, set the environment
+  variable `TONENAI_TONE_STUDIO` to its install folder (the search goes downwards from there; it only needs to find `js/config/address_map.js`).
+- *Windows: "Katana not found" although the amp is on:* the port name differs by driver. Set `TONENAI_MIDI_PORT` to the exact name
+  (list them with `.venv\Scripts\python -c "import mido; print(mido.get_output_names())"`).
 - *"Claude is not signed in":* repeat the sign-in in step 2. For another provider, use **AI > Test connection**.
 - *Created tone sounds off:* patches are informed approximations. Tweak by ear and check the guitar and pickup advice on the song page.
 
@@ -61,7 +76,7 @@ A song goes in, a patch comes out. The app keeps the AI, your files and the amp 
 ```mermaid
 flowchart TB
     YOU(["You"])
-    subgraph APP["Desktop app (macOS)"]
+    subgraph APP["Desktop app (macOS, Windows)"]
         UI["Window<br/>app/ui.html, pywebview"]
         SVC["Backend<br/>app/service.py<br/>library, play, livesets, guitars, settings"]
         JOB["Create and generate jobs<br/>background thread"]
@@ -145,7 +160,7 @@ sequenceDiagram
 Double-click TonenAI.app (keep it inside the project folder; drag it to the Dock if you like)
 ./run.command            # or from a terminal: .venv/bin/python app/main.py
 ```
-**Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played with macOS `afplay`). Click or press any key to skip.
+**Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played natively: `afplay` on macOS, `winsound` on Windows). Click or press any key to skip.
 
 A visual library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Press Enter in the search box to see your library matches first, then other popular songs from the iTunes catalog (shown with **Create**); click any band name (on a card, the song page or a row title) to list all your songs by that band plus more of theirs you can add; the list length is **⚙ > Results per search** (default 10, `search_limit` in `data/settings.json`, 3-30). Search the library; if a
 song is not found, **Create with Claude** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
