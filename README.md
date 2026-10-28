@@ -287,8 +287,7 @@ Patches are written to the amp's temporary (live) patch, not to its memory slots
 your stored sounds. Still, back up first (`patch.py backup`) and use at your own risk; see the license.
 
 **Security notes.** The AI agent used by the Claude provider may only write `songs/*.json` and `songs/*.tsl` and may not read `data/`
-(where your settings and API key live), because it reads web pages while researching. The app window has a Content Security Policy
-that blocks all network access from the page itself; downloads happen in the Python backend (iTunes, and cover images only from Apple's
+(where your settings and API key live), because it reads web pages while researching. Downloads happen in the Python backend (iTunes, and cover images only from Apple's
 image servers). Song ids are checked before they are used in file paths. API keys are stored in `data/settings.json` in plain text
 (file mode 600 on macOS and Linux), so do not share that folder.
 
