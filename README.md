@@ -20,7 +20,7 @@ guitars for each song and works out settings for the pedals you own.
 - **Built around your rig:** pick your amp and pedals; add any pedal and the AI researches its controls, then sets it up per song.
 - **Guitar advice:** it ranks the guitars you own for each song and tells you which pickup to use.
 - **A practice companion:** Learning and Played lists, notes per song, tab links, and livesets for the amp's banks.
-- **Your songs everywhere (optional):** sync the library through your own Google Drive ([setup](docs/google-drive-sync.md)); an Android app is in the works (`android/`).
+- **Your songs everywhere (optional):** sync the library through your own Google Drive ([setup](docs/google-drive-sync.md)), and use the same library on your **Android phone** (see [Android app](#android-app)).
 - **English, Portuguese (Brazil) and Spanish.** macOS today; Windows support is untested (see [Compatibility](#compatibility)).
 
 > **Unofficial.** Not affiliated with BOSS, Roland or any AI company; see [Disclaimer](#disclaimer-and-trademarks).
@@ -105,11 +105,29 @@ with the pickup position to use.
 
 **My practice:** mark a song as **Learning** or **Played** and keep your own notes on it (stored locally in `data/song_meta.json`). Songs you are learning get their own row on the home screen.
 
+**Loudness:** each patch's amp volume is set from its amp type and gain so songs come out at a similar level (clean louder, brown and lead lower, lead and solo patches a few points up). `python3 tools/level_patches.py` checks or fixes a song, then re-export the `.tsl`. Fine-tune by ear: the rule is a starting point.
+
+**Sound:** the opening sting and the Trio+ click track can be switched off in the ⚙ menu, **Sound effects**.
+
 **Also per song (for the pedals you own):** Trio+ band setup (genre, BPM, click track, steps), Whammy DT setup (tuning, when to use it) and a setup card for every pedal you added.
 
 **Language:** English, Português (Brasil) and Español. Pick it from the flag list in the header; the first launch follows your system language and the choice is remembered (`data/settings.json`). In Portuguese or Spanish, songs you create get their notes and tips written in that language too. To add a language, add it to `LANGS` and `I18N` in `app/i18n.js` (and to `LANG_NAMES` in `app/service.py`).
 
 UI dev without the amp: `python3 -m http.server 8765` then open `http://localhost:8765/app/preview.html` (mock amp).
+
+## Android app
+
+A native Android app (Kotlin, Jetpack Compose) in [`android/`](android/README.md). It is your song library in your pocket: plug the
+Katana into the phone with a USB cable and one tap sends a patch to the amp. There is no app-store release yet; you build and install
+it yourself with `android/install.command` (needs Android Studio and a phone with USB debugging on).
+
+- **Same library:** songs with covers, the Trio+, Whammy and guitar setup for each song, your practice status and notes, tab links,
+  My guitars and My gear, and livesets you can send to the amp's slots. Starter songs come with the app.
+- **Synced through your own Google Drive** (optional, [setup](docs/google-drive-sync.md)): the songs, livesets, guitars and gear are shared with the desktop app.
+- **Request a song from the phone:** search for it on the phone, pick the exact song, and your computer creates it with your AI
+  after you approve it, then the song syncs back. The phone has no AI of its own and never sees your AI sign-in.
+- **Opening animation and sound:** the same intro as the desktop; the **Sound effects** switch in Settings turns every sound off.
+- Not yet: Portuguese and Spanish on the phone (English only for now).
 
 ## AI providers
 Click **AI** in the app header and pick a card, then **Save**:
@@ -259,6 +277,7 @@ file names are listed in the credits below). Needs `pip install opencv-python-he
 - Test on a real Windows PC and fix what turns up; a Linux path would need another way to get the parameter list.
 - Let the AI tune the EQ for the specific guitar you pick, not just advise on pickup position.
 - A hosted option, so people without their own AI sign-in can create songs.
+- Android: Portuguese and Spanish, and a signed release build so it can be installed without Android Studio.
 
 ## Disclaimer and trademarks
 **Unofficial.** This project is not affiliated with, endorsed by or sponsored by BOSS or Roland. "BOSS",

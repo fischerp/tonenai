@@ -16,8 +16,15 @@ sends a patch to the amp over USB.
   ([setup](../docs/google-drive-sync.md)).
 - Settings > USB diagnostics: a log of what the phone sees, to send when an amp is not found.
 
-**Not yet (the desktop app has them)**: creating songs with AI, My gear and guitars, practice lists and
-notes, Portuguese and Spanish. Songs are created on the computer and arrive through the Drive sync.
+- Practice status (Learning, Played) with notes, tab links, My guitars (with pictures and finishes) and My gear; the
+  Trio+ setup with the genre and style knobs and a click track; Whammy and Trio+ cards appear only for pedals you own.
+  All of it travels through the Drive sync.
+- Request a song: search for it on the phone (Apple's iTunes search), pick the exact song, and your computer creates it
+  after you approve it (Google Drive dialog on the desktop). The phone has no AI of its own.
+- Opening animation like the desktop's, with an optional sound. Settings > Sound effects turns every sound off.
+
+**Not yet**: Portuguese and Spanish (English only), and creating songs on the phone itself. Songs are created on the
+computer and arrive through the Drive sync.
 
 How it talks to the amp: Android does not list the Katana as a MIDI device (its USB interfaces are
 vendor-specific, class `FF`), so the app claims interface 3 itself and exchanges USB-MIDI event packets over its
