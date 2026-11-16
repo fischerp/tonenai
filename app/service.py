@@ -236,10 +236,7 @@ class Service:
 
     # -------------------------------------------------------------- song requests from the phone (through Google Drive)
     def _phone_cfg(self):
-        try:
-            cfg = json.load(open(SETTINGS))
-        except (OSError, ValueError):
-            cfg = {}
+        cfg = self._settings()
         mode = cfg.get("phone_requests")
         per_day = cfg.get("phone_requests_per_day")
         return (mode if mode in phone_requests.MODES else phone_requests.DEFAULT_MODE,
@@ -263,13 +260,9 @@ class Service:
     def set_phone_requests_mode(self, mode):
         if mode not in phone_requests.MODES:
             return {"ok": False, "error": "Unknown mode"}
-        try:
-            cfg = json.load(open(SETTINGS))
-        except (OSError, ValueError):
-            cfg = {}
+        cfg = self._settings()
         cfg["phone_requests"] = mode
-        os.makedirs(DATA, exist_ok=True)
-        json.dump(cfg, open(SETTINGS, "w"), indent=1)
+        self._save_settings(cfg)
         threading.Thread(target=self._phone_tick, daemon=True).start()
         return {"ok": True}
 
@@ -470,23 +463,15 @@ class Service:
 
     # -------------------------------------------------------------- language (en / pt-BR)
     def get_lang(self):
-        try:
-            v = json.load(open(SETTINGS)).get("lang")
-            return v if v in LANG_NAMES else None
-        except (OSError, ValueError, AttributeError):
-            return None
+        v = self._settings().get("lang")
+        return v if v in LANG_NAMES else None
 
     def set_lang(self, lang):
         if lang not in LANG_NAMES:
             return {"ok": False, "error": "Unknown language"}
-        try:
-            cfg = json.load(open(SETTINGS))
-            cfg = cfg if isinstance(cfg, dict) else {}
-        except (OSError, ValueError):
-            cfg = {}
+        cfg = self._settings()
         cfg["lang"] = lang
-        os.makedirs(DATA, exist_ok=True)
-        json.dump(cfg, open(SETTINGS, "w"), indent=1)
+        self._save_settings(cfg)
         return {"ok": True}
 
     # -------------------------------------------------------------- AI provider (Claude by default, or any OpenAI-compatible server)
