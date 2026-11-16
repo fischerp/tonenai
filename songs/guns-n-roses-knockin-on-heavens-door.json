@@ -45,7 +45,7 @@
    "mid": 50,
    "treble": 55,
    "presence": 50,
-   "volume": 45
+   "volume": 58
   },
   "booster": {
    "type": "MID BOOST",
@@ -83,7 +83,7 @@
    "mid": 65,
    "treble": 55,
    "presence": 55,
-   "volume": 55
+   "volume": 46
   },
   "booster": {
    "type": "T-SCREAM",

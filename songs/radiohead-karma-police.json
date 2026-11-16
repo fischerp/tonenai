@@ -33,7 +33,7 @@
    "tone_notes": "The song is built on a strummed acoustic with piano; an electric on a clean, warm setting works. Roll treble back a little for a rounder sound.",
    "confidence": "unknown"
   },
-  "amp": {"type": "ACOUSTIC", "gain": 25, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 45},
+  "amp": {"type": "ACOUSTIC", "gain": 25, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 56},
   "booster": {"type": "MID BOOST", "on": false},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": false, "time": 400, "feedback": 15, "level": 20},
@@ -43,7 +43,7 @@
  {
   "name": "Karma Outro",
   "memo": "Radiohead - Karma Police: ending. Ed O'Brien's delay pushed into self-oscillation (DMX 15-80S); turn the delay level/feedback up by hand for the 'melting' wash.",
-  "amp": {"type": "CLEAN", "gain": 30, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 45},
+  "amp": {"type": "CLEAN", "gain": 30, "bass": 50, "mid": 50, "treble": 55, "presence": 50, "volume": 58},
   "booster": {"type": "MID BOOST", "on": false},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": true, "time": 500, "feedback": 85, "level": 60},

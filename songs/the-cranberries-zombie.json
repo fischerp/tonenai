@@ -44,7 +44,7 @@
  {
   "name": "Zombie Chorus",
   "memo": "The Cranberries - Zombie (chorus/lead): fuzz-style wall of distortion, Big Muff into cranked amps. Informed approximation.",
-  "amp": {"type": "LEAD", "gain": 65, "bass": 55, "mid": 45, "treble": 60, "presence": 55, "volume": 55},
+  "amp": {"type": "LEAD", "gain": 65, "bass": 55, "mid": 45, "treble": 60, "presence": 55, "volume": 44},
   "booster": {"type": "DISTORTION", "on": true, "drive": 60, "level": 50, "tone": 40},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 15, "level": 20},

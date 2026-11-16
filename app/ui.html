@@ -29,6 +29,7 @@
   .mi:hover, .mi:focus { background: #ffffff1a; outline: none; } .mi.on { font-weight: 700; }
   .mic { width: 20px; text-align: center; } .mt { display: grid; } .mt small { color: var(--muted); font-size: 12px; font-weight: 400; }
   .mrow { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; } .mrow select { margin-left: auto; background: #14141b; border: 1px solid #2a2a37; color: var(--text); border-radius: 6px; padding: 4px 8px; font: inherit; font-size: 13px; }
+  body.nosound [data-click] { display: none !important; }
   .mchk { margin-left: auto; color: #3ddc84; } .msep { height: 1px; background: #33334a; margin: 6px 4px; }
   .mhead { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 6px 12px 4px; }
   .fl { font-size: 18px; line-height: 1; } .logo { cursor: pointer; }
@@ -246,7 +247,9 @@
     <div class="menu" id="menu" role="menu" hidden>
       <button class="mi" role="menuitem" id="imp" title="Load a Tone Studio .tsl file"><span class="mic">＋</span><span>Import .tsl</span></button>
       <button class="mi" role="menuitem" id="abtn" title="Choose which AI builds your patches"><span class="mic">🤖</span><span class="mt">AI provider<small id="aicur"></small></span></button>
+      <button class="mi" role="menuitem" id="dbtn" title="Keep your songs in your own Google Drive, on all your devices"><span class="mic">☁</span><span class="mt">Google Drive<small id="drvcur"></small></span></button>
       <label class="mrow" id="slrow"><span id="sllbl">Results per search</span><select id="slsel" aria-labelledby="sllbl"></select></label>
+      <button class="mi" role="menuitemcheckbox" id="sndbtn" aria-checked="true"><span class="mic" aria-hidden="true">🔊</span><span id="sndlbl">Sound effects</span><b class="mchk" id="sndchk" aria-hidden="true">✓</b></button>
       <div class="msep" role="separator"></div>
       <div class="mhead" id="langhead">Language</div>
       <div id="langmenu" role="group" aria-labelledby="langhead"></div>
@@ -260,6 +263,7 @@
 <div class="modal" id="gearmodal"><div class="sheet" id="gearsheet"></div></div>
 <div class="modal" id="lmodal"><div class="sheet xl" id="lsheet"></div></div>
 <div class="modal" id="amodal"><div class="sheet" id="asheet"></div></div>
+<div class="modal" id="dmodal"><div class="sheet" id="dsheet"></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="i18n.js"></script>
@@ -268,6 +272,7 @@
 <script src="guitar-manager.js"></script>
 <script src="livesets.js"></script>
 <script src="gear.js"></script>
+<script src="drive.js"></script>
 <script src="tabs.js"></script>
 <script>
 let SONGS = [], LIVE = null;          // LIVE = {id, index}
@@ -382,8 +387,22 @@ function genreDial(sel) {   // 12 positions, same layout as the pedal's GENRE kn
   const hand = a === null ? "" : `<line x1="${cx}" y1="${cy}" x2="${cx + 30 * Math.sin(a)}" y2="${cy - 30 * Math.cos(a)}" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
   return `<svg class="dial" width="224" height="170" viewBox="-28 -2 224 170"><circle cx="${cx}" cy="${cy}" r="24" fill="#2a2a37"/>${hand}${out}</svg>`;
 }
+let SOUND = store("sound") !== false;   // master switch: opening sting + click track
+function renderSound() {
+  document.body.classList.toggle("nosound", !SOUND);
+  $("#sndlbl").textContent = tx("Sound effects"); $("#sndbtn").setAttribute("aria-checked", String(SOUND)); $("#sndchk").textContent = SOUND ? "✓" : "";
+  $("#sndbtn").title = tx("Every sound the app makes: the opening sting and the click track");
+}
+function setSound(on) {
+  SOUND = on; store(null, ["sound", JSON.stringify(on)]);
+  const a = api(); if (a && a.set_sound) a.set_sound(on);
+  if (!on) { if (CLICK) toggleClick(); if (SPLASH.audio) SPLASH.audio.pause(); }
+  renderSound(); refreshClickBtn();
+}
+$("#sndbtn").addEventListener("click", () => setSound(!SOUND));
 let CLICK = null;
 function toggleClick(bpm) {
+  if (!SOUND && !CLICK) return;
   if (CLICK) { clearInterval(CLICK.t); CLICK.c.close(); CLICK = null; return refreshClickBtn(); }
   const c = new (window.AudioContext || window.webkitAudioContext)(); let n = 0;
   const beep = () => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = n++ % 4 === 0 ? 1500 : 1000;
@@ -698,6 +717,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.matches && e.target.matches("#hero h1[data-open]")) { openSong(e.target.dataset.open); return; }
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stile")) { e.preventDefault(); e.target.click(); return; }
   if (e.key !== "Escape" || menuOpen()) return;
+  if ($("#dmodal").classList.contains("open")) { driveClose(); return; }
   if ($("#gearmodal").classList.contains("open")) { gearClose(); return; }
   if ($("#lmodal").classList.contains("open")) { const o = $("#lconfirm") || $("#lpick"); if (o) { o.remove(); } else lsClose(); return; }
   if ($("#modal").classList.contains("open")) { $("#modal").classList.remove("open"); if (CLICK) toggleClick(); }
@@ -895,7 +915,8 @@ function applyStatic() {
   nav("#lbtn", "📻", "Livesets", "Plan what goes into the amp's banks"); nav("#gbtn", "🎛", "My gear", "Your amp, pedals and guitars");
   $("#imp").innerHTML = `<span class="mic" aria-hidden="true">＋</span><span>${tx("Import .tsl")}</span>`; $("#imp").title = tx("Load a Tone Studio .tsl file");
   $("#abtn").innerHTML = `<span class="mic" aria-hidden="true">🤖</span><span class="mt">${tx("AI provider")}<small>${esc(aiCurrent())}</small></span>`; $("#abtn").title = tx("Choose which AI builds your patches");
-  renderLang(); renderSearchLimit();
+  if (window.driveStatic) driveStatic();
+  renderLang(); renderSearchLimit(); renderSound();
   if (!api()) $("#stxt").textContent = tx("connecting…");
 }
 function rerenderAll() {
@@ -936,6 +957,7 @@ async function init() {
   if (a) RECENT = await a.recent();
   if (a) META = await a.song_meta();
   render(); refreshStatus(); setInterval(refreshStatus, 5000);
+  if (window.driveWatch) driveWatch();
   loadCovers();
 }
 applyStatic();
@@ -947,7 +969,7 @@ function splashGo() {
   $("#sp-tag").textContent = tx("Tone for every song");
   if (a && a.get_lang) Promise.resolve(a.get_lang()).then(l => { if (l && LANGS.some(x => x.code === l)) { LANG = l; $("#sp-tag").textContent = tx("Tone for every song"); } }).catch(() => {});
   el.classList.add("go");
-  Promise.resolve(a && a.play_intro ? a.play_intro() : { ok: false }).then(r => {
+  Promise.resolve(a && a.get_sound ? a.get_sound() : SOUND).then(on => { SOUND = on !== false; renderSound(); }).catch(() => {}).then(() => SOUND ? (a && a.play_intro ? a.play_intro() : { ok: false }) : { ok: true }).then(r => {
     if (r && r.ok) return;
     try { SPLASH.audio = new Audio("../assets/tonenai-intro.wav"); SPLASH.audio.play().catch(() => {}); } catch (e) {}   // outside the Mac app
   }).catch(() => {});

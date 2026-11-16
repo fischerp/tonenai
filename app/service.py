@@ -18,6 +18,8 @@ def _ok_sid(s):
 VPY = ".venv/Scripts/python" if sys.platform == "win32" else ".venv/bin/python"   # the venv interpreter, as the AI agent must call it
 import patch as PT      # noqa: E402
 import local_llm        # noqa: E402
+import drive_sync       # noqa: E402
+import phone_requests   # noqa: E402
 
 SONGS = os.path.join(ROOT, "songs")
 COVERS = os.path.join(SONGS, "covers")
@@ -133,6 +135,14 @@ class Service:
         self._job = {"state": "idle"}
         self._cancel = threading.Event()
         self._last_text = ""
+        self._drive = drive_sync.DriveSync(SONGS, DATA, open_browser=osutil.open_url,
+                                           trash=lambda p: osutil.trash([str(p)], os.path.join(ROOT, ".trash")))
+        self._inbox = phone_requests.Inbox(os.path.join(DATA, "requests"))
+        self._phone_lock = threading.Lock()
+        self._approved = set()                           # phone requests you approved here (mode "ask")
+        self._phone_job = None                           # id of the phone request being made right now
+        threading.Thread(target=self._drive_kick, daemon=True).start()   # pick up songs made on another device
+        threading.Thread(target=self._phone_poll, daemon=True).start()   # and look for song requests from the phone
 
     # -------------------------------------------------------------- library
     def songs(self):
@@ -143,14 +153,18 @@ class Service:
                 specs = json.load(open(path))
             except ValueError:
                 continue
-            specs = specs if isinstance(specs, list) else [specs]
-            artist, title = _split_title(specs[0].get("memo"), sid)
-            res.append({
-                "id": sid, "artist": artist, "title": title, "cover": "", "added": _added(path), "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"), "gear": specs[0].get("gear"),
-                "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
-                             "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
-                            for i, s in enumerate(specs)],
-            })
+            try:                                       # one odd file must never hide the whole library
+                specs = specs if isinstance(specs, list) else [specs]
+                artist, title = _split_title(specs[0].get("memo"), sid)
+                res.append({
+                    "id": sid, "artist": artist, "title": title, "cover": "", "added": _added(path), "band": specs[0].get("band"), "whammy": specs[0].get("whammy"), "guitar": specs[0].get("guitar"), "gear": specs[0].get("gear"),
+                    "patches": [{"index": i, "name": s["name"], "amp": s.get("amp", {}).get("type", ""),
+                                 "note": (s.get("memo", "").split(":", 1) + [""])[1].strip()}
+                                for i, s in enumerate(specs)],
+                })
+            except (KeyError, TypeError, AttributeError, IndexError):
+                continue
+
         for path in sorted(glob.glob(os.path.join(SONGS, "*.tsl"))):
             sid = os.path.basename(path)[:-4]
             if os.path.exists(os.path.join(SONGS, sid + ".json")):
@@ -181,7 +195,175 @@ class Service:
         dst = os.path.join(SONGS, sid + ".tsl")
         if os.path.abspath(src) != os.path.abspath(dst):
             shutil.copyfile(src, dst)
+        self._drive_kick()
         return {"ok": True, "id": sid}
+
+    # -------------------------------------------------------------- Google Drive (optional: your songs on all your devices)
+    def drive_status(self):
+        return self._drive.status()
+
+    def _drive_run(self, what):
+        d = self._drive
+        if d.busy:
+            return {"ok": False, "error": "Google Drive is busy. Try again in a moment."}
+        d.busy = what
+
+        def work():
+            try:
+                if what == "connect":
+                    d.connect()
+                    d.busy = "sync"
+                d.sync()
+            except Exception as e:                      # shown in the Google Drive dialog
+                d._update_state(last_error=str(e), last_result="error")
+            finally:
+                d.busy = ""
+            if what != "tick":
+                try:
+                    self._phone_tick()
+                except Exception:
+                    pass                                # phone requests are optional: they must never break the sync
+        threading.Thread(target=work, daemon=True).start()
+        return {"ok": True}
+
+    def _drive_kick(self):
+        """Sync in the background after the library changed (does nothing until Drive is connected)."""
+        try:
+            if self._drive.connected():
+                self._drive_run("sync")
+        except Exception:
+            pass                                        # sync is optional: it must never break the app
+
+    # -------------------------------------------------------------- song requests from the phone (through Google Drive)
+    def _phone_cfg(self):
+        try:
+            cfg = json.load(open(SETTINGS))
+        except (OSError, ValueError):
+            cfg = {}
+        mode = cfg.get("phone_requests")
+        per_day = cfg.get("phone_requests_per_day")
+        return (mode if mode in phone_requests.MODES else phone_requests.DEFAULT_MODE,
+                per_day if isinstance(per_day, int) and 0 < per_day <= 50 else phone_requests.DEFAULT_PER_DAY)
+
+    def _phone_poll(self):
+        """While the app is open and Drive is connected: look for new requests every few minutes."""
+        while True:
+            time.sleep(300)
+            try:
+                if self._drive.connected() and not self._drive.busy:
+                    self._drive_run("sync")
+            except Exception:
+                pass
+
+    def phone_requests_state(self):
+        mode, per_day = self._phone_cfg()
+        items = [i for i in self._inbox.items() if i["status"] in ("new", "awaiting-approval", "working")]
+        return {"mode": mode, "per_day": per_day, "items": items, "today": self._inbox.made_today()}
+
+    def set_phone_requests_mode(self, mode):
+        if mode not in phone_requests.MODES:
+            return {"ok": False, "error": "Unknown mode"}
+        try:
+            cfg = json.load(open(SETTINGS))
+        except (OSError, ValueError):
+            cfg = {}
+        cfg["phone_requests"] = mode
+        os.makedirs(DATA, exist_ok=True)
+        json.dump(cfg, open(SETTINGS, "w"), indent=1)
+        threading.Thread(target=self._phone_tick, daemon=True).start()
+        return {"ok": True}
+
+    def phone_request_action(self, rid, action):
+        """Approve or dismiss a request that is waiting (mode "ask")."""
+        item = next((i for i in self._inbox.items() if i["id"] == rid), None)
+        if not item or item["status"] not in ("new", "awaiting-approval"):
+            return {"ok": False, "error": "That request is not waiting any more"}
+        if action == "dismiss":
+            self._inbox.write_result(rid, "declined", "Dismissed on the computer")
+            self._drive_kick()
+        elif action == "approve":
+            self._approved.add(rid)
+            threading.Thread(target=self._phone_tick, daemon=True).start()
+        else:
+            return {"ok": False, "error": "Unknown action"}
+        return {"ok": True}
+
+    def _phone_tick(self):
+        """Runs after every sync: tidy old requests, tell the phone what is waiting, and start the next allowed request."""
+        with self._phone_lock:
+            if self._job.get("state") == "running" or self._phone_job:
+                return
+        changed = self._inbox.cleanup() > 0
+        mode, per_day = self._phone_cfg()
+        started = False
+        for item in self._inbox.items():
+            if item["status"] not in ("new", "awaiting-approval"):
+                continue
+            note = None
+            if time.time() - item["created"] / 1000 > phone_requests.EXPIRE_DAYS * 86400:
+                self._inbox.write_result(item["id"], "failed", "Expired: this computer was not running TonenAI in time")
+                changed = True
+                continue
+            if mode == "off":
+                continue
+            if mode == "ask" and item["id"] not in self._approved:
+                note = "Waiting for you to approve it on the computer"
+            elif self._inbox.made_today() >= per_day:
+                note = f"Daily limit of {per_day} reached; it will run tomorrow"
+            if note:
+                if item["status"] == "new":        # tell the phone once; never rewrite an unchanged result (that would sync forever)
+                    self._inbox.write_result(item["id"], "awaiting-approval", note)
+                    changed = True
+                continue
+            if not started:
+                started = changed = self._start_phone_request(item) or changed
+        if changed:
+            self._drive_kick()
+
+    def _start_phone_request(self, item):
+        with self._phone_lock:
+            if self._job.get("state") == "running":
+                return False
+            self._cancel.clear()
+            self._phone_job = item["id"]
+            self._job = {"state": "running", "note": "Starting Claude…", "query": item["text"], "stage": 0, "round": 0,
+                         "t0": int(time.time() * 1000), "from_phone": True}
+        self._inbox.write_result(item["id"], "working", "Creating the song on the computer")
+        threading.Thread(target=self._run_job, args=(item["text"], item["id"]), daemon=True).start()
+        return True
+
+    def _finish_phone_request(self, rid):
+        """Called when a job that came from the phone ends: tell the phone, then look at the next request."""
+        job = dict(self._job)
+        if job.get("state") == "done":
+            self._inbox.write_result(rid, "done", "Song created", song=job.get("id", ""))
+        else:
+            self._inbox.write_result(rid, "failed", (job.get("error") or "Could not create the song")[:150])
+        self._approved.discard(rid)
+        self._phone_job = None
+        self._drive_kick()
+        threading.Timer(20, self._phone_tick).start()
+
+    def drive_connect(self):
+        try:
+            drive_sync.load_client_config(self._drive.client_path)
+        except drive_sync.SyncError as e:
+            return {"ok": False, "error": str(e)}
+        return self._drive_run("connect")
+
+    def drive_sync_now(self):
+        if not self._drive.connected():
+            return {"ok": False, "error": "Connect Google Drive first."}
+        return self._drive_run("sync")
+
+    def drive_disconnect(self):
+        if self._drive.busy:
+            return {"ok": False, "error": "Google Drive is busy. Try again in a moment."}
+        try:
+            self._drive.disconnect()
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": True}
 
     # -------------------------------------------------------------- amp
     def _connect(self):
@@ -236,7 +418,21 @@ class Service:
         return {"ok": True, "patch": label}
 
     # -------------------------------------------------------------- opening sound (played natively: not subject to web autoplay rules)
+    def get_sound(self):
+        """Master switch for every sound the app makes (opening sting, click track). On unless switched off."""
+        return self._settings().get("sound_effects") is not False
+
+    def set_sound(self, on):
+        cfg = self._settings()
+        cfg["sound_effects"] = bool(on)
+        self._save_settings(cfg)
+        if not on:
+            self.stop_intro()
+        return {"ok": True}
+
     def play_intro(self):
+        if not self.get_sound():
+            return {"ok": True}                                   # silent: the animation still plays
         return {"ok": osutil.play_sound(os.path.join(ROOT, "assets", "tonenai-intro.wav"))}
 
     def stop_intro(self):
@@ -455,7 +651,14 @@ class Service:
         return {"skill": skill, "example": example, "tables": P.TABLES, "sections": sections, "pedals": pedals,
                 "build": PT.build, "songs_dir": SONGS, "lang_note": self._lang_note(), "progress": self._progress, "cancel": self._cancel, "stage": self._stage}
 
-    def _run_job(self, text):
+    def _run_job(self, text, phone_rid=None):
+        try:
+            self._run_job_inner(text)
+        finally:
+            if phone_rid:
+                self._finish_phone_request(phone_rid)
+
+    def _run_job_inner(self, text):
         before = set(glob.glob(os.path.join(SONGS, "*.json")))
         try:
             cfg = local_llm.config(SETTINGS)
@@ -470,6 +673,7 @@ class Service:
             self._stage(3)
             self._validate(sid)
             self._job = {"state": "done", "id": sid}
+            self._drive_kick()
         except Exception as e:
             msg = str(e)
             if "Not logged in" in msg or "authentication" in msg.lower():
@@ -624,6 +828,7 @@ class Service:
             else:
                 raise RuntimeError((self._last_text or f"Claude could not add the {kind} setup for this song")[:300])
             self._job = {"state": "done", "id": sid, "kind": kind}
+            self._drive_kick()
         except Exception as e:
             msg = str(e)
             if "Not logged in" in msg or "authentication" in msg.lower():
@@ -918,6 +1123,7 @@ class Service:
         if not files:
             return {"ok": False, "error": "Song not found"}
         osutil.trash(files, os.path.join(ROOT, ".trash"))   # Trash / Recycle Bin; a recoverable copy in .trash if that fails
+        self._drive_kick()
         return {"ok": True}
 
     # -------------------------------------------------------------- my guitars (local, per user)
@@ -972,7 +1178,11 @@ class Service:
 
     def _save_livesets(self, items):
         os.makedirs(DATA, exist_ok=True)
-        json.dump(items, open(LIVESETS, "w"), indent=1)
+        temp = LIVESETS + ".part"                       # replaced in one step so a sync never reads half a file
+        with open(temp, "w") as f:
+            json.dump(items, f, indent=1)
+        os.replace(temp, LIVESETS)
+        self._drive_kick()
 
     def liveset_save(self, ls):
         """Create or update a liveset: {id?, name, slots: {A1..B4: {song, index} | null}, notes}."""

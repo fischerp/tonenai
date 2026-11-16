@@ -34,7 +34,7 @@
    "tone_notes": "Bright, crisp, fairly open humbucker tone from a modified Marshall plexi with a phaser. A single-coil guitar will be thinner: add a bit of gain and mids.",
    "confidence": "likely"
   },
-  "amp": {"type": "BROWN", "gain": 55, "bass": 50, "mid": 60, "treble": 65, "presence": 65, "volume": 50},
+  "amp": {"type": "BROWN", "gain": 55, "bass": 50, "mid": 60, "treble": 65, "presence": 65, "volume": 44},
   "booster": {"type": "T-SCREAM", "drive": 20, "level": 50},
   "mod": {"type": "PHASER", "on": true},
   "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
@@ -44,7 +44,7 @@
  {
   "name": "Jump Solo",
   "memo": "Van Halen - Jump: solo. Brown amp with more gain and mids, a touch of delay.",
-  "amp": {"type": "BROWN", "gain": 70, "bass": 45, "mid": 65, "treble": 65, "presence": 65, "volume": 55},
+  "amp": {"type": "BROWN", "gain": 70, "bass": 45, "mid": 65, "treble": 65, "presence": 65, "volume": 46},
   "booster": {"type": "T-SCREAM", "drive": 30, "level": 60},
   "mod": {"type": "PHASER", "on": false},
   "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 20, "level": 25},

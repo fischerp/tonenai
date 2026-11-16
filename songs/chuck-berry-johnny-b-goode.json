@@ -40,7 +40,7 @@
    "mid": 60,
    "treble": 60,
    "presence": 50,
-   "volume": 50
+   "volume": 51
   },
   "booster": {
    "type": "MID BOOST",

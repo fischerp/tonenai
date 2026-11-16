@@ -24,7 +24,7 @@
  {
   "name": "BackInBlack Lead",
   "memo": "AC/DC - Back in Black: solo. Same Plexi crunch with a bit more gain and mids for sustain, light delay.",
-  "amp": {"type": "CRUNCH", "gain": 60, "bass": 45, "mid": 62, "treble": 58, "presence": 35, "volume": 58},
+  "amp": {"type": "CRUNCH", "gain": 60, "bass": 45, "mid": 62, "treble": 58, "presence": 35, "volume": 53},
   "booster": {"type": "MID BOOST", "on": false},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": true, "time": 250, "feedback": 15, "level": 18},

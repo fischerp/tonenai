@@ -20,6 +20,11 @@ Rules: never overwrite the user's stored patches without a backup; keep rhythm/l
 Katana MkII has 5 amp types + Variation, 5 effect slots (booster, mod, fx, delay, reverb).
 Hardware facts are in README.md. Commit straight to `main`; the user tags releases themselves.
 
+## Loudness (keep every patch at a similar volume)
+High-gain amps are much louder than clean ones at the same volume number, so set `amp.volume` from the amp type, not by feel:
+ACOUSTIC 54, CLEAN 56, CRUNCH 50, LEAD 46, BROWN 44, minus 1 per 10 gain points above 50 (plus 1 per 10 below), and +4 for a
+lead/solo patch. Run `python3 tools/level_patches.py` (dry run; `--apply` writes) to check or fix a song, then re-export the .tsl.
+
 ## Band setup (DigiTech Trio+)
 Add a `"band"` object to the FIRST patch of every song file (the Trio+ is a band-creator pedal the user plays along with;
 it is set by hand, not by MIDI). Look up the real tempo/key/structure with a web search; never invent numbers.

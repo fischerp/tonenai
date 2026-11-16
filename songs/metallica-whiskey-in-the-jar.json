@@ -38,7 +38,7 @@
    "tone_notes": "Humbucker crunch with moderate gain. A single-coil guitar will sound thinner: add a little gain and roll back treble. Gear is only partly documented for this specific track (database entries for the album, one source for the video guitar).",
    "confidence": "likely"
   },
-  "amp": {"type": "BROWN", "gain": 60, "bass": 55, "mid": 60, "treble": 58, "presence": 55, "volume": 50},
+  "amp": {"type": "BROWN", "gain": 60, "bass": 55, "mid": 60, "treble": 58, "presence": 55, "volume": 43},
   "booster": {"type": "T-SCREAM", "drive": 25, "level": 50},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": false, "time": 300, "feedback": 15, "level": 20},
@@ -48,7 +48,7 @@
  {
   "name": "Whiskey Lead",
   "memo": "Metallica - Whiskey In the Jar: lead. Singing, sustained lead tone with a short delay and a touch of reverb.",
-  "amp": {"type": "LEAD", "gain": 65, "bass": 50, "mid": 65, "treble": 58, "presence": 55, "volume": 55},
+  "amp": {"type": "LEAD", "gain": 65, "bass": 50, "mid": 65, "treble": 58, "presence": 55, "volume": 48},
   "booster": {"type": "T-SCREAM", "drive": 30, "level": 60},
   "mod": {"type": "CHORUS", "on": false},
   "delay": {"type": "DIGITAL", "on": true, "time": 350, "feedback": 20, "level": 25},

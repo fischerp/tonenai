@@ -3,7 +3,7 @@ __pycache__/
 tools/catalog.json
 backups/
 songs/covers/
-data/
+/data/
 .DS_Store
 Claude outputs/
 .env
@@ -13,3 +13,8 @@ Claude outputs/
 *.p12
 *.alb
 .claude/settings.local.json
+
+# Songs you create stay yours (sync them with Google Drive); only the starter library already in the repo is tracked.
+# To ship another starter song: git add -f songs/<name>.json songs/<name>.tsl
+songs/*.json
+songs/*.tsl

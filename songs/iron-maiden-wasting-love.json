@@ -13,7 +13,7 @@
              "tone_notes": "No source confirms the guitar used on this track. Humbuckers work too: for the clean part, roll back volume a little and add treble; for the heavy parts, they suit the crunch and lead patches well.",
              "confidence": "unknown"},
   "memo": "Iron Maiden - Wasting Love: clean arpeggio intro/verses. Strat-style sparkle, chorus and a touch of delay, lots of reverb. Informed approximation.",
-  "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 50, "treble": 60, "presence": 55, "volume": 45},
+  "amp": {"type": "CLEAN", "gain": 25, "bass": 50, "mid": 50, "treble": 60, "presence": 55, "volume": 58},
   "mod": {"type": "CHORUS", "on": true},
   "delay": {"type": "DIGITAL", "on": true, "time": 420, "feedback": 20, "level": 22},
   "reverb": {"type": "HALL", "on": true, "time": 40, "level": 30},
@@ -31,7 +31,7 @@
  {
   "name": "Wasting Love Ld",
   "memo": "Iron Maiden - Wasting Love: Gers lead solos. Singing Marshall lead with boost, delay and reverb.",
-  "amp": {"type": "LEAD", "gain": 65, "bass": 45, "mid": 65, "treble": 60, "presence": 60, "volume": 55},
+  "amp": {"type": "LEAD", "gain": 65, "bass": 45, "mid": 65, "treble": 60, "presence": 60, "volume": 48},
   "booster": {"type": "T-SCREAM", "on": true, "drive": 30, "level": 55},
   "delay": {"type": "DIGITAL", "on": true, "time": 450, "feedback": 25, "level": 28},
   "reverb": {"type": "HALL", "on": true, "time": 35, "level": 25},
