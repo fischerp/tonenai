@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon version: the dial only, in one colour. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="1024" android:viewportHeight="1024">
+    <path android:pathData="M336.7 706.7A262 262 0 1 1 687.3 706.7" android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="50" android:strokeLineCap="round" />
+    <path android:pathData="M312 512 C340 380 360 380 392.8 512 C420 610 440 610 473.6 512 C500 440 520 440 554.4 512 C580 565 605 565 635.2 512 C660 472 690 472 716 512"
+        android:strokeColor="#FFFFFFFF" android:strokeWidth="46" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

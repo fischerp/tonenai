@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 1410 = 0x0582, Roland Corporation (BOSS) -->
+    <usb-device vendor-id="1410" />
+</resources>

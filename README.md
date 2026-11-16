@@ -20,6 +20,7 @@ guitars for each song and works out settings for the pedals you own.
 - **Built around your rig:** pick your amp and pedals; add any pedal and the AI researches its controls, then sets it up per song.
 - **Guitar advice:** it ranks the guitars you own for each song and tells you which pickup to use.
 - **A practice companion:** Learning and Played lists, notes per song, tab links, and livesets for the amp's banks.
+- **Your songs everywhere (optional):** sync the library through your own Google Drive ([setup](docs/google-drive-sync.md)); an Android app is in the works (`android/`).
 - **English, Portuguese (Brazil) and Spanish.** macOS today; Windows support is untested (see [Compatibility](#compatibility)).
 
 > **Unofficial.** Not affiliated with BOSS, Roland or any AI company; see [Disclaimer](#disclaimer-and-trademarks).
@@ -86,7 +87,7 @@ run.bat                  # Windows: double-click it
 ```
 **Opening:** the app starts with a short splash and an original TO-NEN-AI sting (a bass hit, then a guitar lick; `assets/tonenai-intro.wav`, played natively: `afplay` on macOS, `winsound` on Windows). Click or press any key to skip.
 
-A visual library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. Press Enter in the search box to see your library matches first, then other popular songs from the iTunes catalog (shown with **Create**); click any band name (on a card, the song page or a row title) to list all your songs by that band plus more of theirs you can add; the list length is **⚙ > Results per search** (default 10, `search_limit` in `data/settings.json`, 3-30). Search the library; if a
+A visual library of your songs: click a song, pick a patch, it is sent to the amp. **Import .tsl** loads any Tone Studio liveset file into the library. The songs in `songs/` that come with the repo are the starter library; songs you create or import stay on your computer (Git ignores them). Press Enter in the search box to see your library matches first, then other popular songs from the iTunes catalog (shown with **Create**); click any band name (on a card, the song page or a row title) to list all your songs by that band plus more of theirs you can add; the list length is **⚙ > Results per search** (default 10, `search_limit` in `data/settings.json`, 3-30). Search the library; if a
 song is not found, **Create** researches the tone and adds `songs/<artist>-<title>.json` + `.tsl`.
 Creating songs needs an AI: choose one in step 2 of the Quick start.
 **My gear:** tell TonenAI what you own and it only shows and builds setups for that. Pick your **amp** (Katana MkII is the
@@ -219,6 +220,8 @@ sequenceDiagram
 | `gear/` | `catalog.json`: the amps and pedals offered in My gear |
 | `assets/`, `docs/` | logo, icons and intro sound; README screenshots |
 | `songs/` | your library: one `.json` spec and one `.tsl` per song, plus cached album covers (git-ignored) |
+| `android/` | the Android app (Kotlin, Jetpack Compose); see `android/README.md` |
+| `docs/` | `google-drive-sync.md`: optional sync of your songs through your own Google Drive |
 | `data/` | everything personal: your guitars, your rig and pedal profiles, favourites, notes, settings, API key (git-ignored) |
 | `.claude/` | the `katana-patch` skill (the rules the AI follows) and helper agents for contributors |
 
@@ -250,7 +253,7 @@ of hex bytes. Tone Studio's full backups use `.alb`.
 
 ## Developer: regenerating the guitar outlines
 `tools/trace_guitars.py` re-creates `app/guitar-shapes.js` from reference photos (download them into `/tmp/mkprev/ref/` first;
-file names are listed in the credits above). Needs `pip install opencv-python-headless numpy`, then `EXPORT=1 python tools/trace_guitars.py`.
+file names are listed in the credits below). Needs `pip install opencv-python-headless numpy`, then `EXPORT=1 python tools/trace_guitars.py`.
 
 ## Roadmap
 - Test on a real Windows PC and fix what turns up; a Linux path would need another way to get the parameter list.
